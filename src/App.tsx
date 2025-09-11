@@ -1,9 +1,8 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef, useState } from "react";
-import { contours } from "d3-contour";
 
 import { Button } from 'antd'
-import './ContourAnalysis'
+import DrawerCountour from "./utils/countour";
 
 const App = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +21,17 @@ const App = () => {
       animation: false,
       timeline: false,
       fullscreenButton: false,
+
+
+      /*       baseLayer: new Cesium.ImageryLayer(new Cesium.WebMapTileServiceImageryProvider({
+              url: "http://t0.tianditu.gov.cn/img_w/wmts?tk=03e1637ffbffc98d74b6ead0631a29d4",
+              layer: 'img',
+              style: 'default',
+              format: 'tiles',
+              tileMatrixSetID: 'w',
+              maximumLevel: 18,
+              subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+            })), */
     });
 
     viewerRef.current = viewer;
@@ -31,7 +41,7 @@ const App = () => {
         viewer.terrainProvider = terrain;
 
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(86.55, 27.99, 3000),
+          destination: Cesium.Cartesian3.fromDegrees(86.55, 27.99, 10000),
         });
       }
     );
@@ -43,15 +53,14 @@ const App = () => {
 
 
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
-      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
-      <Button type="primary" style={{ position: "absolute", top: "10px", left: "10px" }} onClick={() => {
-        // @ts-ignore
-        let contourAnalysis = new window.ContourAnalysis(viewerRef.current);
-        let options = {
-          countorLineList: [],
-        };
-        contourAnalysis.createContour(options);
+    <div className="canvas-container">
+      <div className="canvas-container-body" ref={containerRef} />
+      <Button type="primary" style={{ position: "absolute", top: "10px", right: "10px" }} onClick={() => {
+
+        const ellipseContour = DrawerCountour.drawerCircleCountour(viewerRef.current!);
+
+        // 配置颜色分级和等高线数量（可选）
+        ellipseContour.startDraw();
       }}>绘制等高线</Button>
     </div>
   );

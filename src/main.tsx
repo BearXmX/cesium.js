@@ -1,21 +1,43 @@
-import { StrictMode } from 'react'
+
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom'
 import { Button, ConfigProvider, Space, theme } from 'antd'
-
 import App from './App.tsx'
+import Enhance from './enhance.tsx'
+import YellowRiver from './pages/yellow-river/index.tsx'
 import './index.css'
+import Earthquake from './pages/earthquake/index.tsx'
 
 
 export const links = [
   {
-    name: '',
+    name: '等高线',
     path: '/',
     content: '',
     element: (
-      <>
-        <App key={'/'}></App>
-      </>
+      <Enhance>
+        <App></App>
+      </Enhance>
+    ),
+  },
+  {
+    name: '黄河',
+    path: '/yellow-river',
+    content: '',
+    element: (
+      <Enhance>
+        <YellowRiver></YellowRiver>
+      </Enhance>
+    ),
+  },
+  {
+    name: '地震',
+    path: '/earthquake',
+    content: '',
+    element: (
+      <Enhance>
+        <Earthquake></Earthquake>
+      </Enhance>
     ),
   },
 ]
