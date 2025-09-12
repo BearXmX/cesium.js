@@ -18,5 +18,28 @@ body,
 }
 
 .canvas-container .canvas-container-body {
+  position: relative;
   height: 100%;
+}
+
+.canvas-container .canvas-container-body-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 20px 20px;
+  width: 200px;
+  background: rgba(83, 83, 83, 0.42);
+  border-radius: 5px;
+  overflow: auto;
+  max-height: 400px;
+}
+
+/* 修改滚动条 */
+.canvas-container .canvas-container-body-controls::-webkit-scrollbar {
+  width: 2px;
+}
+
+/* 修改滚动条 颜色 */
+.canvas-container .canvas-container-body-controls::-webkit-scrollbar-thumb {
+  background: #bdbdbd;
 }

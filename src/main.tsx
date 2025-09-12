@@ -7,6 +7,7 @@ import Enhance from './enhance.tsx'
 import YellowRiver from './pages/yellow-river/index.tsx'
 import './index.css'
 import Earthquake from './pages/earthquake/index.tsx'
+import SuzhouRiver from './pages/suzhou-river/index.tsx'
 
 
 export const links = [
@@ -37,6 +38,16 @@ export const links = [
     element: (
       <Enhance>
         <Earthquake></Earthquake>
+      </Enhance>
+    ),
+  },
+  {
+    name: '苏州河',
+    path: '/suzhou-river',
+    content: '',
+    element: (
+      <Enhance>
+        <SuzhouRiver></SuzhouRiver>
       </Enhance>
     ),
   },

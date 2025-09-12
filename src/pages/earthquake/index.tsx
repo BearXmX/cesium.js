@@ -1,45 +1,51 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef, useState } from "react";
-import { Button, Checkbox, Form } from 'antd'
+import { Button, Checkbox, Form, Modal } from 'antd'
 import DrawerCountour from "../../utils/countour";
 
 const Earthquake = () => {
+
+  const [modal, modalContext] = Modal.useModal();
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
+  const chinaEarthquakeRef = useRef<Cesium.Entity[]>([]);
+
   const stepDividingLineRef = useRef<Cesium.Entity[]>([]);
 
-  const globalPlateBoundaryRef = useRef<Cesium.Entity[]>(null);
+  const globalPlateBoundaryRef = useRef<Cesium.Entity[]>([]);
 
-  const globalPlateBoundaryNameRef = useRef<Cesium.Entity[]>(null);
+  const globalPlateBoundaryNameRef = useRef<Cesium.Entity[]>([]);
 
-  const globalTrenchRef = useRef<Cesium.Entity[]>(null);
+  const globalTrenchRef = useRef<Cesium.Entity[]>([]);
 
-  const globalEarthquakePointRef = useRef<Cesium.Entity[]>(null);
+  const globalEarthquakePointRef = useRef<Cesium.Entity[]>([]);
 
-  const globalVolcanoPointRef = useRef<Cesium.Entity[]>(null);
+  const globalVolcanoPointRef = useRef<Cesium.Entity[]>([]);
 
-  const globalLandArcLineRef = useRef<Cesium.Entity[]>(null);
+  const globalLandArcLineRef = useRef<Cesium.Entity[]>([]);
 
-  const globalLandArcNameRef = useRef<Cesium.Entity[]>(null);
+  const globalLandArcNameRef = useRef<Cesium.Entity[]>([]);
 
-  const globalRiftValleyLineRef = useRef<Cesium.Entity[]>(null);
+  const globalRiftValleyLineRef = useRef<Cesium.Entity[]>([]);
 
-  const globalRiftValleyNameRef = useRef<Cesium.Entity[]>(null);
+  const globalRiftValleyNameRef = useRef<Cesium.Entity[]>([]);
 
-  const ANZNCMainlandOutlineRef = useRef<Cesium.Entity[]>(null);
+  const ANZNCMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
-  const NORTHAMEMainlandOutlineRef = useRef<Cesium.Entity[]>(null);
+  const NORTHAMEMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
-  const AFRICAMainlandOutlineRef = useRef<Cesium.Entity[]>(null);
+  const AFRICAMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
-  const SOUTHAMEMainlandOutlineRef = useRef<Cesium.Entity[]>(null);
+  const SOUTHAMEMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
-  const THESOUTHPOLEMainlandOutlineRef = useRef<Cesium.Entity[]>(null);
+  const THESOUTHPOLEMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
-  const EURASIAMainlandOutlineRef = useRef<Cesium.Entity[]>(null);
+  const EURASIAMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
+  const globalMainlandNameRef = useRef<Cesium.Entity[]>([]);
 
   const drawChinaBoundary = () => {
     fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
@@ -53,6 +59,40 @@ const Earthquake = () => {
       })
     })
   }
+
+
+  const drawChinaEarthquakeArea = (checked: boolean) => {
+
+    if (checked) {
+
+      if (chinaEarthquakeRef.current?.length) {
+
+        chinaEarthquakeRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+        fetch(window.$$prefix + "/data/earthquake/china-earthquake-area.geojson").then(res => res.json()).then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.PINK,
+            fill: Cesium.Color.PINK.withAlpha(0.5),
+            strokeWidth: 2,
+            markerSymbol: "circle"
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            chinaEarthquakeRef.current = dataSource.entities.values;
+          });
+
+        });
+      }
+
+    } else {
+      chinaEarthquakeRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+
+  };
 
   const drawANZNCMainlandOutline = (checked: boolean) => {
     if (checked) {
@@ -240,13 +280,83 @@ const Earthquake = () => {
     }
   }
 
+  const drawGlobalMainlandName = (checked: boolean) => {
+
+    if (checked) {
+
+      if (globalMainlandNameRef.current?.length) {
+
+        globalMainlandNameRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+
+        fetch(window.$$prefix + "/data/earthquake/global-mainland-name.geojson")
+          .then(res => res.json())
+          .then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.RED,
+              fill: Cesium.Color.RED.withAlpha(0.2),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+              const viewer = viewerRef.current!;
+
+              viewer.dataSources.add(dataSource);
+
+              dataSource.entities.values.forEach(entity => {
+                const props = entity.properties!.getValue();
+                if (!props) return;
+
+                const labelConfig = {
+                  text: props.LabelMes || "",
+                  textColor: "#fff", // 原始文字颜色配置
+                  outlineColor: "#000000",
+                  outlineWidth: 4, // 原100过大，修正为1
+                  farDistance: 30000000,
+                  nearDistance: 2000000
+                };
+
+                // 移除默认点/图标，避免重叠
+                entity.billboard = undefined;
+                entity.point = undefined;
+
+                // 关键修正：将 color → fontColor
+                entity.label = new Cesium.LabelGraphics({
+                  text: labelConfig.text,
+                  font: '30px sans-serif',
+                  style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
+                  outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
+                  outlineWidth: labelConfig.outlineWidth,
+                  fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
+                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                });
+              });
+
+              globalMainlandNameRef.current = dataSource.entities.values;
+            });
+          });
+
+      }
+
+    } else {
+      globalMainlandNameRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
   const drawMainlandOutline = (checked: boolean) => {
     drawANZNCMainlandOutline(checked)
     drawNORTHAMEMainlandOutline(checked)
     drawAFRICAMainlandOutline(checked)
-    /*   drawTHESOUTHPOLEMainlandOutline(checked) */
+    drawTHESOUTHPOLEMainlandOutline(checked)
     drawSOUTHAMEMainlandOutline(checked)
     drawEURASIAMainlandOutline(checked)
+    drawGlobalMainlandName(checked)
   }
 
 
@@ -613,8 +723,6 @@ const Earthquake = () => {
         })
 
       } else {
-
-
         fetch(window.$$prefix + "/data/earthquake/global-land-arc-name.geojson")
           .then(res => res.json())
           .then(data => {
@@ -781,6 +889,22 @@ const Earthquake = () => {
     }
   }
 
+  const playVideo = (src: string) => {
+    modal.info({
+      icon: null,
+      title: '视频播放',
+      content: <video src={src} style={{ width: '100%', height: '100%' }} controlsList="nodownload" controls autoPlay />,
+      okText: '关闭',
+      cancelText: '取消',
+      width: 800,
+      centered: true,
+      onOk() {
+      },
+      onCancel() {
+      }
+    })
+  }
+
 
 
   useEffect(() => {
@@ -830,114 +954,126 @@ const Earthquake = () => {
 
 
   return (
-    <div className="canvas-container">
-      <div className="canvas-container-body" ref={containerRef} />
+    <>
+      {modalContext}
+      <div className="canvas-container">
+        <div className="canvas-container-body" ref={containerRef} />
+        <div className="canvas-container-body-controls" >
 
-      <div style={{ position: "absolute", top: "10px", right: "10px", padding: "20px 20px", width: '200px', background: "rgba(83, 83, 83, 0.42)", borderRadius: "5px" }}>
+          <Button type="primary" size="small" style={{ marginBottom: 4 }}
+            onClick={() => {
+              const src = window.$$prefix + '/data/earthquake/earthquake.mp4'
 
-        {/*         <Button type="primary" onClick={() => {
-          const ellipseContour = DrawerCountour.drawerDiyShapeCountour(viewerRef.current!);
-          // 配置颜色分级和等高线数量（可选）
-          ellipseContour.startDraw();
-        }}>绘制等高线</Button> */}
+              playVideo(src)
 
-        <Form
-          name="basic"
-          labelAlign="left"
-          labelCol={{ span: 20 }}
-          labelWrap={true}
-          wrapperCol={{ span: 4 }}
-          initialValues={{
-            drawStepDividingLine: false, drawGlobalPlateBoundary: false, drawGlobalPlateBoundaryName: false, drawGlobalTrenchName: false, drawGlobalEarthquakePoint: false,
-            drawGlobalVolcanoPoint: false,
-            drawGlobalLandArcLine: false
-          }}
-          autoComplete="off"
-          onFieldsChange={(values) => {
-            const name = values[0].name[0];
+            }}
+          >地震视频</Button>
+          <Form
+            name="basic"
+            labelAlign="left"
+            labelCol={{ span: 20 }}
+            labelWrap={true}
+            wrapperCol={{ span: 4 }}
+            initialValues={{
+              drawStepDividingLine: false,
+              drawGlobalPlateBoundary: false,
+              drawGlobalPlateBoundaryName: false,
+              drawGlobalTrenchName: false,
+              drawGlobalEarthquakePoint: false,
+              drawGlobalVolcanoPoint: false,
+              drawGlobalLandArcLine: false
+            }}
+            autoComplete="off"
+            onFieldsChange={(values) => {
+              const name = values[0].name[0];
 
-            const value = values[0].value;
-            if (name === 'drawMainlandOutline') {
-              drawMainlandOutline(value)
-            }
+              const value = values[0].value;
 
+              if (name === 'drawChinaEarthquakeArea') {
+                drawChinaEarthquakeArea(value)
+              }
 
-            if (name === 'drawStepDividingLine') {
-              drawStepDividingLine(value)
-            }
-
-            if (name === 'drawGlobalPlateBoundary') {
-              drawGlobalPlateBoundary(value)
-            }
-
-            if (name === 'drawGlobalPlateBoundaryName') {
-              drawGlobalPlateBoundaryName(value)
-            }
-
-            if (name === 'drawGlobalTrenchName') {
-              drawGlobalTrenchName(value)
-            }
-
-            if (name === 'drawGlobalEarthquakePoint') {
-              drawGlobalEarthquakePoint(value)
-            }
-
-            if (name === 'drawGlobalVolcanoPoint') {
-              drawGlobalVolcanoPoint(value)
-            }
+              if (name === 'drawMainlandOutline') {
+                drawMainlandOutline(value)
+              }
 
 
-            if (name === 'drawGlobalLandArc') {
-              drawGlobalLandArc(value)
-            }
+              if (name === 'drawStepDividingLine') {
+                drawStepDividingLine(value)
+              }
+
+              if (name === 'drawGlobalPlateBoundary') {
+                drawGlobalPlateBoundary(value)
+              }
+
+              if (name === 'drawGlobalPlateBoundaryName') {
+                drawGlobalPlateBoundaryName(value)
+              }
+
+              if (name === 'drawGlobalTrenchName') {
+                drawGlobalTrenchName(value)
+              }
+
+              if (name === 'drawGlobalEarthquakePoint') {
+                drawGlobalEarthquakePoint(value)
+              }
+
+              if (name === 'drawGlobalVolcanoPoint') {
+                drawGlobalVolcanoPoint(value)
+              }
 
 
-            if (name === 'drawGlobalRiftValley') {
-              drawGlobalRiftValley(value)
-            }
+              if (name === 'drawGlobalLandArc') {
+                drawGlobalLandArc(value)
+              }
 
 
-          }}
-        >
+              if (name === 'drawGlobalRiftValley') {
+                drawGlobalRiftValley(value)
+              }
 
-          <Form.Item name="drawMainlandOutline" valuePropName="checked" label={'大陆轮廓'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
-          <Form.Item name="drawStepDividingLine" valuePropName="checked" label={'梯度分界线'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
-          <Form.Item name="drawGlobalPlateBoundary" valuePropName="checked" label={'板块分界线'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
-          <Form.Item name="drawGlobalPlateBoundaryName" valuePropName="checked" label={'板块名称'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
 
-          <Form.Item name="drawGlobalTrenchName" valuePropName="checked" label={'主要海沟'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
+            }}
+          >
+            <Form.Item name="drawChinaEarthquakeArea" valuePropName="checked" label={'中国主要地震带'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
+            <Form.Item name="drawStepDividingLine" valuePropName="checked" label={'梯度分界线'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
+            <Form.Item name="drawGlobalPlateBoundary" valuePropName="checked" label={'板块分界线'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
+            <Form.Item name="drawGlobalPlateBoundaryName" valuePropName="checked" label={'板块名称'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
 
-          <Form.Item name="drawGlobalEarthquakePoint" valuePropName="checked" label={'地震分布（近10年）'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
+            <Form.Item name="drawGlobalTrenchName" valuePropName="checked" label={'主要海沟'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
 
-          <Form.Item name="drawGlobalVolcanoPoint" valuePropName="checked" label={'火山分布'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
+            <Form.Item name="drawGlobalEarthquakePoint" valuePropName="checked" label={'地震分布（近10年）'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
 
-          <Form.Item name="drawGlobalLandArc" valuePropName="checked" label={'主要岛弧'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
+            <Form.Item name="drawGlobalVolcanoPoint" valuePropName="checked" label={'火山分布'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
 
-          <Form.Item name="drawGlobalRiftValley" valuePropName="checked" label={'主要裂谷'} style={{ marginBottom: '5px' }}>
-            <Checkbox></Checkbox>
-          </Form.Item>
+            <Form.Item name="drawGlobalLandArc" valuePropName="checked" label={'主要岛弧'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
 
-        </Form>
+            <Form.Item name="drawGlobalRiftValley" valuePropName="checked" label={'主要裂谷'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
 
+          </Form>
+
+        </div>
       </div>
+    </>
 
-    </div>
   );
 };
 
