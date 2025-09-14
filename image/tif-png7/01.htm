@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>My Map Set Name (Google Maps Export from Global Mapper)</title>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+    var G = google.maps;
+    var map;
+    
+    var customMapType = new G.ImageMapType
+      (
+        {
+        getTileUrl: function(coord, zoom)
+          {
+          var normalizedCoord = getNormalizedCoord(coord, zoom);
+          if (!normalizedCoord) { return null; }
+          
+          if ( zoom == 1 && normalizedCoord.x >= 1 && normalizedCoord.x <= 1 && normalizedCoord.y >= 0 && normalizedCoord.y <= 0 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 2 && normalizedCoord.x >= 3 && normalizedCoord.x <= 3 && normalizedCoord.y >= 1 && normalizedCoord.y <= 1 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 3 && normalizedCoord.x >= 6 && normalizedCoord.x <= 6 && normalizedCoord.y >= 3 && normalizedCoord.y <= 3 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 4 && normalizedCoord.x >= 13 && normalizedCoord.x <= 13 && normalizedCoord.y >= 6 && normalizedCoord.y <= 6 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 5 && normalizedCoord.x >= 26 && normalizedCoord.x <= 26 && normalizedCoord.y >= 13 && normalizedCoord.y <= 13 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 6 && normalizedCoord.x >= 53 && normalizedCoord.x <= 53 && normalizedCoord.y >= 26 && normalizedCoord.y <= 26 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 7 && normalizedCoord.x >= 107 && normalizedCoord.x <= 107 && normalizedCoord.y >= 52 && normalizedCoord.y <= 52 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 8 && normalizedCoord.x >= 214 && normalizedCoord.x <= 214 && normalizedCoord.y >= 104 && normalizedCoord.y <= 104 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 9 && normalizedCoord.x >= 428 && normalizedCoord.x <= 428 && normalizedCoord.y >= 209 && normalizedCoord.y <= 209 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 10 && normalizedCoord.x >= 857 && normalizedCoord.x <= 857 && normalizedCoord.y >= 418 && normalizedCoord.y <= 418 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 11 && normalizedCoord.x >= 1714 && normalizedCoord.x <= 1715 && normalizedCoord.y >= 836 && normalizedCoord.y <= 836 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 12 && normalizedCoord.x >= 3429 && normalizedCoord.x <= 3430 && normalizedCoord.y >= 1673 && normalizedCoord.y <= 1673 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 13 && normalizedCoord.x >= 6859 && normalizedCoord.x <= 6860 && normalizedCoord.y >= 3346 && normalizedCoord.y <= 3347 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 14 && normalizedCoord.x >= 13719 && normalizedCoord.x <= 13721 && normalizedCoord.y >= 6693 && normalizedCoord.y <= 6694 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 15 && normalizedCoord.x >= 27438 && normalizedCoord.x <= 27442 && normalizedCoord.y >= 13386 && normalizedCoord.y <= 13388 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 16 && normalizedCoord.x >= 54876 && normalizedCoord.x <= 54884 && normalizedCoord.y >= 26773 && normalizedCoord.y <= 26777 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 17 && normalizedCoord.x >= 109753 && normalizedCoord.x <= 109769 && normalizedCoord.y >= 53546 && normalizedCoord.y <= 53555 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 18 && normalizedCoord.x >= 219506 && normalizedCoord.x <= 219538 && normalizedCoord.y >= 107093 && normalizedCoord.y <= 107110 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 19 && normalizedCoord.x >= 439012 && normalizedCoord.x <= 439077 && normalizedCoord.y >= 214186 && normalizedCoord.y <= 214221 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          else if ( zoom == 20 && normalizedCoord.x >= 878025 && normalizedCoord.x <= 878155 && normalizedCoord.y >= 428372 && normalizedCoord.y <= 428442 )
+          {
+            return "file:///C://Users//user//Desktop//tif-png7//" + zoom + "/" + normalizedCoord.x + "/" + normalizedCoord.y + ".png"; // replace that with a "real" URL
+          }
+          return null;
+        },
+
+        alt: "My Map Set Name",
+        tileSize: new G.Size(256, 256),
+        isPng: true,
+        maxZoom: 20,
+        minZoom: 1,
+        opacity: 1.00,
+        name: "My Map Set Name"
+      }
+    )
+
+    function getNormalizedCoord(coord, zoom)
+    {
+      var y = coord.y;
+      var x = coord.x;
+      
+      var tileRange = 1 << zoom;
+      
+      if (y < 0 || y >= tileRange) { return null; }
+      if (x < 0 || x >= tileRange)
+      {
+        x = (x % tileRange + tileRange) % tileRange;
+      }
+      
+      return { x: x, y: y };
+    }
+
+    function initialize()
+    {
+      var myLatlng = new G.LatLng(29.505644,120.937500);
+      var myOptions = {
+        center: myLatlng,
+        zoom: 1,
+        mapTypeId: G.MapTypeId.ROADMAP,
+        mapTypeControl: true,
+        overviewMapControl: false,
+        scaleControl: false,
+        streetViewControl: true,
+        panControl: true,
+        zoomControl: true,
+        zoomControlOptions: { style: google.maps.ZoomControlStyle.DEFAULT }
+      };
+      
+      map = new G.Map(document.getElementById("map_canvas"), myOptions);
+      map.overlayMapTypes.insertAt(0, customMapType);
+    }
+    </script>
+</head>
+<body onload="initialize()">
+<div id="map_canvas" style="width: 100%; height: 800px; margin: 0px 0px 0px 0px; float: middle;"></div>
+</body> </html>
