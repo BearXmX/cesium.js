@@ -12,7 +12,7 @@ import SuzhouRiver from './pages/suzhou-river/index.tsx'
 
 export const links = [
   {
-    name: '等高线',
+    name: '佘山',
     path: '/',
     content: '',
     element: (

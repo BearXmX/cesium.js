@@ -188,6 +188,9 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       })
     })
 
+
+
+
     return () => viewer.destroy();
   }, []);
 
@@ -195,8 +198,40 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
   return (
     <div className="canvas-container">
       <div className="canvas-container-body" ref={containerRef} />
-      <div style={{ position: "absolute", top: "10px", right: "10px", padding: "20px 20px", width: '200px', background: "rgba(83, 83, 83, 0.42)", borderRadius: "5px" }}>
+      <div id="slider" style={{ display: 'none' }}></div>
+      <div className="canvas-container-body-controls">
+        <Button type="primary" size="small" style={{ marginBottom: 4 }}
+          onClick={() => {
+            // 添加瓦片图
+            const imageryLayer = viewerRef.current!.imageryLayers.addImageryProvider(
+              new Cesium.UrlTemplateImageryProvider({
+                url: window.$$prefix + "/image/tif-png7/{z}/{x}/{y}.png",
+                maximumLevel: 19,
+              })
+            );
 
+            // 设置右边显示历史影像
+            imageryLayer.splitDirection = Cesium.SplitDirection.RIGHT;
+
+            // slider 控制
+            const slider = document.getElementById("slider");
+
+            slider!.style.display = "block";
+
+            // @ts-ignore
+            viewerRef.current!.scene.splitPosition = 0.5; // 默认中间分割
+
+            let handler = false;
+            slider!.addEventListener("mousedown", () => handler = true);
+            window.addEventListener("mouseup", () => handler = false);
+            window.addEventListener("mousemove", (e) => {
+              if (!handler) return;
+              const splitPos = e.clientX / window.innerWidth;
+              slider!.style.left = (splitPos * 100) + "%";
+              viewerRef.current!.scene.splitPosition = splitPos;
+            });
+          }}
+        >加载影像</Button>
         <Form
           name="basic"
           labelAlign="left"
@@ -218,7 +253,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
         </Form>
       </div>
-
     </div>
   );
 }

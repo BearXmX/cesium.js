@@ -177,8 +177,6 @@ const YellowRiver = () => {
 
     });
 
-
-
     const positions = [{ lon: '110.1042', lat: '37.4324' }, { lon: '108.4434', lat: '40.3717' }]
 
     // 标点

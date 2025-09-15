@@ -32,6 +32,7 @@ body,
   border-radius: 5px;
   overflow: auto;
   max-height: 400px;
+  min-height: 100px;
 }
 
 /* 修改滚动条 */
@@ -42,4 +43,15 @@ body,
 /* 修改滚动条 颜色 */
 .canvas-container .canvas-container-body-controls::-webkit-scrollbar-thumb {
   background: #bdbdbd;
+}
+
+#slider {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: ew-resize;
+  z-index: 999;
 }

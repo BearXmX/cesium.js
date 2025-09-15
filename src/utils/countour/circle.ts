@@ -3,6 +3,8 @@ import * as Cesium from 'cesium'
 import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/turf'
 import CreateRemindertip from './tips'
 
+const _instance = [] as CircleContour[]
+
 class CircleContour {
   viewer: Cesium.Viewer
   floatingPoint: Cesium.Entity | undefined
@@ -33,15 +35,25 @@ class CircleContour {
     '#4D0000',
     '#2F0000',
   ]
+
   finished: boolean = false
   clickPoints: Cesium.Entity[] = []
   pointCounter: number = 0
+  countorLineLabelList: Cesium.Entity[] = []
 
   constructor(viewer: Cesium.Viewer) {
+    if (_instance.some(item => !item.finished)) {
+      window.alert('已经有正在绘制的等高线！请勿重复操作')
+      return
+    }
     if (!viewer) throw new Error('viewer is required')
-    this.viewer = viewer
-  }
 
+    this.viewer = viewer
+
+    _instance.push(this)
+
+    this.startDraw()
+  }
   startDraw() {
     this.finished = false
     this.points = []
@@ -50,6 +62,7 @@ class CircleContour {
     this.ellipseEntity = undefined
 
     const viewer = this.viewer
+
     let toolTip = '左键点击开始绘制区域，点击添加点'
 
     this.handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas)
@@ -60,9 +73,8 @@ class CircleContour {
       const newPos = viewer.scene.pickPosition(event.endPosition)
       if (!Cesium.defined(newPos)) return
 
-      CreateRemindertip(toolTip, event.endPosition, true)
-
       if (this.points.length < 2) {
+        CreateRemindertip(toolTip, event.endPosition, true)
         if (!this.floatingPoint) {
           this.floatingPoint = viewer.entities.add({
             position: newPos,
@@ -74,13 +86,11 @@ class CircleContour {
       }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
 
-    // 左键点击
     this.handler.setInputAction(event => {
       if (this.finished) return
       const earthPos = viewer.scene.pickPosition(event.position)
       if (!Cesium.defined(earthPos)) return
 
-      // 保存点击点
       const pointEntity = viewer.entities.add({
         position: earthPos,
         point: { color: Cesium.Color.RED.withAlpha(0.8), pixelSize: 5, heightReference: Cesium.HeightReference.CLAMP_TO_GROUND },
@@ -101,12 +111,60 @@ class CircleContour {
           this.floatingPoint = undefined
         }
 
-        toolTip = '右键点击生成等高线'
+        toolTip = '右击生成等高线'
+
+        CreateRemindertip('', event.position, false)
+
+        // 在第二个点上方插入文字按钮
+        const secondPos = this.points[1]
+        const carto = Cesium.Cartographic.fromCartesian(secondPos)
+        const upPos = Cesium.Cartesian3.fromRadians(
+          carto.longitude,
+          carto.latitude,
+          (carto.height || 0) + 30 // 抬高 30 米
+        )
+
+        const buttonEntity = viewer.entities.add({
+          position: upPos,
+          label: {
+            text: '点我生成等高线',
+            font: '18px sans-serif',
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 3,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -10), // 稍微向上偏移一点
+          },
+        })
+        this.clickPoints.push(buttonEntity)
+
+        // 监听点击事件
+        this.handler?.setInputAction(click => {
+          const picked = viewer.scene.pick(click.position)
+          if (Cesium.defined(picked) && picked.id === buttonEntity) {
+            // 调用生成等高线
+            const ellipsePositions = this.getEllipsePositions(this.points[0], this.points[1], 64)
+
+            this.generateContour(ellipsePositions)
+
+            // 移除椭圆、红点、按钮
+            if (this.ellipseEntity) {
+              viewer.entities.remove(this.ellipseEntity)
+              this.ellipseEntity = undefined
+            }
+            this.clickPoints.forEach(p => viewer.entities.remove(p))
+            this.clickPoints = []
+
+            this.handler?.destroy()
+            this.finished = true
+          }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
 
     // 右键生成等高线
-    this.handler.setInputAction(event => {
+    /*     this.handler.setInputAction(event => {
       if (this.finished || this.points.length < 2) return
 
       const ellipsePositions = this.getEllipsePositions(this.points[0], this.points[1], 64)
@@ -126,7 +184,7 @@ class CircleContour {
       // 不再允许标点
       this.handler?.destroy()
       this.finished = true
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK) */
   }
 
   drawEllipse(center: Cesium.Cartesian3, radiusPos: Cesium.Cartesian3) {
@@ -253,6 +311,8 @@ class CircleContour {
                     heightReference: Cesium.HeightReference.NONE, // 关键
                   },
                 })
+
+                $this.countorLineLabelList.push(labelEntity)
               }
             }
           }
@@ -270,6 +330,9 @@ class CircleContour {
     this.handler?.destroy()
     this.finished = false
     this.clickPoints = []
+
+    this.countorLineLabelList.forEach(element => this.viewer.entities.remove(element))
+    this.countorLineLabelList = []
   }
 }
 

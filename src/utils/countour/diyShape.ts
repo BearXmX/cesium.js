@@ -8,23 +8,35 @@ import * as Cesium from 'cesium'
 import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/turf'
 import CreateRemindertip from './tips'
 
+const _instance = [] as DiyShape[]
+
 interface ContourAnalysisOptions {
   interfaceNum?: number
   colorFill?: string[]
 }
 
 class DiyShape {
-  viewer: Cesium.Viewer
-  interfaceNum: number
-  colorFill: string[]
-  countorLineList: Cesium.DataSource[]
+  viewer!: Cesium.Viewer
+  interfaceNum: number = 25
+  colorFill: string[] = []
+  countorLineList: Cesium.DataSource[] = []
   drawGeomtry: Cesium.Entity | undefined
   countorLine: Cesium.GeoJsonDataSource | undefined
+  countorLineLabelList: Cesium.Entity[] = []
+  finished: boolean = false
 
   constructor(viewer: Cesium.Viewer) {
+    if (_instance.some(item => !item.finished)) {
+      window.alert('已经有正在绘制的等高线！请勿重复操作')
+      return
+    }
+
     if (!viewer) throw new Error('no viewer object!')
+
     this.viewer = viewer
+
     this.interfaceNum = 25
+
     this.colorFill = [
       '#8CEA00',
       '#B7FF4A',
@@ -48,6 +60,15 @@ class DiyShape {
       '#2F0000',
     ]
     this.countorLineList = []
+
+    this.countorLineLabelList = []
+
+    this.finished = false
+
+    this.startDraw({
+      colorFill: this.colorFill,
+      interfaceNum: this.interfaceNum,
+    })
   }
 
   startDraw(options?: ContourAnalysisOptions): void {
@@ -147,6 +168,8 @@ class DiyShape {
       if (floatingPoint) viewer.entities.remove(floatingPoint)
       if (activeShape) viewer.entities.remove(activeShape)
       handler.destroy()
+
+      $this.finished = true
       $this.interpolatePoint(activeShapePoints)
     }
   }
@@ -282,6 +305,8 @@ class DiyShape {
                     heightReference: Cesium.HeightReference.NONE, // 关键
                   },
                 })
+
+                $this.countorLineLabelList.push(labelEntity)
               }
             }
           }
@@ -312,6 +337,9 @@ class DiyShape {
   destroy(): void {
     this.countorLineList.forEach(element => this.viewer.dataSources.remove(element))
     this.countorLineList = []
+
+    this.countorLineLabelList.forEach(element => this.viewer.entities.remove(element))
+    this.countorLineLabelList = []
   }
 }
 

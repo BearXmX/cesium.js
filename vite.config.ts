@@ -8,4 +8,13 @@ export default defineConfig({
   build: {},
   // @ts-ignore
   base: process.env.NODE_ENV === 'production' ? './' : '/',
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://edu.21atcloud.com.cn/',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })
