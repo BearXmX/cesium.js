@@ -110,7 +110,7 @@ const App = () => {
 
           /*           const ellipseContour = DrawCountour.drawCircleCountour(viewerRef.current!); */
 
-          fetch(window.$$prefix + "/shenshan.geojson").then(res => res.json()).then(data => {
+          fetch(window.$$prefix + "/sheshan/sheshan.geojson").then(res => res.json()).then(data => {
             const ellipseContour = DrawCountour.drawShapeByGeojson(viewerRef.current!, data);
           })
         }}>绘制佘山等高线</Button>

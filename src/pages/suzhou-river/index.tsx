@@ -240,6 +240,26 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       })
     })
 
+    const positions = [{ lon: '121.36524746370344', lat: '31.225978753978456' }]
+
+    // 标点
+
+    const pointInstance = positions.map(item => {
+
+      const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.lon), parseFloat(item.lat));
+
+      return viewer.entities.add({
+        position: position,
+        point: {
+          color: Cesium.Color.RED,
+          pixelSize: 8,
+          outlineColor: Cesium.Color.GREEN,
+        }
+      })
+
+    })
+
+
     setupClickHandler(viewer);
 
     return () => viewer.destroy();

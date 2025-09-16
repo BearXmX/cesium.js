@@ -7,175 +7,250 @@
       "properties": {
         "name": "东"
       },
-      "geometry": { "type": "Point", "coordinates": [42.121662073890477, 11.104556697742465] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [42.12166207389044, 11.104556697742469]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "非"
       },
-      "geometry": { "type": "Point", "coordinates": [40.044987252950079, 9.324549708364982] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [40.04498725295001, 9.324549708364987]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "大"
       },
-      "geometry": { "type": "Point", "coordinates": [38.035736939183074, 6.991661760165707] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [38.03573693918308, 6.991661760165704]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "裂"
       },
-      "geometry": { "type": "Point", "coordinates": [36.673761894280609, 4.105892853144637] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.67376189428061, 4.105892853144633]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "谷"
       },
-      "geometry": { "type": "Point", "coordinates": [35.905122512503972, 1.233608847558243] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [35.90512251250395, 1.233608847558241]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "东"
       },
-      "geometry": { "type": "Point", "coordinates": [36.039971526850749, -2.299435328327365] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.03997152685071, -2.299435328327367]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "支"
       },
-      "geometry": { "type": "Point", "coordinates": [36.066941329720109, -5.805509701343618] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.06694132972016, -5.805509701343618]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "东"
       },
-      "geometry": { "type": "Point", "coordinates": [31.320256024713487, 3.17543465415186] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [31.32025602471349, 3.17543465415181]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "非"
       },
-      "geometry": { "type": "Point", "coordinates": [30.430252530024745, 1.139214537515498] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.43025253002475, 1.139214537515492]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "大"
       },
-      "geometry": { "type": "Point", "coordinates": [29.414484689521856, -0.845213679456492] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [29.41448468952186, -0.845213679456493]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "裂"
       },
-      "geometry": { "type": "Point", "coordinates": [29.027822780818248, -3.175953921581429] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [29.027822780818248, -3.175953921581429]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "谷"
       },
-      "geometry": { "type": "Point", "coordinates": [29.499794331031971, -5.400962658303281] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [29.49979433103191, -5.400962658303289]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "西"
       },
-      "geometry": { "type": "Point", "coordinates": [30.36282802285136, -7.720365705067881] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.36282802285132, -7.720365705067889]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "支"
       },
-      "geometry": { "type": "Point", "coordinates": [31.684348363449793, -9.513857595880042] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [31.684348363449796, -9.513857595880044]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "圣"
       },
-      "geometry": { "type": "Point", "coordinates": [-123.900906434808206, 40.740090566275001] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-123.9009064348085, 40.740090566271]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "安"
       },
-      "geometry": { "type": "Point", "coordinates": [-123.240852178895494, 39.36459288612123] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-123.2408521788956, 39.36459288612128]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "德"
       },
-      "geometry": { "type": "Point", "coordinates": [-122.303852081341077, 38.127568126788297] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-122.30385208134103, 38.1275681267883]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "列"
       },
-      "geometry": { "type": "Point", "coordinates": [-121.297615523376237, 36.839769963154389] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-121.29761552337624, 36.83976996315434]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "斯"
       },
-      "geometry": { "type": "Point", "coordinates": [-120.212910976946247, 35.261178665796699] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-120.21291097694628, 35.2611786657965]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "断"
       },
-      "geometry": { "type": "Point", "coordinates": [-117.997344243812648, 34.476498781145217] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-117.99734424381269, 34.47649878114523]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "层"
       },
-      "geometry": { "type": "Point", "coordinates": [-116.515683991029519, 33.867217929533467] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-116.51568399102952, 33.86721792953348]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "冰"
       },
-      "geometry": { "type": "Point", "coordinates": [-21.465927270132358, 64.03649107935243] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-21.465927270132354, 64.03649107935242]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "岛"
       },
-      "geometry": { "type": "Point", "coordinates": [-20.317842716483092, 64.461373081015182] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-20.317842716483096, 64.46137308101513]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "裂"
       },
-      "geometry": { "type": "Point", "coordinates": [-18.593738702506915, 64.550556965902615] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-18.593738702506915, 64.55055696590264]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "谷"
       },
-      "geometry": { "type": "Point", "coordinates": [-17.45224476053188, 65.52016341241395] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-17.45224476053184, 65.52016341241395]
+      }
     }
   ]
 }
