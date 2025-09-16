@@ -82,7 +82,6 @@ const App = () => {
     Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(
       async (terrain) => {
         viewer.terrainProvider = terrain;
-
         viewer.camera.flyTo({
           destination: Cesium.Cartesian3.fromDegrees(121.19439881893892, 31.085280932994194, 1400),
           orientation: {

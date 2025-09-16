@@ -19,6 +19,46 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
   const huangpuRiverWaterPrimitivesRef = useRef<any[]>([]);
 
   const wenzaobangWaterPrimitivesRef = useRef<any[]>([]);
+  const setupClickHandler = (viewer: Cesium.Viewer) => {
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+    handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
+      // 拾取椭球面上的点
+      const cartesian = viewer.camera.pickEllipsoid(
+        movement.position,
+        viewer.scene.globe.ellipsoid
+      );
+      if (!cartesian) return;
+
+      // 转换为经纬度
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+      const lon = Cesium.Math.toDegrees(cartographic.longitude);
+      const lat = Cesium.Math.toDegrees(cartographic.latitude);
+
+      // 获取当前相机大致层级
+      const zoom = Math.round(
+        Math.log2(
+          (2 * Math.PI * 6378137) /
+          viewer.camera.getMagnitude()
+        )
+      );
+
+      // 经纬度 → XYZ 瓦片坐标
+      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
+      const y = Math.floor(
+        ((1 -
+          Math.log(
+            Math.tan((lat * Math.PI) / 180) +
+            1 / Math.cos((lat * Math.PI) / 180)
+          ) /
+          Math.PI) /
+          2) *
+        Math.pow(2, zoom)
+      );
+
+      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  }
 
   const addWaterRegion = (positions: any, instance: any[]) => {
     let waterPrimitive = new WaterPrimitive(positions, {
@@ -108,12 +148,16 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
     fetch(window.$$prefix + "/data/suzhou-river/suzhou-river.geojson").then(res => res.json()).then(data => {
 
-      data.geometries.forEach((item: any) => {
+      data.features.forEach((item: any) => {
 
-        const coordinates = item.coordinates[0];
-        const positions = coordinatesToPositions(coordinates);
+        item.geometry.geometries.forEach((v: any) => {
+          const coordinates = v.coordinates[0];
 
-        addWaterRegion(positions, suzhouRiverWaterPrimitivesRef.current)
+          const positions = coordinatesToPositions(coordinates);
+
+          addWaterRegion(positions, suzhouRiverWaterPrimitivesRef.current)
+        })
+
       })
 
       /*       Cesium.GeoJsonDataSource.load(data, {
@@ -142,12 +186,16 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
     fetch(window.$$prefix + "/data/suzhou-river/huangpu-river.geojson").then(res => res.json()).then(data => {
 
-      data.geometries.forEach((item: any) => {
+      data.features.forEach((item: any) => {
 
-        const coordinates = item.coordinates[0];
-        const positions = coordinatesToPositions(coordinates);
+        item.geometry.geometries.forEach((v: any) => {
+          const coordinates = v.coordinates[0];
 
-        addWaterRegion(positions, huangpuRiverWaterPrimitivesRef.current)
+          const positions = coordinatesToPositions(coordinates);
+
+          addWaterRegion(positions, huangpuRiverWaterPrimitivesRef.current)
+        })
+
       })
 
       // 绘制文字
@@ -166,12 +214,16 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
     fetch(window.$$prefix + "/data/suzhou-river/wenzaobang.geojson").then(res => res.json()).then(data => {
 
-      data.geometries.forEach((item: any) => {
+      data.features.forEach((item: any) => {
 
-        const coordinates = item.coordinates[0];
-        const positions = coordinatesToPositions(coordinates);
+        item.geometry.geometries.forEach((v: any) => {
+          const coordinates = v.coordinates[0];
 
-        addWaterRegion(positions, wenzaobangWaterPrimitivesRef.current)
+          const positions = coordinatesToPositions(coordinates);
+
+          addWaterRegion(positions, wenzaobangWaterPrimitivesRef.current)
+        })
+
       })
 
       // 绘制文字
@@ -188,8 +240,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       })
     })
 
-
-
+    setupClickHandler(viewer);
 
     return () => viewer.destroy();
   }, []);

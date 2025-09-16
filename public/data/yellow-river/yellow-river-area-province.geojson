@@ -1,5 +1,6 @@
 {
   "type": "FeatureCollection",
+  "name": "黄河流域省界",
   "features": [
     {
       "type": "Feature",
@@ -6034,11 +6035,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.1",
-        "prov_code": 150000,
-        "prov_name": "内蒙古自治区",
-        "shape_leng": 2360735.26336,
-        "shape_area": 151867472901
+        "provCode": 150000,
+        "provName": "内蒙古自治区",
+        "shapeLeng": 2360735.26336,
+        "shapeArea": 151867472901
       }
     },
     {
@@ -6620,11 +6620,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.2",
-        "prov_code": 140000,
-        "prov_name": "山西省",
-        "shape_leng": 216917.436135,
-        "shape_area": 2104226194.18
+        "provCode": 140000,
+        "provName": "山西省",
+        "shapeLeng": 216917.436135,
+        "shapeArea": 2104226194.18
       }
     },
     {
@@ -12005,11 +12004,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.3",
-        "prov_code": 140000,
-        "prov_name": "山西省",
-        "shape_leng": 2233308.79724,
-        "shape_area": 94943266384.8
+        "provCode": 140000,
+        "provName": "山西省",
+        "shapeLeng": 2233308.79724,
+        "shapeArea": 94943266384.8
       }
     },
     {
@@ -21123,11 +21121,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.4",
-        "prov_code": 610000,
-        "prov_name": "陕西省",
-        "shape_leng": 3180264.55798,
-        "shape_area": 133131198249
+        "provCode": 610000,
+        "provName": "陕西省",
+        "shapeLeng": 3180264.55798,
+        "shapeArea": 133131198249
       }
     },
     {
@@ -27067,11 +27064,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.5",
-        "prov_code": 640000,
-        "prov_name": "宁夏回族自治区",
-        "shape_leng": 1972769.56046,
-        "shape_area": 51301842537.3
+        "provCode": 640000,
+        "provName": "宁夏回族自治区",
+        "shapeLeng": 1972769.56046,
+        "shapeArea": 51301842537.3
       }
     },
     {
@@ -31221,11 +31217,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.6",
-        "prov_code": 370000,
-        "prov_name": "山东省",
-        "shape_leng": 1849031.90045,
-        "shape_area": 15509906714.5
+        "provCode": 370000,
+        "provName": "山东省",
+        "shapeLeng": 1849031.90045,
+        "shapeArea": 15509906714.5
       }
     },
     {
@@ -42055,11 +42050,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.7",
-        "prov_code": 630000,
-        "prov_name": "青海省",
-        "shape_leng": 4153842.60014,
-        "shape_area": 152576149208
+        "provCode": 630000,
+        "provName": "青海省",
+        "shapeLeng": 4153842.60014,
+        "shapeArea": 152576149208
       }
     },
     {
@@ -55495,11 +55489,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.8",
-        "prov_code": 620000,
-        "prov_name": "甘肃省",
-        "shape_leng": 4430635.72754,
-        "shape_area": 143131139750
+        "provCode": 620000,
+        "provName": "甘肃省",
+        "shapeLeng": 4430635.72754,
+        "shapeArea": 143131139750
       }
     },
     {
@@ -59899,11 +59892,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.9",
-        "prov_code": 410000,
-        "prov_name": "河南省",
-        "shape_leng": 1809475.36233,
-        "shape_area": 35582989690
+        "provCode": 410000,
+        "provName": "河南省",
+        "shapeLeng": 1809475.36233,
+        "shapeArea": 35582989690
       }
     },
     {
@@ -60004,11 +59996,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.10",
-        "prov_code": 370000,
-        "prov_name": "山东省",
-        "shape_leng": 37371.6232973,
-        "shape_area": 30389379.8322
+        "provCode": 370000,
+        "provName": "山东省",
+        "shapeLeng": 37371.6232973,
+        "shapeArea": 30389379.8322
       }
     },
     {
@@ -60171,11 +60162,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.11",
-        "prov_code": 640000,
-        "prov_name": "宁夏回族自治区",
-        "shape_leng": 48554.7713935,
-        "shape_area": 52210822.7489
+        "provCode": 640000,
+        "provName": "宁夏回族自治区",
+        "shapeLeng": 48554.7713935,
+        "shapeArea": 52210822.7489
       }
     },
     {
@@ -60200,11 +60190,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.12",
-        "prov_code": 640000,
-        "prov_name": "宁夏回族自治区",
-        "shape_leng": 4455.64169124,
-        "shape_area": 1018139.77618
+        "provCode": 640000,
+        "provName": "宁夏回族自治区",
+        "shapeLeng": 4455.64169124,
+        "shapeArea": 1018139.77618
       }
     },
     {
@@ -63048,11 +63037,10 @@
         ]
       },
       "properties": {
-        "gml_id": "huangheliuyushengjie.13",
-        "prov_code": 510000,
-        "prov_name": "四川省",
-        "shape_leng": 1035691.16037,
-        "shape_area": 17165020827.9
+        "provCode": 510000,
+        "provName": "四川省",
+        "shapeLeng": 1035691.16037,
+        "shapeArea": 17165020827.9
       }
     }
   ]

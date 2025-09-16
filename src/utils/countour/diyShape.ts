@@ -25,11 +25,20 @@ class DiyShape {
   countorLineLabelList: Cesium.Entity[] = []
   finished: boolean = false
 
-  constructor(viewer: Cesium.Viewer) {
+  points: Cesium.Cartesian3[] = []
+
+  /* 每一个点击实例 */
+  clickPoints: Cesium.Entity[] = [] // 存储每次点击的点
+
+  buttonEntity: Cesium.Entity | undefined = undefined
+
+  constructor(viewer: Cesium.Viewer, options?: ContourAnalysisOptions) {
     if (_instance.some(item => !item.finished)) {
       window.alert('已经有正在绘制的等高线！请勿重复操作')
       return
     }
+
+    _instance.push(this)
 
     if (!viewer) throw new Error('no viewer object!')
 
@@ -59,6 +68,13 @@ class DiyShape {
       '#4D0000',
       '#2F0000',
     ]
+
+    options = options || {}
+
+    this.interfaceNum = Cesium.defaultValue(options.interfaceNum, this.interfaceNum)
+
+    this.colorFill = Cesium.defaultValue(options.colorFill, this.colorFill)
+
     this.countorLineList = []
 
     this.countorLineLabelList = []
@@ -73,7 +89,7 @@ class DiyShape {
 
   startDraw(options?: ContourAnalysisOptions): void {
     options = options || {}
-    this.interfaceNum = Cesium.defaultValue(options.interfaceNum, 55)
+    this.interfaceNum = Cesium.defaultValue(options.interfaceNum, 25)
     this.colorFill = Cesium.defaultValue(options.colorFill, this.colorFill)
     this.createNewLine()
   }
@@ -81,18 +97,25 @@ class DiyShape {
   private createNewLine(): void {
     const $this = this
     const viewer = this.viewer
+
     const activeShapePoints: Cesium.Cartesian3[] = []
+
     let activeShape: Cesium.Entity | undefined
+
     let floatingPoint: Cesium.Entity | undefined
-    const clickPoints: Cesium.Entity[] = [] // 存储每次点击的点
-    let pointIndex = 0 // 唯一索引
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas)
+
     let toolTip = '左键点击开始绘制区域，点击添加点'
 
     // 鼠标移动，小红点跟随
     handler.setInputAction(function (event: Cesium.ScreenSpaceEventHandler.MotionEvent) {
       const newPosition = viewer.scene.pickPosition(event.endPosition)
+
+      if ($this.finished) {
+        CreateRemindertip(toolTip, event.endPosition, false)
+      }
+
       if (!Cesium.defined(newPosition)) return
 
       CreateRemindertip(toolTip, event.endPosition, true)
@@ -106,7 +129,6 @@ class DiyShape {
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
           },
         })
-        clickPoints.push(floatingPoint) // 把浮动点也加入 clickPoints
       } else {
         // @ts-ignore
         floatingPoint.position!.setValue(newPosition)
@@ -120,29 +142,71 @@ class DiyShape {
 
     // 左键点击
     handler.setInputAction(function (event: Cesium.ScreenSpaceEventHandler.PositionedEvent) {
+      if ($this.finished) return
+
+      const picked = viewer.scene.pick(event.position)
+
+      if (Cesium.defined(picked) && picked.id === $this.buttonEntity) {
+        toolTip = ''
+        CreateRemindertip(toolTip, event.position, false)
+
+        terminateShape()
+
+        return
+      }
+
       const earthPosition = viewer.scene.pickPosition(event.position)
       if (Cesium.defined(earthPosition)) {
-        // 每次点击都生成唯一点
-        const pointEntity = viewer.entities.add({
-          position: earthPosition,
-          point: {
-            color: Cesium.Color.RED.withAlpha(0.8),
-            pixelSize: 5,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-          },
-        })
-        clickPoints.push(pointEntity)
+        // 每次点击生成唯一点
+        const pointEntity = $this.createPoint(earthPosition, activeShapePoints.length === 0)
+
+        $this.clickPoints.push(pointEntity)
+
+        $this.points.push(earthPosition)
+
+        CreateRemindertip(toolTip, event.position, true)
+
+        if ($this.clickPoints.length >= 3) {
+          if (!$this.buttonEntity) {
+            // 在第二个点上方插入文字按钮
+            const secondPos = $this.points[0]
+            const carto = Cesium.Cartographic.fromCartesian(secondPos)
+            const upPos = Cesium.Cartesian3.fromRadians(
+              carto.longitude,
+              carto.latitude,
+              (carto.height || 0) + 50 // 抬高 30 米
+            )
+
+            const buttonEntity = viewer.entities.add({
+              position: upPos,
+              label: {
+                text: '点我生成等高线',
+                font: '18px sans-serif',
+                fillColor: Cesium.Color.WHITE,
+                outlineColor: Cesium.Color.BLACK,
+                outlineWidth: 3,
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                pixelOffset: new Cesium.Cartesian2(0, -50), // 稍微向上偏移一点
+              },
+            })
+
+            $this.buttonEntity = buttonEntity
+          }
+        }
 
         if (activeShapePoints.length === 0) {
           toolTip = '左键添加第二个点'
-          floatingPoint = $this.createPoint(earthPosition, false)
+
           activeShapePoints.push(earthPosition)
+
           const dynamicPositions = new Cesium.CallbackProperty(function () {
             return new Cesium.PolygonHierarchy(activeShapePoints)
           }, false)
+
           activeShape = $this.drawShape(dynamicPositions)
         } else {
-          toolTip = '左键添加点，右键完成绘制'
+          toolTip = '左键添加点'
         }
 
         activeShapePoints.push(earthPosition)
@@ -150,10 +214,10 @@ class DiyShape {
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
 
     // 右键完成绘制
-    handler.setInputAction(function (event: Cesium.ScreenSpaceEventHandler.PositionedEvent) {
+    /*     handler.setInputAction(function (event: Cesium.ScreenSpaceEventHandler.PositionedEvent) {
       CreateRemindertip(toolTip, event.position, false)
       terminateShape()
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK) */
 
     function terminateShape(): void {
       activeShapePoints.pop()
@@ -162,20 +226,38 @@ class DiyShape {
         $this.drawShape(activeShapePoints)
       }
 
-      // 隐藏所有点击点
-      clickPoints.forEach(p => (p.show = false))
+      if ($this.buttonEntity) {
+        $this.buttonEntity!.show = false
+        viewer.entities.remove($this.buttonEntity)
+      }
 
-      if (floatingPoint) viewer.entities.remove(floatingPoint)
-      if (activeShape) viewer.entities.remove(activeShape)
+      // 隐藏所有点击点
+      $this.clickPoints.forEach(p => {
+        p.show = false
+        viewer.entities.remove(p)
+      })
+
+      if (floatingPoint) {
+        floatingPoint!.show = false
+        viewer.entities.remove(floatingPoint)
+      }
+
+      if (activeShape) {
+        activeShape.show = false
+        viewer.entities.remove(activeShape)
+      }
+
       handler.destroy()
 
       $this.finished = true
+
       $this.interpolatePoint(activeShapePoints)
     }
   }
 
   private createPoint(worldPosition: Cesium.Cartesian3, boolPoint: boolean): Cesium.Entity {
     const _size = boolPoint ? 30 : 5
+
     return this.viewer.entities.add({
       position: worldPosition,
       point: {

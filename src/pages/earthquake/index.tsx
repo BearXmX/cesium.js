@@ -311,7 +311,7 @@ const Earthquake = () => {
                 if (!props) return;
 
                 const labelConfig = {
-                  text: props.LabelMes || "",
+                  text: props.name || "",
                   textColor: "#fff", // 原始文字颜色配置
                   outlineColor: "#000000",
                   outlineWidth: 4, // 原100过大，修正为1
@@ -481,7 +481,7 @@ const Earthquake = () => {
                 if (!props) return;
 
                 const labelConfig = {
-                  text: props.LabelMes || "未命名板块",
+                  text: props.name || "未命名板块",
                   textColor: "#FFFFFF", // 原始文字颜色配置
                   outlineColor: "#000000",
                   outlineWidth: 5, // 原100过大，修正为1
@@ -550,7 +550,7 @@ const Earthquake = () => {
                 if (!props) return;
 
                 const labelConfig = {
-                  text: props.LabelMes || "海沟",
+                  text: props.name || "海沟",
                   textColor: "#0307eeff", // 原始文字颜色配置
                   outlineColor: "#000000",
                   outlineWidth: 4, // 原100过大，修正为1
@@ -616,7 +616,7 @@ const Earthquake = () => {
                 position: position,
                 point: {
                   color: Cesium.Color.WHITE,
-                  pixelSize: (Number(props.LabelSize.replace('px', ''))) || 5,
+                  pixelSize: (Number(props.size)) || 5,
                   outlineColor: Cesium.Color.GREEN,
                   outlineWidth: 2
                 }
@@ -661,7 +661,7 @@ const Earthquake = () => {
                 position: position,
                 point: {
                   color: Cesium.Color.RED,
-                  pixelSize: (Number(props.LabelSize.replace('px', ''))) || 5,
+                  pixelSize: (Number(props.size)) || 5,
                   outlineColor: Cesium.Color.BLACK,
                   outlineWidth: 2
 
@@ -741,7 +741,7 @@ const Earthquake = () => {
                 if (!props) return;
 
                 const labelConfig = {
-                  text: props.LabelMes || "岛",
+                  text: props.name || "岛",
                   textColor: "#fff", // 原始文字颜色配置
                   outlineColor: "#000000",
                   outlineWidth: 4, // 原100过大，修正为1
@@ -851,7 +851,7 @@ const Earthquake = () => {
                 if (!props) return;
 
                 const labelConfig = {
-                  text: props.LabelMes || "",
+                  text: props.name || "",
                   textColor: "#fff", // 原始文字颜色配置
                   outlineColor: "#000000",
                   outlineWidth: 4, // 原100过大，修正为1
@@ -905,7 +905,46 @@ const Earthquake = () => {
     })
   }
 
+  const setupClickHandler = (viewer: Cesium.Viewer) => {
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
+    handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
+      // 拾取椭球面上的点
+      const cartesian = viewer.camera.pickEllipsoid(
+        movement.position,
+        viewer.scene.globe.ellipsoid
+      );
+      if (!cartesian) return;
+
+      // 转换为经纬度
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+      const lon = Cesium.Math.toDegrees(cartographic.longitude);
+      const lat = Cesium.Math.toDegrees(cartographic.latitude);
+
+      // 获取当前相机大致层级
+      const zoom = Math.round(
+        Math.log2(
+          (2 * Math.PI * 6378137) /
+          viewer.camera.getMagnitude()
+        )
+      );
+
+      // 经纬度 → XYZ 瓦片坐标
+      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
+      const y = Math.floor(
+        ((1 -
+          Math.log(
+            Math.tan((lat * Math.PI) / 180) +
+            1 / Math.cos((lat * Math.PI) / 180)
+          ) /
+          Math.PI) /
+          2) *
+        Math.pow(2, zoom)
+      );
+
+      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  }
 
   useEffect(() => {
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTcwYjRjZi03Y2M5LTRiZTAtYTU4ZC04YjQ5OWRjOGM0N2EiLCJpZCI6MzM5NTk0LCJpYXQiOjE3NTczODMxNDZ9.MOvOOWYC62dePPqxADFjmesGKc6hDwtp0evj1DiujBw'
@@ -948,6 +987,8 @@ const Earthquake = () => {
 
 
     drawChinaBoundary()
+
+    setupClickHandler(viewer);
 
     return () => viewer.destroy();
   }, []);
@@ -1039,6 +1080,9 @@ const Earthquake = () => {
               <Checkbox></Checkbox>
             </Form.Item>
             <Form.Item name="drawStepDividingLine" valuePropName="checked" label={'梯度分界线'} style={{ marginBottom: '4px' }}>
+              <Checkbox></Checkbox>
+            </Form.Item>
+            <Form.Item name="drawMainlandOutline" valuePropName="checked" label={'大陆板块'} style={{ marginBottom: '4px' }}>
               <Checkbox></Checkbox>
             </Form.Item>
             <Form.Item name="drawGlobalPlateBoundary" valuePropName="checked" label={'板块分界线'} style={{ marginBottom: '4px' }}>

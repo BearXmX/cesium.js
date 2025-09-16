@@ -1,18 +1,26 @@
 import * as Cesium from 'cesium'
 import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/turf'
 
+interface ContourAnalysisOptions {
+  interfaceNum?: number
+  colorFill?: string[]
+}
+
 class DrawShapeByGeojson {
   viewer: Cesium.Viewer
-  interfaceNum: number
-  colorFill: string[]
+  interfaceNum: number = 25
+  colorFill: string[] = []
   countorLineList: Cesium.DataSource[]
   countorLine: Cesium.GeoJsonDataSource | undefined
   countorLineLabelList: Cesium.Entity[]
 
-  constructor(viewer: Cesium.Viewer, geojson: any) {
+  constructor(viewer: Cesium.Viewer, geojson: any, options?: ContourAnalysisOptions) {
     if (!viewer) throw new Error('no viewer object!')
+
     this.viewer = viewer
+
     this.interfaceNum = 25
+
     this.colorFill = [
       '#8CEA00',
       '#B7FF4A',
@@ -35,6 +43,13 @@ class DrawShapeByGeojson {
       '#4D0000',
       '#2F0000',
     ]
+
+    options = options || {}
+
+    this.interfaceNum = Cesium.defaultValue(options.interfaceNum, this.interfaceNum)
+
+    this.colorFill = Cesium.defaultValue(options.colorFill, this.colorFill)
+
     this.countorLineList = []
 
     this.countorLineLabelList = []
