@@ -7,42 +7,60 @@
       "properties": {
         "name": "南极洲板块"
       },
-      "geometry": { "type": "Point", "coordinates": [59.296570323723927, -88] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [59.296570323723934, -88.006]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "亚欧板块"
       },
-      "geometry": { "type": "Point", "coordinates": [85.01, 50.51] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [85.013, 50.518]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "印度洋板块"
       },
-      "geometry": { "type": "Point", "coordinates": [69.5075369786789, 12.57916984896778] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [69.50753697867897, 12.579169848967782]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "非洲板块"
       },
-      "geometry": { "type": "Point", "coordinates": [15.291132103528938, -7.655809597391013] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [15.29113210352894, -7.655809597391014]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "美洲板块"
       },
-      "geometry": { "type": "Point", "coordinates": [-72.544385173122521, 31.868940727102114] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.54438517312252, 31.868940727102114]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "太平洋板块"
       },
-      "geometry": { "type": "Point", "coordinates": [-164.15, 12.96] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-164.153, 12.967]
+      }
     }
   ]
 }
