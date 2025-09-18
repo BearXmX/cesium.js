@@ -2,7 +2,7 @@ import * as Cesium from "cesium";
 import { useEffect, useRef, useState } from "react";
 import { Button, Checkbox, Form, Modal } from 'antd'
 import DrawerCountour from "../../utils/countour";
-
+import * as gui from 'lil-gui'
 const Earthquake = () => {
 
   const [modal, modalContext] = Modal.useModal();
@@ -10,6 +10,8 @@ const Earthquake = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const viewerRef = useRef<Cesium.Viewer | null>(null);
+
+  const guiRef = useRef<gui.GUI | null>(null);
 
   const chinaEarthquakeRef = useRef<Cesium.Entity[]>([]);
 
@@ -46,6 +48,81 @@ const Earthquake = () => {
   const EURASIAMainlandOutlineRef = useRef<Cesium.Entity[]>([]);
 
   const globalMainlandNameRef = useRef<Cesium.Entity[]>([]);
+
+  const guiControls = {
+    drawMainlandOutline: false,
+    drawChinaEarthquakeArea: false,
+    drawStepDividingLine: false,
+    drawGlobalPlateBoundary: false,
+    drawGlobalPlateBoundaryName: false,
+    drawGlobalTrenchName: false,
+    drawGlobalEarthquakePoint: false,
+    drawGlobalVolcanoPoint: false,
+    drawGlobalLandArc: false,
+    drawGlobalRiftValley: false,
+
+  };
+
+  const initGui = () => {
+
+    if (guiRef.current) {
+      guiRef.current.destroy()
+      guiRef.current = null
+    }
+
+    guiRef.current = new gui.GUI({})
+
+    guiRef.current.title('地震')
+
+    const mainControls = guiRef.current.addFolder('国内')
+
+    mainControls.add(guiControls, 'drawChinaEarthquakeArea').name('中国主要地震带').onChange((value: boolean) => {
+      drawChinaEarthquakeArea(value)
+    })
+
+    mainControls.add(guiControls, 'drawStepDividingLine').name('梯度分界线').onChange((value: boolean) => {
+      drawStepDividingLine(value)
+    })
+
+
+
+    const historyChangeContols = guiRef.current.addFolder('全球')
+
+    historyChangeContols.add(guiControls, 'drawMainlandOutline').name('大陆板块').onChange((value: boolean) => {
+      drawMainlandOutline(value)
+    })
+
+    historyChangeContols.add(guiControls, 'drawGlobalPlateBoundary').name('板块分界线').onChange((value: boolean) => {
+      drawGlobalPlateBoundary(value)
+    })
+
+    historyChangeContols.add(guiControls, 'drawGlobalPlateBoundaryName').name('板块名称').onChange((value: boolean) => {
+      drawGlobalPlateBoundaryName(value)
+    })
+
+    historyChangeContols.add(guiControls, 'drawGlobalTrenchName').name('主要海沟').onChange((value: boolean) => {
+      drawGlobalTrenchName(value)
+    })
+
+    historyChangeContols.add(guiControls, 'drawGlobalEarthquakePoint').name('地震分布（近10年）').onChange((value: boolean) => {
+      drawGlobalEarthquakePoint(value)
+    })
+
+    historyChangeContols.add(guiControls, 'drawGlobalVolcanoPoint').name('火山分布').onChange((value: boolean) => {
+      drawGlobalVolcanoPoint(value)
+    })
+
+    historyChangeContols.add(guiControls, 'drawGlobalLandArc').name('主要岛弧').onChange((value: boolean) => {
+      drawGlobalLandArc(value)
+    })
+
+
+    historyChangeContols.add(guiControls, 'drawGlobalRiftValley').name('主要裂谷').onChange((value: boolean) => {
+      drawGlobalRiftValley(value)
+    })
+
+
+  }
 
   const drawChinaBoundary = () => {
     fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
@@ -990,7 +1067,12 @@ const Earthquake = () => {
 
     setupClickHandler(viewer);
 
-    return () => viewer.destroy();
+    initGui()
+
+    return () => {
+      viewer.destroy();
+      guiRef.current?.destroy()
+    }
   }, []);
 
 
@@ -1001,118 +1083,14 @@ const Earthquake = () => {
         <div className="canvas-container-body" ref={containerRef} />
         <div className="canvas-container-body-controls" >
 
-          <Button type="primary" size="small" style={{ marginBottom: 4 }}
+          {/*           <Button type="primary" size="small" style={{ marginBottom: 4 }}
             onClick={() => {
               const src = window.$$prefix + '/data/earthquake/earthquake.mp4'
 
               playVideo(src)
 
             }}
-          >地震视频</Button>
-          <Form
-            name="basic"
-            labelAlign="left"
-            labelCol={{ span: 20 }}
-            labelWrap={true}
-            wrapperCol={{ span: 4 }}
-            initialValues={{
-              drawStepDividingLine: false,
-              drawGlobalPlateBoundary: false,
-              drawGlobalPlateBoundaryName: false,
-              drawGlobalTrenchName: false,
-              drawGlobalEarthquakePoint: false,
-              drawGlobalVolcanoPoint: false,
-              drawGlobalLandArcLine: false
-            }}
-            autoComplete="off"
-            onFieldsChange={(values) => {
-              const name = values[0].name[0];
-
-              const value = values[0].value;
-
-              if (name === 'drawChinaEarthquakeArea') {
-                drawChinaEarthquakeArea(value)
-              }
-
-              if (name === 'drawMainlandOutline') {
-                drawMainlandOutline(value)
-              }
-
-
-              if (name === 'drawStepDividingLine') {
-                drawStepDividingLine(value)
-              }
-
-              if (name === 'drawGlobalPlateBoundary') {
-                drawGlobalPlateBoundary(value)
-              }
-
-              if (name === 'drawGlobalPlateBoundaryName') {
-                drawGlobalPlateBoundaryName(value)
-              }
-
-              if (name === 'drawGlobalTrenchName') {
-                drawGlobalTrenchName(value)
-              }
-
-              if (name === 'drawGlobalEarthquakePoint') {
-                drawGlobalEarthquakePoint(value)
-              }
-
-              if (name === 'drawGlobalVolcanoPoint') {
-                drawGlobalVolcanoPoint(value)
-              }
-
-
-              if (name === 'drawGlobalLandArc') {
-                drawGlobalLandArc(value)
-              }
-
-
-              if (name === 'drawGlobalRiftValley') {
-                drawGlobalRiftValley(value)
-              }
-
-
-            }}
-          >
-            <Form.Item name="drawChinaEarthquakeArea" valuePropName="checked" label={'中国主要地震带'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-            <Form.Item name="drawStepDividingLine" valuePropName="checked" label={'梯度分界线'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-            <Form.Item name="drawMainlandOutline" valuePropName="checked" label={'大陆板块'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-            <Form.Item name="drawGlobalPlateBoundary" valuePropName="checked" label={'板块分界线'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-            <Form.Item name="drawGlobalPlateBoundaryName" valuePropName="checked" label={'板块名称'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-
-            <Form.Item name="drawGlobalTrenchName" valuePropName="checked" label={'主要海沟'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-
-            <Form.Item name="drawGlobalEarthquakePoint" valuePropName="checked" label={'地震分布（近10年）'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-
-            <Form.Item name="drawGlobalVolcanoPoint" valuePropName="checked" label={'火山分布'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-
-            <Form.Item name="drawGlobalLandArc" valuePropName="checked" label={'主要岛弧'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-
-            <Form.Item name="drawGlobalRiftValley" valuePropName="checked" label={'主要裂谷'} style={{ marginBottom: '4px' }}>
-              <Checkbox></Checkbox>
-            </Form.Item>
-
-          </Form>
+          >地震视频</Button> */}
 
         </div>
       </div>
