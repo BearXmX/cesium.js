@@ -1,8 +1,7 @@
 import * as Cesium from "cesium";
-import { useEffect, useRef, useState } from "react";
-import { Button, Checkbox, Form } from 'antd'
-import DrawerCountour from "../../utils/countour";
-import WaterPrimitive from "./water-primitive";
+import { useEffect, useRef } from "react";
+import WaterPrimitive from "@/utils/plugins/water-primitive";
+import * as gui from 'lil-gui'
 
 type SuzhouRiverPropsType = {
 
@@ -14,12 +13,64 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
+  const guiRef = useRef<gui.GUI | null>(null);
+
   const suzhouRiverWaterPrimitivesRef = useRef<any[]>([]);
 
   const huangpuRiverWaterPrimitivesRef = useRef<any[]>([]);
 
   const wenzaobangWaterPrimitivesRef = useRef<any[]>([]);
-  const setupClickHandler = (viewer: Cesium.Viewer) => {
+
+  const guiControls = {
+    history: () => {
+      viewerRef.current?.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(121.44681124210383, 31.253252971821134, 300) });
+
+      // 添加瓦片图
+      const imageryLayer = viewerRef.current!.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+          url: window.$$prefix + "/image/tif-png7/{z}/{x}/{y}.png",
+          maximumLevel: 19,
+        })
+      );
+
+      // 设置右边显示历史影像
+      imageryLayer.splitDirection = Cesium.SplitDirection.RIGHT;
+
+      // slider 控制
+      const slider = document.getElementById("slider");
+
+      slider!.style.display = "block";
+
+      // @ts-ignore
+      viewerRef.current!.scene.splitPosition = 0.5; // 默认中间分割
+
+      let handler = false;
+      slider!.addEventListener("mousedown", () => handler = true);
+      window.addEventListener("mouseup", () => handler = false);
+      window.addEventListener("mousemove", (e) => {
+        if (!handler) return;
+        const splitPos = e.clientX / window.innerWidth;
+        slider!.style.left = (splitPos * 100) + "%";
+        viewerRef.current!.scene.splitPosition = splitPos;
+      });
+    },
+  };
+
+  const initGui = () => {
+    if (guiRef.current) {
+      guiRef.current.destroy()
+      guiRef.current = null
+    }
+
+    guiRef.current = new gui.GUI({})
+
+    guiRef.current.title('苏州河')
+
+    guiRef.current.add(guiControls, 'history').name('加载历史影像')
+
+  }
+
+  const initClickHandler = (viewer: Cesium.Viewer) => {
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
     handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
@@ -88,7 +139,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
   }
 
   useEffect(() => {
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTcwYjRjZi03Y2M5LTRiZTAtYTU4ZC04YjQ5OWRjOGM0N2EiLCJpZCI6MzM5NTk0LCJpYXQiOjE3NTczODMxNDZ9.MOvOOWYC62dePPqxADFjmesGKc6hDwtp0evj1DiujBw'
+    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN;
 
     const viewer = new Cesium.Viewer(containerRef.current!, {
       infoBox: false,
@@ -109,13 +160,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
         viewer.terrainProvider = terrain;
 
         viewer.camera.flyTo({
-
           destination: Cesium.Cartesian3.fromDegrees(121.491185, 31.250281, 25000),
-          /*          orientation: {
-                     heading: 6.1552778668430514,
-                     pitch: -0.774444999584774,
-                     roll: 6.282667953914245
-                   } */
         });
       }
     );
@@ -144,7 +189,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
         viewer.dataSources.add(dataSource)
       })
     })
-
 
     fetch(window.$$prefix + "/data/suzhou-river/suzhou-river.geojson").then(res => res.json()).then(data => {
 
@@ -240,29 +284,14 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       })
     })
 
-    const positions = [{ lon: '121.36524746370344', lat: '31.225978753978456' }]
+    initClickHandler(viewer);
 
-    // 标点
+    initGui()
 
-    const pointInstance = positions.map(item => {
-
-      const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.lon), parseFloat(item.lat));
-
-      return viewer.entities.add({
-        position: position,
-        point: {
-          color: Cesium.Color.RED,
-          pixelSize: 8,
-          outlineColor: Cesium.Color.GREEN,
-        }
-      })
-
-    })
-
-
-    setupClickHandler(viewer);
-
-    return () => viewer.destroy();
+    return () => {
+      viewer.destroy()
+      guiRef.current?.destroy()
+    };
   }, []);
 
 
@@ -270,60 +299,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
     <div className="canvas-container">
       <div className="canvas-container-body" ref={containerRef} />
       <div id="slider" style={{ display: 'none' }}></div>
-      <div className="canvas-container-body-controls">
-        <Button type="primary" size="small" style={{ marginBottom: 4 }}
-          onClick={() => {
-            // 添加瓦片图
-            const imageryLayer = viewerRef.current!.imageryLayers.addImageryProvider(
-              new Cesium.UrlTemplateImageryProvider({
-                url: window.$$prefix + "/image/tif-png7/{z}/{x}/{y}.png",
-                maximumLevel: 19,
-              })
-            );
-
-            // 设置右边显示历史影像
-            imageryLayer.splitDirection = Cesium.SplitDirection.RIGHT;
-
-            // slider 控制
-            const slider = document.getElementById("slider");
-
-            slider!.style.display = "block";
-
-            // @ts-ignore
-            viewerRef.current!.scene.splitPosition = 0.5; // 默认中间分割
-
-            let handler = false;
-            slider!.addEventListener("mousedown", () => handler = true);
-            window.addEventListener("mouseup", () => handler = false);
-            window.addEventListener("mousemove", (e) => {
-              if (!handler) return;
-              const splitPos = e.clientX / window.innerWidth;
-              slider!.style.left = (splitPos * 100) + "%";
-              viewerRef.current!.scene.splitPosition = splitPos;
-            });
-          }}
-        >加载影像</Button>
-        <Form
-          name="basic"
-          labelAlign="left"
-          labelCol={{ span: 20 }}
-          labelWrap={true}
-          wrapperCol={{ span: 4 }}
-          initialValues={{
-
-          }}
-          autoComplete="off"
-          onFieldsChange={(values) => {
-            const name = values[0].name[0];
-
-            const value = values[0].value;
-
-
-          }}
-        >
-
-        </Form>
-      </div>
     </div>
   );
 }

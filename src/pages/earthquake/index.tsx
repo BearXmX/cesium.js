@@ -1,8 +1,8 @@
 import * as Cesium from "cesium";
-import { useEffect, useRef, useState } from "react";
-import { Button, Checkbox, Form, Modal } from 'antd'
-import DrawerCountour from "../../utils/countour";
+import { useEffect, useRef } from "react";
+import { Modal } from 'antd'
 import * as gui from 'lil-gui'
+
 const Earthquake = () => {
 
   const [modal, modalContext] = Modal.useModal();
@@ -61,6 +61,21 @@ const Earthquake = () => {
     drawGlobalLandArc: false,
     drawGlobalRiftValley: false,
 
+    showVideo: () => {
+      modal.info({
+        icon: null,
+        title: '视频播放',
+        content: <video src={window.$$prefix + '/data/earthquake/earthquake.mp4'} style={{ width: '100%', height: '100%' }} controlsList="nodownload" controls autoPlay />,
+        okText: '关闭',
+        cancelText: '取消',
+        width: 800,
+        centered: true,
+        onOk() {
+        },
+        onCancel() {
+        }
+      })
+    }
   };
 
   const initGui = () => {
@@ -72,10 +87,17 @@ const Earthquake = () => {
 
     guiRef.current = new gui.GUI({})
 
-    guiRef.current.title('地震')
+    guiRef.current.title('地震相关')
 
-    const mainControls = guiRef.current.addFolder('国内')
+    const videoControls = guiRef.current.addFolder('科普视频')
 
+    const mainControls = guiRef.current.addFolder('国内相关')
+
+    const globalControls = guiRef.current.addFolder('全球相关')
+
+    videoControls.add(guiControls, 'showVideo').name('什么是地震？')
+
+    /* 国内相关 */
     mainControls.add(guiControls, 'drawChinaEarthquakeArea').name('中国主要地震带').onChange((value: boolean) => {
       drawChinaEarthquakeArea(value)
     })
@@ -84,40 +106,37 @@ const Earthquake = () => {
       drawStepDividingLine(value)
     })
 
-
-
-    const historyChangeContols = guiRef.current.addFolder('全球')
-
-    historyChangeContols.add(guiControls, 'drawMainlandOutline').name('大陆板块').onChange((value: boolean) => {
+    /* 全球相关 */
+    globalControls.add(guiControls, 'drawMainlandOutline').name('大陆板块').onChange((value: boolean) => {
       drawMainlandOutline(value)
     })
 
-    historyChangeContols.add(guiControls, 'drawGlobalPlateBoundary').name('板块分界线').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalPlateBoundary').name('板块分界线').onChange((value: boolean) => {
       drawGlobalPlateBoundary(value)
     })
 
-    historyChangeContols.add(guiControls, 'drawGlobalPlateBoundaryName').name('板块名称').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalPlateBoundaryName').name('板块名称').onChange((value: boolean) => {
       drawGlobalPlateBoundaryName(value)
     })
 
-    historyChangeContols.add(guiControls, 'drawGlobalTrenchName').name('主要海沟').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalTrenchName').name('主要海沟').onChange((value: boolean) => {
       drawGlobalTrenchName(value)
     })
 
-    historyChangeContols.add(guiControls, 'drawGlobalEarthquakePoint').name('地震分布（近10年）').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalEarthquakePoint').name('地震分布（近10年）').onChange((value: boolean) => {
       drawGlobalEarthquakePoint(value)
     })
 
-    historyChangeContols.add(guiControls, 'drawGlobalVolcanoPoint').name('火山分布').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalVolcanoPoint').name('火山分布').onChange((value: boolean) => {
       drawGlobalVolcanoPoint(value)
     })
 
-    historyChangeContols.add(guiControls, 'drawGlobalLandArc').name('主要岛弧').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalLandArc').name('主要岛弧').onChange((value: boolean) => {
       drawGlobalLandArc(value)
     })
 
 
-    historyChangeContols.add(guiControls, 'drawGlobalRiftValley').name('主要裂谷').onChange((value: boolean) => {
+    globalControls.add(guiControls, 'drawGlobalRiftValley').name('主要裂谷').onChange((value: boolean) => {
       drawGlobalRiftValley(value)
     })
 
@@ -151,8 +170,8 @@ const Earthquake = () => {
       } else {
         fetch(window.$$prefix + "/data/earthquake/china-earthquake-area.geojson").then(res => res.json()).then(data => {
           Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.PINK,
-            fill: Cesium.Color.PINK.withAlpha(0.5),
+            stroke: Cesium.Color.BROWN,
+            fill: Cesium.Color.BROWN.withAlpha(0.5),
             strokeWidth: 2,
             markerSymbol: "circle"
           }).then(function (dataSource) {
@@ -512,8 +531,6 @@ const Earthquake = () => {
             markerSymbol: "circle"
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
-
-
             globalPlateBoundaryRef.current = dataSource.entities.values
           });
 
@@ -536,10 +553,7 @@ const Earthquake = () => {
         globalPlateBoundaryNameRef.current.forEach(item => {
           item.show = true
         })
-
       } else {
-
-
         fetch(window.$$prefix + "/data/earthquake/global-plate-boundary-name.geojson")
           .then(res => res.json())
           .then(data => {
@@ -605,10 +619,7 @@ const Earthquake = () => {
         globalTrenchRef.current.forEach(item => {
           item.show = true
         })
-
       } else {
-
-
         fetch(window.$$prefix + "/data/earthquake/global-trench-name.geojson")
           .then(res => res.json())
           .then(data => {
@@ -906,10 +917,7 @@ const Earthquake = () => {
         globalRiftValleyNameRef.current.forEach(item => {
           item.show = true
         })
-
       } else {
-
-
         fetch(window.$$prefix + "/data/earthquake/global-rift-valley-name.geojson")
           .then(res => res.json())
           .then(data => {
@@ -966,23 +974,7 @@ const Earthquake = () => {
     }
   }
 
-  const playVideo = (src: string) => {
-    modal.info({
-      icon: null,
-      title: '视频播放',
-      content: <video src={src} style={{ width: '100%', height: '100%' }} controlsList="nodownload" controls autoPlay />,
-      okText: '关闭',
-      cancelText: '取消',
-      width: 800,
-      centered: true,
-      onOk() {
-      },
-      onCancel() {
-      }
-    })
-  }
-
-  const setupClickHandler = (viewer: Cesium.Viewer) => {
+  const initClickHandler = (viewer: Cesium.Viewer) => {
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
     handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
@@ -1024,7 +1016,7 @@ const Earthquake = () => {
   }
 
   useEffect(() => {
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OTcwYjRjZi03Y2M5LTRiZTAtYTU4ZC04YjQ5OWRjOGM0N2EiLCJpZCI6MzM5NTk0LCJpYXQiOjE3NTczODMxNDZ9.MOvOOWYC62dePPqxADFjmesGKc6hDwtp0evj1DiujBw'
+    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN;
 
     const viewer = new Cesium.Viewer(containerRef.current!, {
       infoBox: false,
@@ -1065,7 +1057,7 @@ const Earthquake = () => {
 
     drawChinaBoundary()
 
-    setupClickHandler(viewer);
+    initClickHandler(viewer);
 
     initGui()
 
@@ -1081,9 +1073,8 @@ const Earthquake = () => {
       {modalContext}
       <div className="canvas-container">
         <div className="canvas-container-body" ref={containerRef} />
-        <div className="canvas-container-body-controls" >
 
-          {/*           <Button type="primary" size="small" style={{ marginBottom: 4 }}
+        {/*           <Button type="primary" size="small" style={{ marginBottom: 4 }}
             onClick={() => {
               const src = window.$$prefix + '/data/earthquake/earthquake.mp4'
 
@@ -1091,8 +1082,6 @@ const Earthquake = () => {
 
             }}
           >地震视频</Button> */}
-
-        </div>
       </div>
     </>
 

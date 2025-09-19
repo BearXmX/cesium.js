@@ -17,4 +17,10 @@ export default defineConfig({
       },
     },
   },
+  // 配置路径别名
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 })

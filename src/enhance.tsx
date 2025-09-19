@@ -21,7 +21,7 @@ const Enhance: React.FC<EnhancePropsType> = (props) => {
     <Select
       value={import.meta.env.PROD ? (window.location.hash === '' ? '/' : window.location.hash).replace('#', '') : window.location.pathname}
       style={{ width: 120, position: 'absolute', top: 10, left: 10, zIndex: 2 }}
-      options={routes.map((item, index) => ({
+      options={routes.slice(1).map((item, index) => ({
         value: item.path,
         label: item.name,
       }))}
