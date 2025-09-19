@@ -2,13 +2,13 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, HashRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Button, ConfigProvider, Space, theme } from 'antd'
-import App from './App.tsx'
 import Enhance from './enhance.tsx'
-import Sheshan from './pages/sheshan/index.tsx'
+import SheshanMountain from './pages/sheshan-mountain/index.tsx'
 import YellowRiver from './pages/yellow-river/index.tsx'
 import Earthquake from './pages/earthquake/index.tsx'
 import SuzhouRiver from './pages/suzhou-river/index.tsx'
 import './index.css'
+import HengduanMountains from './pages/hengduan-mountains/index.tsx'
 
 
 export const links = [
@@ -18,17 +18,17 @@ export const links = [
     content: '',
     element: (
       <Enhance>
-        <Navigate to={'/sheshan'}></Navigate>
+        <Navigate to={'/sheshan-mountain'}></Navigate>
       </Enhance>
     ),
   },
   {
     name: '佘山',
-    path: '/sheshan',
+    path: '/sheshan-mountain',
     content: '',
     element: (
       <Enhance>
-        <Sheshan></Sheshan>
+        <SheshanMountain></SheshanMountain>
       </Enhance>
     ),
   },
@@ -59,6 +59,16 @@ export const links = [
     element: (
       <Enhance>
         <SuzhouRiver></SuzhouRiver>
+      </Enhance>
+    ),
+  },
+  {
+    name: '横断山脉',
+    path: '/hengduan-mountains',
+    content: '',
+    element: (
+      <Enhance>
+        <HengduanMountains></HengduanMountains>
       </Enhance>
     ),
   },

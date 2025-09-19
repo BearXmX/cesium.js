@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import DrawCountour from "@/utils/countour";
 import * as gui from 'lil-gui'
 
-const Sheshan = () => {
+const SheshanMountain: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
@@ -11,7 +11,7 @@ const Sheshan = () => {
 
   const guiControls = {
     countour: () => {
-      fetch(window.$$prefix + "/data/sheshan/sheshan.geojson").then(res => res.json()).then(data => {
+      fetch(window.$$prefix + "/data/sheshan-mountain/sheshan-mountain.geojson").then(res => res.json()).then(data => {
         const ellipseContour = DrawCountour.drawShapeByGeojson(viewerRef.current!, data);
       })
     },
@@ -135,4 +135,4 @@ const Sheshan = () => {
   );
 };
 
-export default Sheshan;
+export default SheshanMountain;

@@ -7,7 +7,7 @@ const App = () => {
 
 
   useEffect(() => {
-    /*     navigate('/sheshan') */
+
   }, []);
   return <div style={{ width: '100%', height: '100%', background: '#000' }}></div>;
 };
