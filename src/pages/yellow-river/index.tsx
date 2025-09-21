@@ -1,10 +1,9 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef, useState } from "react";
 import { Button, Checkbox, Form, Modal } from 'antd'
-import DrawerCountour from "../../utils/countour";
+import DrawerCountour from "@/utils/countour";
 import * as gui from 'lil-gui'
-import IndicationLabel from "../../utils/plugins/indication-label";
-import SampleLabel from "../../utils/plugins/sample-label";
+import SampleLabel from "@/utils/plugins/sample-label";
 
 const YellowRiver = () => {
 
@@ -15,6 +14,8 @@ const YellowRiver = () => {
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
   const guiRef = useRef<gui.GUI | null>(null);
+
+  const administrativeRegionRef = useRef<Cesium.Entity[]>([]);
 
   const yellowRiverBranchRef = useRef<Cesium.Entity[]>([]);
 
@@ -40,10 +41,25 @@ const YellowRiver = () => {
   const nansonggudaoRef = useRef<Cesium.Entity[]>([]);
   const nansonggudaoNameRef = useRef<Cesium.Entity[]>([]);
 
+
   const dayuzhishuiControlRef = useRef<gui.Controller>(null);
   const jinfuzhiheControlRef = useRef<gui.Controller>(null);
 
   const cultureInstanceList = useRef<{
+    position: Cesium.Cartesian3
+    text: string,
+    instance: SampleLabel
+    key: string
+  }[]>([]);
+
+  const yellowRiverAreaCityInstanceList = useRef<{
+    position: Cesium.Cartesian3
+    text: string,
+    instance: SampleLabel
+    key: string
+  }[]>([]);
+
+  const yellowRiverSubsectionInstanceList = useRef<{
     position: Cesium.Cartesian3
     text: string,
     instance: SampleLabel
@@ -73,6 +89,7 @@ const YellowRiver = () => {
       }
     ].map(item => {
       const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+        containerBackgroundUrlType: 'story',
         defaultVisible: false,
         clickCallback: () => {
 
@@ -242,10 +259,131 @@ const YellowRiver = () => {
     })
   }
 
+  const initYellowRiverAreaCity = () => {
+
+    yellowRiverAreaCityInstanceList.current = [
+      {
+        position: Cesium.Cartesian3.fromDegrees(113.63347196165603,
+          34.749234812398115, 20),
+        text: '郑州市',
+        instance: null,
+        key: 'zhengzhoushi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(115.49679039259848,
+          35.25467337564086, 20),
+        text: '菏泽市',
+        instance: null,
+        key: 'hezeshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(101.76560988176715,
+          36.62741711989274, 20),
+        text: '西宁市',
+        instance: null,
+        key: 'xiningshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(103.78327390724866,
+          36.07726675570002, 20),
+        text: '兰州市',
+        instance: null,
+        key: 'lanzhoushi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(112.53321374491901,
+          37.86001460264656, 20),
+        text: '太原市',
+        instance: null,
+        key: 'taiyuanshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(106.21382373287798,
+          38.47223420584143, 20),
+        text: '银川市',
+        instance: null,
+        key: 'yinchuanshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(106.21382373287798,
+          38.47223420584143, 20),
+        text: '银川市',
+        instance: null,
+        key: 'yinchuanshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(108.9409382315867,
+          34.29707135981137, 20),
+        text: '西安市',
+        instance: null,
+        key: 'xianshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(107.31417624573231,
+          40.760193834638244, 20),
+        text: '巴彦淖尔',
+        instance: null,
+        key: 'bayannaoshi'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(116.98764637644916,
+          36.65355257715363, 20),
+        text: '济南市',
+        instance: null,
+        key: 'jinanshi'
+      },
+    ].map(item => {
+      const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+        containerBackgroundUrlType: 'position',
+        defaultVisible: false,
+      });
+
+      return {
+        ...item,
+        instance
+      }
+    })
+
+  }
+
+  const initYellowRiverSubsection = () => {
+
+    yellowRiverSubsectionInstanceList.current = [
+      {
+        position: Cesium.Cartesian3.fromDegrees(111.04,
+          40.16, 20),
+        text: '上中游分界点：河口镇',
+        instance: null,
+        key: 'hekouzhen'
+      },
+      {
+        position: Cesium.Cartesian3.fromDegrees(113.28,
+          34.57, 20),
+        text: '中下游分界点：桃花峪',
+        instance: null,
+        key: 'taohuayu'
+      },
+    ].map(item => {
+      const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+        containerBackgroundUrlType: 'subsection',
+        defaultVisible: false,
+      });
+
+      return {
+        ...item,
+        instance
+      }
+    })
+  }
+
   const guiControls = {
+    drawAdministrativeRegion: false,
+
     drawYellowRiverBranch: false,
     drawYellowRiverAreaProvince: false,
     drawLoessPlateauArea: false,
+    drawYellowRiverAreaCity: false,
+    drawYellowRiverSubsectionPoint: false,
 
     drawYuhegudao: false,
     drawXihangudao: false,
@@ -269,7 +407,6 @@ const YellowRiver = () => {
         }
       })
     },
-
     dayuzhishui: () => {
       const visible = cultureInstanceList.current.find(item => item.key === 'dayuzhishui')?.instance?.toggleVisible(true)
 
@@ -302,13 +439,20 @@ const YellowRiver = () => {
 
     guiRef.current.title('黄河')
 
+    const regionControls = guiRef.current.addFolder('主要区域')
+
     const videoControls = guiRef.current.addFolder('黄河科普')
 
-    const mainControls = guiRef.current.addFolder('主要区域')
+    const mainControls = guiRef.current.addFolder('相关区域')
 
     const historyChangeContols = guiRef.current.addFolder('历史改道')
 
     const cultureControls = guiRef.current.addFolder('人文历史')
+
+    /* 主要区域 */
+    regionControls.add(guiControls, 'drawAdministrativeRegion').name('行政区域').onChange((value: boolean) => {
+      drawAdministrativeRegion(value)
+    })
 
     /* 科普视频 */
     videoControls.add(guiControls, 'showVideo').name('我们的母亲河')
@@ -318,13 +462,31 @@ const YellowRiver = () => {
       drawYellowRiverBranch(value)
     })
 
-    mainControls.add(guiControls, 'drawYellowRiverAreaProvince').name('黄河流域').onChange((value: boolean) => {
+    const yellowRiverAreaProvinceControl = mainControls.add(guiControls, 'drawYellowRiverAreaProvince').name('黄河流域').onChange((value: boolean) => {
       drawYellowRiverAreaProvince(value)
     })
 
     mainControls.add(guiControls, 'drawLoessPlateauArea').name('黄土高原').onChange((value: boolean) => {
       drawLoessPlateauArea(value)
     })
+
+    mainControls.add(guiControls, 'drawYellowRiverAreaCity').name('流经城市').onChange((value: boolean) => {
+      yellowRiverAreaCityInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
+      yellowRiverAreaProvinceControl.setValue(value)
+      yellowRiverAreaProvinceControl.updateDisplay()
+
+      if (value) {
+        cameraFlyTo(113.63347196165603, 34.749234812398115, 1000000)
+      }
+    })
+    mainControls.add(guiControls, 'drawYellowRiverSubsectionPoint').name('上中下游分界点').onChange((value: boolean) => {
+      yellowRiverSubsectionInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
+
+      if (value) {
+        cameraFlyTo(111.04, 40.16, 1000000)
+      }
+    })
+
 
     /* 历史改道 */
     dayuzhishuiControlRef.current = historyChangeContols.add(guiControls, 'drawYuhegudao').name('禹河故道').onChange((value: boolean) => {
@@ -427,6 +589,37 @@ const YellowRiver = () => {
       console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
   }
+
+  const drawAdministrativeRegion = (checked: boolean) => {
+    if (checked) {
+
+      if (administrativeRegionRef.current?.length) {
+
+        administrativeRegionRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+        fetch(window.$$prefix + "/data/china/china.geojson").then(res => res.json()).then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.BROWN.withAlpha(0.8),
+            fill: Cesium.Color.WHITE.withAlpha(0.5),
+            strokeWidth: 0.8,
+            markerSymbol: "circle"
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            administrativeRegionRef.current = dataSource.entities.values
+          });
+
+        });
+      }
+
+    } else {
+      administrativeRegionRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  };
 
   const drawYellowRiverBranch = (checked: boolean) => {
     if (checked) {
@@ -690,7 +883,7 @@ const YellowRiver = () => {
       })
 
       xihangudaoNameRef.current.forEach(item => {
-        item.show = true
+        item.show = false
       })
     }
 
@@ -926,7 +1119,6 @@ const YellowRiver = () => {
     Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(
       async (terrain) => {
         viewer.terrainProvider = terrain;
-
         cameraFlyTo(106.42574140217508, 37.565051396604, 4000000)
       }
     );
@@ -935,16 +1127,14 @@ const YellowRiver = () => {
 
     fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
       Cesium.GeoJsonDataSource.load(data, {
-        stroke: Cesium.Color.BLUE,
-        fill: Cesium.Color.BLUE.withAlpha(0.2),
+        stroke: Cesium.Color.BROWN,
+        fill: Cesium.Color.BROWN.withAlpha(0.2),
         strokeWidth: 2,
         markerSymbol: "circle"
       }).then(function (dataSource) {
         viewer.dataSources.add(dataSource)
-        /*         viewer.flyTo(dataSource); */
       })
     })
-
 
     fetch(window.$$prefix + "/data/yellow-river/yellow-river.geojson").then(res => res.json()).then(data => {
       Cesium.GeoJsonDataSource.load(data, {
@@ -962,6 +1152,10 @@ const YellowRiver = () => {
     initClickHandler(viewer)
 
     initCultureIntanceList()
+
+    initYellowRiverAreaCity()
+
+    initYellowRiverSubsection()
 
     initGui()
 
