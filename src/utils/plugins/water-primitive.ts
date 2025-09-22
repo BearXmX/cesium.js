@@ -26,6 +26,11 @@ class WaterPrimitive {
     return primitive
   }
 
+  /*   updateColor(color) {
+    this.options.baseWaterColor = color
+    this.appearance.material.uniforms.baseWaterColor = color
+  } */
+
   getApper() {
     let apper = new Cesium.EllipsoidSurfaceAppearance({
       aboveGround: true,
