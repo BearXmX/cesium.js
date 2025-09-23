@@ -1,7 +1,7 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef } from "react";
-import DrawCountour from "@/utils/countour";
 import * as gui from 'lil-gui'
+import SampleLabel from "@/utils/plugins/sample-label";
 
 const HengduanMountains = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -9,11 +9,43 @@ const HengduanMountains = () => {
 
   const guiRef = useRef<gui.GUI | null>(null);
 
-  const guiControls = {
-    countour: () => {
-      getCameraParams()
-    },
-  };
+  const HengduanMountainsDiagramRef = useRef<Cesium.Entity[]>([]);
+  const changjiangRiverRef = useRef<Cesium.Entity[]>([]);
+  const lancangRiverRef = useRef<Cesium.Entity[]>([]);
+  const nujiangRiverRef = useRef<Cesium.Entity[]>([]);
+  const dulongjiangRiverRef = useRef<Cesium.Entity[]>([]);
+  const jinshajiangRiverRef = useRef<Cesium.Entity[]>([]);
+  const minjiangRiverRef = useRef<Cesium.Entity[]>([]);
+  const yalongjiangRiverRef = useRef<Cesium.Entity[]>([]);
+
+  const higherMountainPonitInstanceList = useRef<{
+    position: Cesium.Cartesian3
+    text: string,
+    instance: SampleLabel
+    key: string
+  }[]>([]);
+
+  const initHigherMountainPonit = () => {
+
+    higherMountainPonitInstanceList.current = [
+      {
+        position: Cesium.Cartesian3.fromDegrees(101.88123898839554, 29.5935768399523, 7100.9),
+        text: '贡嘎山',
+        instance: null,
+        key: 'gonggashan'
+      },
+    ].map(item => {
+      const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+        containerBackgroundUrlType: 'position',
+        defaultVisible: false,
+      });
+
+      return {
+        ...item,
+        instance
+      }
+    })
+  }
 
   const getCameraParams = () => {
     const camera = viewerRef.current!.camera;
@@ -48,8 +80,307 @@ const HengduanMountains = () => {
     return code;
   }
 
-  // @ts-ignore
-  window.getCameraParams = getCameraParams
+  const drawHengduanMountainsDiagram = (checked: boolean) => {
+    if (checked) {
+
+      if (HengduanMountainsDiagramRef.current?.length) {
+
+        HengduanMountainsDiagramRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/hengduan-mountains-area.geojson")
+          .then(res => res.json())
+          .then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.ORANGE,
+              fill: Cesium.Color.ORANGE.withAlpha(0.5),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource)
+              HengduanMountainsDiagramRef.current = dataSource.entities.values
+
+              HengduanMountainsDiagramRef.current.push(viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(99.98771658991963, 30.29968842554559),
+                label: {
+                  text: "横断山区",
+                  font: "20px sans-serif",
+                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                  outlineWidth: 2,
+                  outlineColor: Cesium.Color.WHITE,
+                  fillColor: Cesium.Color.BLACK,
+                }
+              }))
+            })
+          });
+
+      }
+
+    } else {
+      HengduanMountainsDiagramRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const drawChangjiangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (changjiangRiverRef.current?.length) {
+
+        changjiangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/changjiang-river.geojson")
+          .then(res => res.json())
+          .then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.AQUA,
+              fill: Cesium.Color.AQUA.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              changjiangRiverRef.current = dataSource.entities.values
+            })
+          });
+
+      }
+
+    } else {
+      changjiangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+
+  }
+
+  const drawLancangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (lancangRiverRef.current?.length) {
+
+        lancangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/lancang-river.geojson")
+          .then(res => res.json())
+          .then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.AQUA,
+              fill: Cesium.Color.AQUA.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              lancangRiverRef.current = dataSource.entities.values
+            })
+          });
+
+      }
+
+    } else {
+      lancangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const drawNujiangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (nujiangRiverRef.current?.length) {
+
+        nujiangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/nujiang-river.geojson")
+          .then(res => res.json()).then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.AQUA,
+              fill: Cesium.Color.AQUA.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              nujiangRiverRef.current = dataSource.entities.values
+            })
+          });
+      }
+    } else {
+      nujiangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const drawDulongjiangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (dulongjiangRiverRef.current?.length) {
+
+        dulongjiangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/dulongjiang-river.geojson")
+          .then(res => res.json()).then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.AQUA,
+              fill: Cesium.Color.AQUA.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              dulongjiangRiverRef.current = dataSource.entities.values
+            })
+          });
+      }
+    } else {
+      dulongjiangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const drawJinshajiangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (jinshajiangRiverRef.current?.length) {
+
+        jinshajiangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/jinshajiang-river.geojson")
+          .then(res => res.json()).then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.WHITE,
+              fill: Cesium.Color.WHITE.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              jinshajiangRiverRef.current = dataSource.entities.values
+            })
+          });
+      }
+    } else {
+      jinshajiangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const drawMinjiangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (minjiangRiverRef.current?.length) {
+
+        minjiangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/minjiang-river.geojson")
+          .then(res => res.json()).then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.AQUA,
+              fill: Cesium.Color.AQUA.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              minjiangRiverRef.current = dataSource.entities.values
+            })
+          });
+      }
+    } else {
+      minjiangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const drawYalongjiangRiver = (checked: boolean) => {
+    if (checked) {
+
+      if (yalongjiangRiverRef.current?.length) {
+
+        yalongjiangRiverRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/hengduan-mountains/yalongjiang-river.geojson")
+          .then(res => res.json()).then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.AQUA,
+              fill: Cesium.Color.AQUA.withAlpha(1),
+              strokeWidth: 2,
+              markerSymbol: "circle"
+            }).then(function (dataSource) {
+
+              viewerRef.current!.dataSources.add(dataSource)
+
+              yalongjiangRiverRef.current = dataSource.entities.values
+            })
+          });
+      }
+    } else {
+      yalongjiangRiverRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
+  const guiControls = {
+    drawHengduanMountainsDiagram: true,
+    drawHigherMountainPoint: false,
+    drawChangjiangRiver: false,
+    drawLancangRiver: false,
+    drawNujiangRiver: false,
+    drawDulongjiangRiver: false,
+    drawJinshajiangRiver: false,
+    drawMinjiangRiver: false,
+    drawYalongjiangRiver: false,
+
+    getCameraParams: () => {
+      getCameraParams()
+    },
+  };
+
+
 
   const initGui = () => {
     if (guiRef.current) {
@@ -59,9 +390,65 @@ const HengduanMountains = () => {
 
     guiRef.current = new gui.GUI({})
 
-    guiRef.current.title('横断山脉')
+    guiRef.current.title('横断山')
 
-    guiRef.current.add(guiControls, 'countour').name('获取参数')
+    guiRef.current.add(guiControls, 'getCameraParams').name('获取相机参数')
+
+    const mainAreaControls = guiRef.current.addFolder('主要区域');
+
+    mainAreaControls.add(guiControls, 'drawHengduanMountainsDiagram').name('横断山区').onChange((value: boolean) => {
+      drawHengduanMountainsDiagram(value)
+    })
+
+    mainAreaControls.add(guiControls, 'drawHigherMountainPoint').name('最高峰').onChange((value: boolean) => {
+      higherMountainPonitInstanceList.current.forEach(item => {
+        item.instance.toggleVisible(value)
+      })
+
+      if (value) {
+        viewerRef.current!.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(101.81087885, 29.52080401, 7599.75),
+          orientation: {
+            heading: 0.6762693278851586,
+            pitch: -0.042912143092978194,
+            roll: 0.0001878768739276282
+          }
+        });
+      }
+    })
+
+    const mainRiverControls = guiRef.current.addFolder('主要河流');
+
+    mainRiverControls.add(guiControls, 'drawChangjiangRiver').name('长江').onChange((value: boolean) => {
+      drawChangjiangRiver(value)
+    })
+
+    mainRiverControls.add(guiControls, 'drawLancangRiver').name('澜沧江').onChange((value: boolean) => {
+      drawLancangRiver(value)
+    })
+
+    mainRiverControls.add(guiControls, 'drawNujiangRiver').name('怒江').onChange((value: boolean) => {
+      drawNujiangRiver(value)
+    })
+
+
+
+    mainRiverControls.add(guiControls, 'drawJinshajiangRiver').name('金沙江').onChange((value: boolean) => {
+      drawJinshajiangRiver(value)
+    })
+
+    mainRiverControls.add(guiControls, 'drawMinjiangRiver').name('岷江').onChange((value: boolean) => {
+      drawMinjiangRiver(value)
+    })
+
+    mainRiverControls.add(guiControls, 'drawYalongjiangRiver').name('雅砻江').onChange((value: boolean) => {
+      drawYalongjiangRiver(value)
+    })
+
+    mainRiverControls.add(guiControls, 'drawDulongjiangRiver').name('独龙江').onChange((value: boolean) => {
+      drawDulongjiangRiver(value)
+    })
+
   }
 
   const initClickHandler = (viewer: Cesium.Viewer) => {
@@ -126,21 +513,32 @@ const HengduanMountains = () => {
       async (terrain) => {
         viewer.terrainProvider = terrain;
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(99.05746825, 29.35850818, 4863.54),
-          orientation: {
-            heading: 2.9208046571239317,
-            pitch: -0.12289746941645263,
-            roll: 6.283132085195532
-          }
+          destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.80768620, 5000000),
         });
       }
     );
 
     (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = "none";
 
+
+    fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
+      Cesium.GeoJsonDataSource.load(data, {
+        stroke: Cesium.Color.BROWN,
+        fill: Cesium.Color.BROWN.withAlpha(0.2),
+        strokeWidth: 2,
+        markerSymbol: "circle"
+      }).then(function (dataSource) {
+        viewer.dataSources.add(dataSource)
+      })
+    })
+
+
     initClickHandler(viewer);
 
     initGui()
+
+    drawHengduanMountainsDiagram(true)
+    initHigherMountainPonit()
 
     return () => {
       viewer.destroy();

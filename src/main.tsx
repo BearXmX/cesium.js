@@ -63,7 +63,7 @@ export const links = [
     ),
   },
   {
-    name: '横断山脉',
+    name: '横断山',
     path: '/hengduan-mountains',
     content: '',
     element: (

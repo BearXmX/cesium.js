@@ -21,7 +21,7 @@ body,
   margin-bottom: 0px;
 }
 
-.ant-notification .ant-notification-notice-wrapper .ant-notification-notice-wrapper:after {
+.ant-notification .ant-notification-notice-wrapper::after {
   display: none;
 }
 

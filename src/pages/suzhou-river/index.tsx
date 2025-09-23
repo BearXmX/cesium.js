@@ -393,7 +393,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
     });
 
     suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverUpstreamSegment').name('上游段').onChange((value: boolean) => {
-      suzhouRiverWaterPrimitivesRef.current[0].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.GREEN.withAlpha(1) : Cesium.Color.AQUA.withAlpha(0.6)
+      suzhouRiverWaterPrimitivesRef.current[0].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.GREEN.withAlpha(0.6) : Cesium.Color.AQUA.withAlpha(0.6)
       if (value) {
         viewerRef.current?.camera.flyTo({
           destination: Cesium.Cartesian3.fromDegrees(121.21475984777767,
@@ -403,7 +403,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
     });
 
     suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverMidstreamSegment').name('下游段').onChange((value: boolean) => {
-      suzhouRiverWaterPrimitivesRef.current[1].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.TOMATO.withAlpha(1) : Cesium.Color.AQUA.withAlpha(0.6)
+      suzhouRiverWaterPrimitivesRef.current[1].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.TOMATO.withAlpha(0.6) : Cesium.Color.AQUA.withAlpha(0.6)
       if (value) {
         viewerRef.current?.camera.flyTo({
           destination: Cesium.Cartesian3.fromDegrees(121.41021285316776,
@@ -411,7 +411,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
         })
       }
     });
-
 
     /* 水质 */
     const drawWaterQualitycheckpointControl = waterQualityControls.add(guiControls, 'drawWaterQualitycheckpoint').name('水质检测点').onChange((value: boolean) => {
