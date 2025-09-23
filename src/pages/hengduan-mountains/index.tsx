@@ -431,8 +431,6 @@ const HengduanMountains = () => {
       drawNujiangRiver(value)
     })
 
-
-
     mainRiverControls.add(guiControls, 'drawJinshajiangRiver').name('金沙江').onChange((value: boolean) => {
       drawJinshajiangRiver(value)
     })
