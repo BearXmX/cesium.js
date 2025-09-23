@@ -11,6 +11,28 @@ body,
   overflow: auto;
 }
 
+.ant-notification {
+  height: 100%;
+}
+
+.ant-notification .ant-notification-notice-wrapper {
+  max-height: 100%;
+  overflow: auto;
+  margin-bottom: 0px;
+}
+
+.ant-notification .ant-notification-notice-wrapper .ant-notification-notice-wrapper:after {
+  display: none;
+}
+
+.ant-notification .ant-notification-notice-wrapper .ant-notification-notice {
+  max-height: 100%;
+}
+
+.ant-notification .ant-notification-notice-wrapper .ant-notification-notice-close {
+  top: 20px;
+}
+
 .canvas-container {
   position: relative;
   height: 100%;

@@ -55,16 +55,9 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       {
         position: Cesium.Cartesian3.fromDegrees(121.3434840671743,
           31.241460134456975, 20),
-        text: '上中游分界点：外环线交界处附近',
+        text: '上下游分界点：北新泾外环线附近',
         instance: null,
         key: 'waihuanxianjiaohechu'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.46746389388825,
-          31.242487823822824, 20),
-        text: '中下游分界点：西藏路桥附近',
-        instance: null,
-        key: 'xizangluqiao'
       },
     ].map(item => {
       const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
@@ -286,6 +279,36 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
     })
   }
 
+  const showLandUseType = (value: boolean) => {
+
+    if (value) {
+      notificationApi.info({
+        style: {
+          maxHeight: '100%'
+        },
+        message: `用地类型分布图`,
+        description: <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#9ed08a' }}></span>农业用地&nbsp;&nbsp;
+            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#f1718b' }}></span>工业用地&nbsp;&nbsp;
+            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#00a550' }}></span>城市绿地
+          </div>
+          <img src={landUseType2021} width={'100%'} alt="" />
+          <div style={{ textAlign: 'center' }}>2021年</div>
+          <img src={landUseType1989} width={'100%'} alt="" />
+          <div style={{ textAlign: 'center' }}>1989年</div>
+          <img src={landUseType1958} width={'100%'} alt="" />
+          <div style={{ textAlign: 'center' }}>1958年</div>
+        </>,
+        placement: 'bottomLeft',
+        duration: null,
+      });
+    } else {
+      notificationApi.destroy();
+    }
+
+  }
+
 
   const guiControls = {
     drawSuzhouRiverSubsectionPoint: false,
@@ -293,7 +316,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
     drawSuzhouRiverOrganismSamplingPoint: false,
     drawSuzhouRiverUpstreamSegment: false,
     drawSuzhouRiverMidstreamSegment: false,
-    drawSuzhouRiverDownstreamSegment: false,
+    drawSuzhouRiverLandUseType: false,
+
     history: () => {
       viewerRef.current?.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(121.44681124210383, 31.253252971821134, 300) });
 
@@ -327,26 +351,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       });
     },
 
-    showLandUseType: () => {
-      notificationApi.info({
-        message: `用地类型分布图`,
-        description: <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#9ed08a' }}></span>农业用地&nbsp;&nbsp;
-            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#f1718b' }}></span>工业用地&nbsp;&nbsp;
-            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#00a550' }}></span>城市绿地
-          </div>
-          <img src={landUseType2021} width={'100%'} alt="" />
-          <div style={{ textAlign: 'center' }}>2021年</div>
-          <img src={landUseType1989} width={'100%'} alt="" />
-          <div style={{ textAlign: 'center' }}>1989年</div>
-          <img src={landUseType1958} width={'100%'} alt="" />
-          <div style={{ textAlign: 'center' }}>1958年</div>
-        </>,
-        placement: 'bottomLeft',
-        duration: null,
-      });
-    }
   };
 
   const initGui = () => {
@@ -363,26 +367,27 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
     const suzhouRiverAreaControls = guiRef.current.addFolder('区域划分')
 
+    const landUseTypeControls = guiRef.current.addFolder('用地类型')
+
     const waterQualityControls = guiRef.current.addFolder('水质')
 
     /*     const soilControls = guiRef.current.addFolder('土壤') */
 
     const organismControls = guiRef.current.addFolder('生物')
 
-    const landUseTypeControls = guiRef.current.addFolder('用地类型')
 
     /* 历史影像 */
     historyControls.add(guiControls, 'history').name('加载恒丰路历史影像')
 
     /* 区域划分 */
-    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverSubsectionPoint').name('上中游分界点').onChange((value: boolean) => {
+    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverSubsectionPoint').name('上下游分界点').onChange((value: boolean) => {
 
       suzhouRiverSubsectionInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
 
       if (value) {
         viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.42928466816858,
-            31.23850311074299, 20000),
+          destination: Cesium.Cartesian3.fromDegrees(121.34345294112579,
+            31.241533962801665, 15000),
         })
       }
     });
@@ -397,7 +402,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       }
     });
 
-    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverMidstreamSegment').name('中游段').onChange((value: boolean) => {
+    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverMidstreamSegment').name('下游段').onChange((value: boolean) => {
       suzhouRiverWaterPrimitivesRef.current[1].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.TOMATO.withAlpha(1) : Cesium.Color.AQUA.withAlpha(0.6)
       if (value) {
         viewerRef.current?.camera.flyTo({
@@ -407,15 +412,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       }
     });
 
-    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverDownstreamSegment').name('下游段').onChange((value: boolean) => {
-      suzhouRiverWaterPrimitivesRef.current[2].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.GOLD.withAlpha(1) : Cesium.Color.AQUA.withAlpha(0.6)
-      if (value) {
-        viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.48179504826629,
-            31.246186434358357, 10000),
-        })
-      }
-    });
 
     /* 水质 */
     const drawWaterQualitycheckpointControl = waterQualityControls.add(guiControls, 'drawWaterQualitycheckpoint').name('水质检测点').onChange((value: boolean) => {
@@ -449,7 +445,10 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       }
     });
 
-    landUseTypeControls.add(guiControls, 'showLandUseType').name('用地类型分布')
+    /* 用地类型 */
+    landUseTypeControls.add(guiControls, 'drawSuzhouRiverLandUseType').name('用地类型分布').onChange((value: boolean) => {
+      showLandUseType(value)
+    });
 
   }
 
@@ -500,8 +499,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       normalMap: window.$$prefix + '/waterNormalsSmall.jpg',
       frequency: 1000.0,
       animationSpeed: 0.01,
-      amplitude: 10,
-      specularIntensity: 10
+      amplitude: 100,
+      specularIntensity: 100
     });
 
 
@@ -587,7 +586,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
       // 绘制文字
       viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(121.451185, 31.250281),
+        position: Cesium.Cartesian3.fromDegrees(121.43424178657835, 31.264846739529258),
         label: {
           text: "苏州河",
           font: "30px sans-serif",
@@ -639,7 +638,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
       // 绘制文字
       viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(121.451185, 31.342281),
+        position: Cesium.Cartesian3.fromDegrees(121.17507739975338, 31.297054818748347),
         label: {
           text: "蕰藻浜",
           font: "26px sans-serif",
