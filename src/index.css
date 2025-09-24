@@ -133,27 +133,52 @@ body,
   box-sizing: border-box;
 }
 
-.point-sample-label-container::before {
-  content: '';
+.point-sample-label-container .point-sample-label-container-indication {
   width: calc(100% + 22px);
   height: 39px;
   position: absolute;
   bottom: -39px;
   left: -22px;
-  background: url(@/assets/normal-sample-label-bg.png) 0px 0px no-repeat;
-  background-position: 0px 0px;
+  overflow: hidden;
 }
 
-.point-sample-label-container-position::before {
-  background: url(@/assets/position-sample-label-bg.png) 0px 0px no-repeat;
+.point-sample-label-container .point-sample-label-container-indication .point-sample-label-container-indication-radius {
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.point-sample-label-container-story::before {
-  background: url(@/assets/story-sample-label-bg.png) 0px 0px no-repeat;
+.point-sample-label-container .point-sample-label-container-indication .point-sample-label-container-indication-radius::after {
+  position: absolute;
+  content: '';
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  z-index: 2;
 }
 
-.point-sample-label-container-subsection::before {
-  background: url(@/assets/subsection-sample-label-bg.png) 0px 0px no-repeat;
+.point-sample-label-container .point-sample-label-container-indication .point-sample-label-container-indication-topLine {
+  position: absolute;
+  left: 22px;
+  top: 0px;
+  width: calc(100% - 22px);
+  height: 2px;
+}
+
+.point-sample-label-container .point-sample-label-container-indication .point-sample-label-container-indication-leftLine {
+  position: absolute;
+  left: 12px;
+  top: -3px;
+  width: 2px;
+  height: 40px;
+  transform: rotate(30deg);
 }
 
 .point-sample-label-container .point-sample-label-text {
@@ -171,9 +196,7 @@ body,
   box-sizing: border-box;
 }
 
-.point-sample-label-container .point-sample-label-text .point-sample-label-icon-position,
-.point-sample-label-container .point-sample-label-text .point-sample-label-icon-story,
-.point-sample-label-container .point-sample-label-text .point-sample-label-icon-subsection {
+.point-sample-label-container .point-sample-label-text .point-sample-label-icon-use {
   display: inline-block;
   width: 20px;
   height: 20px;
@@ -195,22 +218,6 @@ body,
 .point-sample-label-container .point-sample-label-text-click {
   cursor: pointer;
   text-decoration: underline;
-}
-
-.point-sample-label-container .point-sample-label-text:hover {
-  color: #fff;
-}
-
-.point-sample-label-container-story .point-sample-label-text:hover {
-  color: #eda914;
-}
-
-.point-sample-label-container-position .point-sample-label-text:hover {
-  color: #00ffcc;
-}
-
-.point-sample-label-container-subsection .point-sample-label-text:hover {
-  color: #ff00e4;
 }
 
 .point-sample-label-container .point-sample-label-close {

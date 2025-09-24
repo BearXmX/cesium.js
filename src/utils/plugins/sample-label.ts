@@ -5,7 +5,10 @@ interface options {
   defaultVisible?: boolean
   clickCallback?: () => void
   containerBackgroundUrlType?: 'normal' | 'position' | 'story' | 'subsection'
+  indicationLineColor?: string
 }
+
+const defaultIconType = ['normal', 'position', 'story', 'subsection']
 
 class SampleLabel {
   viewer: Viewer
@@ -21,10 +24,11 @@ class SampleLabel {
     this.options = {
       defaultVisible: true,
       containerBackgroundUrlType: 'normal',
+      indicationLineColor: '#00ffcc',
       ...options,
     }
 
-    this.createDom(options)
+    this.createDom(this.options)
 
     this.addPostRender()
   }
@@ -81,25 +85,49 @@ class SampleLabel {
 
     this.container.classList.add('point-sample-label-container')
 
+    /* 指示线条 */
+    const indication = document.createElement('div')
+
+    indication.classList.add('point-sample-label-container-indication')
+
+    this.container.appendChild(indication)
+
+    const radius = document.createElement('div')
+    radius.classList.add('point-sample-label-container-indication-radius')
+    indication.appendChild(radius)
+
+    radius.style.backgroundColor = options.indicationLineColor
+
+    const topLine = document.createElement('div')
+    topLine.classList.add('point-sample-label-container-indication-topLine')
+    indication.appendChild(topLine)
+    topLine.style.backgroundColor = options.indicationLineColor
+
+    const leftLine = document.createElement('div')
+    leftLine.classList.add('point-sample-label-container-indication-leftLine')
+    indication.appendChild(leftLine)
+    leftLine.style.backgroundColor = options.indicationLineColor
+
+    /* 文字 */
     let label = document.createElement('div')
+
+    label.addEventListener('mouseenter', function () {
+      label.style.color = options.indicationLineColor
+    })
+
+    label.addEventListener('mouseleave', function () {
+      label.style.color = '#fff' // 恢复默认
+    })
 
     let labelIcon = document.createElement('span')
 
     labelIcon.classList.add('point-sample-label-icon')
 
-    if (options.containerBackgroundUrlType === 'position') {
-      this.container.classList.add('point-sample-label-container-position')
-      labelIcon.classList.add('point-sample-label-icon-position')
-    }
+    this.container.classList.add(`point-sample-label-container-${options.containerBackgroundUrlType}`)
+    labelIcon.classList.add(`point-sample-label-icon-${options.containerBackgroundUrlType}`)
 
-    if (options.containerBackgroundUrlType === 'story') {
-      this.container.classList.add('point-sample-label-container-story')
-      labelIcon.classList.add('point-sample-label-icon-story')
-    }
-
-    if (options.containerBackgroundUrlType === 'subsection') {
-      this.container.classList.add('point-sample-label-container-subsection')
-      labelIcon.classList.add('point-sample-label-icon-subsection')
+    if (options.containerBackgroundUrlType !== 'normal') {
+      labelIcon.classList.add(`point-sample-label-icon-use`)
     }
 
     label.classList.add('point-sample-label-text')

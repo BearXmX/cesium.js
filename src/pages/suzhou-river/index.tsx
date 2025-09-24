@@ -63,6 +63,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
         containerBackgroundUrlType: 'subsection',
         defaultVisible: false,
+        indicationLineColor: '#ff00e4'
       });
 
       return {
@@ -147,6 +148,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
         containerBackgroundUrlType: 'position',
         defaultVisible: false,
+        indicationLineColor: '#ef561d',
         clickCallback() {
 
           const { longitude, latitude, height } = cartesian3ToDegrees(item.position, Cesium.Ellipsoid.WGS84);
@@ -262,6 +264,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
         containerBackgroundUrlType: 'position',
         defaultVisible: false,
+        indicationLineColor: '#e5c07b',
         clickCallback() {
 
           const { longitude, latitude, height } = cartesian3ToDegrees(item.position, Cesium.Ellipsoid.WGS84);

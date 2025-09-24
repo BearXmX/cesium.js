@@ -91,6 +91,7 @@ const YellowRiver = () => {
       const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
         containerBackgroundUrlType: 'story',
         defaultVisible: false,
+        indicationLineColor: '#ffb20e',
         clickCallback: () => {
 
           const modalOptions = {
@@ -350,15 +351,15 @@ const YellowRiver = () => {
 
     yellowRiverSubsectionInstanceList.current = [
       {
-        position: Cesium.Cartesian3.fromDegrees(111.04,
-          40.16, 20),
+        position: Cesium.Cartesian3.fromDegrees(111.05715607250661,
+          40.259150486471185, 20),
         text: '上中游分界点：河口镇',
         instance: null,
         key: 'hekouzhen'
       },
       {
-        position: Cesium.Cartesian3.fromDegrees(113.28,
-          34.57, 20),
+        position: Cesium.Cartesian3.fromDegrees(113.36184669983977,
+          34.965343981723414, 20),
         text: '中下游分界点：桃花峪',
         instance: null,
         key: 'taohuayu'
