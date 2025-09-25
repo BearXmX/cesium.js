@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import { fileURLToPath } from 'url'
 import * as path from 'path';
-import { escape } from 'querystring';
 
 //  node .\src\script\offset.js --/earthquake/AFRICA-mainland-outline.geojson
 
@@ -31,7 +30,7 @@ function offset(num) {
   let newDec = decPart;
 
   // 根据小数长度决定加几位随机数
-  if (decPart.length < 6) {
+  if (decPart.length >= 6) {
     // 末位随机且不为0
     const rand = Math.floor(Math.random() * 9) + 1;
     newDec = decPart + rand;

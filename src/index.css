@@ -11,12 +11,18 @@ body,
   overflow: auto;
 }
 
+.lil-gui.root {
+  top: 10px;
+}
+
 .lil-gui.root > button.title {
   height: 40px;
+  flex-shrink: 0;
 }
 
 .ant-notification {
   height: 100%;
+  top: 1px !important;
 }
 
 .ant-notification .ant-notification-notice-wrapper {
