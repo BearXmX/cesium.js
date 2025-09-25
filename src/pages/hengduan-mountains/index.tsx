@@ -22,6 +22,8 @@ const HengduanMountains = () => {
   const minjiangRiverRef = useRef<Cesium.Entity[]>([]);
   const yalongjiangRiverRef = useRef<Cesium.Entity[]>([]);
   const daduheRiverRef = useRef<Cesium.Entity[]>([]);
+  const chinaClimateDistributionRef = useRef<Cesium.Entity[]>([]);
+
   const pandaRef = useRef<any[]>([]);
 
   const shanshuRef = useRef<any[]>([]);
@@ -679,6 +681,119 @@ const HengduanMountains = () => {
   };
 
 
+  const drawChinaClimateDistribution = (checked: boolean) => {
+    if (checked) {
+
+      if (chinaClimateDistributionRef.current?.length) {
+
+        chinaClimateDistributionRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/china/china-climate-distribution.geojson")
+          .then(res => res.json())
+          .then(data => {
+            // 为5种气候类型定义颜色方案
+            const climateColors: any = {
+              '高原山地气候': {
+                fill: Cesium.Color.fromCssColorString('#4A90E2').withAlpha(0.6), // 冷蓝色
+                stroke: Cesium.Color.fromCssColorString('#2C5AA0'),
+                textPosition: [92.09404483908936, 34.53784283747934],
+              },
+              '热带季风气候': {
+                fill: Cesium.Color.fromCssColorString('#FF6B6B').withAlpha(0.6), // 暖红色
+                stroke: Cesium.Color.fromCssColorString('#D64545'),
+                textPosition: [100.81780521173025, 22.46855638524489],
+              },
+              '温带大陆性气候': {
+                fill: Cesium.Color.fromCssColorString('#FFA726').withAlpha(0.6), // 橙色
+                stroke: Cesium.Color.fromCssColorString('#F57C00'),
+                textPosition: [107.72144131427258, 40.440585432301184],
+              },
+              '亚热带季风气候': {
+                fill: Cesium.Color.fromCssColorString('#66BB6A').withAlpha(0.6), // 绿色
+                stroke: Cesium.Color.fromCssColorString('#388E3C'),
+                textPosition: [109.47667037219985, 29.4584931073585],
+              },
+              '温带季风气候': {
+                fill: Cesium.Color.fromCssColorString('#AB47BC').withAlpha(0.6), // 紫色
+                stroke: Cesium.Color.fromCssColorString('#8E24AA'),
+                textPosition: [112.99830415726292, 36.593583520746385],
+              }
+            };
+
+            // 获取所有唯一的名称
+            const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))];
+
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.BLACK.withAlpha(0),
+              strokeWidth: 0,
+              fill: Cesium.Color.WHITE.withAlpha(0)
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource);
+
+              const entities = dataSource.entities.values;
+              chinaClimateDistributionRef.current = entities;
+
+              // 根据气候类型设置颜色
+              entities.forEach(entity => {
+                const climateType = entity.name;
+                if (climateType && climateColors[climateType]) {
+                  const colorScheme = climateColors[climateType];
+                  if (entity.polygon) {
+                    entity.polygon.material = colorScheme.fill;
+                    // @ts-ignore
+                    entity.polygon.outline = false;
+                    entity.polygon.outlineColor = colorScheme.stroke;
+                    // @ts-ignore
+                    entity.polygon.outlineWidth = 0;
+                  }
+                }
+              });
+
+              // 添加文字标签
+              Object.keys(climateColors).forEach(climateType => {
+                const colorScheme = climateColors[climateType];
+                if (colorScheme.textPosition) {
+                  const [longitude, latitude] = colorScheme.textPosition;
+
+                  // 创建文字标签
+                  const text = viewerRef.current!.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
+                    label: {
+                      text: climateType,
+                      font: '16pt Microsoft YaHei', // 使用微软雅黑字体，更清晰
+                      fillColor: Cesium.Color.WHITE,
+                      outlineColor: Cesium.Color.BLACK, // 黑色描边，增加可读性
+                      outlineWidth: 3,
+                      pixelOffset: new Cesium.Cartesian2(0, 0),
+                      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                      scale: 1.0,
+                      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                      verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                      showBackground: false
+                    }
+                  });
+
+                  chinaClimateDistributionRef.current.push(text)
+                }
+              });
+
+              console.log("气候分布分类:", uniqueNames);
+            });
+          });
+      }
+
+    } else {
+      chinaClimateDistributionRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  };
+
+
   const guiControls = {
     drawProvince: false,
     drawHengduanMountainsDiagram: true,
@@ -691,6 +806,7 @@ const HengduanMountains = () => {
     drawMinjiangRiver: false,
     drawYalongjiangRiver: false,
     drawDaduheRiver: false,
+    drawChinaClimateDistribution: false,
     drawPanda: false,
 
     drawShanshu: false,
@@ -718,9 +834,12 @@ const HengduanMountains = () => {
 
     const mainRiverControls = guiRef.current.addFolder('主要河流');
 
-    const animalsControls = guiRef.current.addFolder('动物分布');
+    const climateControls = guiRef.current.addFolder('气候');
 
-    const plantControls = guiRef.current.addFolder('植被分布');
+    const plantControls = guiRef.current.addFolder('植被');
+
+    const animalsControls = guiRef.current.addFolder('动物');
+
 
     /* 主要区域 */
 
@@ -827,6 +946,11 @@ const HengduanMountains = () => {
           destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.80768620, 2000000),
         });
       }
+    })
+
+    /* 气候 */
+    climateControls.add(guiControls, 'drawChinaClimateDistribution').name('相关气候分布').onChange((value: boolean) => {
+      drawChinaClimateDistribution(value)
     })
 
     /* 动物分布 */
