@@ -23,6 +23,8 @@ const HengduanMountains = () => {
   const yalongjiangRiverRef = useRef<Cesium.Entity[]>([]);
   const daduheRiverRef = useRef<Cesium.Entity[]>([]);
   const chinaClimateDistributionRef = useRef<Cesium.Entity[]>([]);
+  const chinaSoilDistributionRef = useRef<Cesium.Entity[]>([]);
+  const chinaPlantDistributionRef = useRef<Cesium.Entity[]>([]);
 
   const pandaRef = useRef<any[]>([]);
 
@@ -793,6 +795,301 @@ const HengduanMountains = () => {
     }
   };
 
+  const drawChinaSoilDistribution = (checked: boolean) => {
+    if (checked) {
+
+      if (chinaSoilDistributionRef.current?.length) {
+
+        chinaSoilDistributionRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/china/china-soil-distribution.geojson")
+          .then(res => res.json())
+          .then(data => {
+            // 为土壤类型定义颜色方案
+            const soilColors: any = {
+              '砖红壤': {
+                fill: Cesium.Color.fromCssColorString('#8B4513').withAlpha(0.6), // 红棕色
+                stroke: Cesium.Color.fromCssColorString('#654321'),
+                textPosition: [109.60266864561984, 18.925205005894433], // 海南附近
+              },
+              '灰漠土': {
+                fill: Cesium.Color.fromCssColorString('#A9A9A9').withAlpha(0.6), // 灰色
+                stroke: Cesium.Color.fromCssColorString('#696969'),
+                textPosition: [85.0, 45.0], // 新疆北部
+              },
+              '棕漠土': {
+                fill: Cesium.Color.fromCssColorString('#D2691E').withAlpha(0.6), // 棕色
+                stroke: Cesium.Color.fromCssColorString('#8B4513'),
+                textPosition: [90.0, 40.0], // 新疆南部
+              },
+              '黑钙土': {
+                fill: Cesium.Color.fromCssColorString('#2F4F4F').withAlpha(0.6), // 深灰色
+                stroke: Cesium.Color.fromCssColorString('#000000'),
+                textPosition: [111.19799358960789, 40.26795863764495], // 内蒙古东部
+              },
+              '亚高山草原土带': {
+                fill: Cesium.Color.fromCssColorString('#61fd61ff').withAlpha(0.6), // 淡绿色
+                stroke: Cesium.Color.fromCssColorString('#556B2F'),
+                textPosition: [88.9329247937849, 28.597591991570404], // 青藏高原
+              },
+              '灰钙土': {
+                fill: Cesium.Color.fromCssColorString('#D3D3D3').withAlpha(0.6), // 浅灰色
+                stroke: Cesium.Color.fromCssColorString('#A9A9A9'),
+                textPosition: [102.59440658804448, 36.02267693298963], // 甘肃、宁夏
+              },
+              '黑土': {
+                fill: Cesium.Color.fromCssColorString('#2F2F2F').withAlpha(0.6), // 近黑色
+                stroke: Cesium.Color.fromCssColorString('#000000'),
+                textPosition: [128.99970312431063, 45.634047159130965], // 东北地区
+              },
+              '寒棕土': {
+                fill: Cesium.Color.fromCssColorString('#8B7355').withAlpha(0.6), // 冷棕色
+                stroke: Cesium.Color.fromCssColorString('#696969'),
+                textPosition: [122.94437565648104, 52.214359020658], // 黑龙江北部
+              },
+              '棕壤': {
+                fill: Cesium.Color.fromCssColorString('#A0522D').withAlpha(0.6), // 标准棕色
+                stroke: Cesium.Color.fromCssColorString('#8B4513'),
+                textPosition: [115.0, 35.0], // 华北地区
+              },
+              '黄棕壤': {
+                fill: Cesium.Color.fromCssColorString('#DAA520').withAlpha(0.6), // 黄棕色
+                stroke: Cesium.Color.fromCssColorString('#B8860B'),
+                textPosition: [113.66903286043595, 31.508797605755067], // 长江中下游
+              },
+              '赤红壤': {
+                fill: Cesium.Color.fromCssColorString('#DC143C').withAlpha(0.6), // 赤红色
+                stroke: Cesium.Color.fromCssColorString('#B22222'),
+                textPosition: [100.68825517044883, 23.042228682822703], // 广东、广西
+              },
+              '红壤': {
+                fill: Cesium.Color.fromCssColorString('#CD5C5C').withAlpha(0.6), // 红色
+                stroke: Cesium.Color.fromCssColorString('#B22222'),
+                textPosition: [115.0, 26.0], // 福建、江西
+              },
+              '高山漠土带': {
+                fill: Cesium.Color.fromCssColorString('#708090').withAlpha(0.6), // 石板灰色
+                stroke: Cesium.Color.fromCssColorString('#2F4F4F'),
+                textPosition: [78.44630649651444, 36.17994722511998], // 青藏高原西部
+              },
+              '亚高山漠土带': {
+                fill: Cesium.Color.fromCssColorString('#46525eff').withAlpha(0.6), // 浅石板灰色
+                stroke: Cesium.Color.fromCssColorString('#696969'),
+                textPosition: [79.97242147078896, 33.4684656396256], // 青藏高原中部
+              },
+              '高山草原土带': {
+                fill: Cesium.Color.fromCssColorString('#4d4545ff').withAlpha(0.6), // 淡绿色
+                stroke: Cesium.Color.fromCssColorString('#32CD32'),
+                textPosition: [85.91594544886775, 32.84534541395958], // 青藏高原东部
+              },
+              '高山草甸土带': {
+                fill: Cesium.Color.fromCssColorString('#115311ff').withAlpha(0.6), // 草绿色
+                stroke: Cesium.Color.fromCssColorString('#3CB371'),
+                textPosition: [97.3786945658124, 34.218864101076356], // 青藏高原东南部
+              }
+            };
+
+            // 获取所有唯一的名称
+            const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))];
+
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.BLACK.withAlpha(0),
+              strokeWidth: 0,
+              fill: Cesium.Color.WHITE.withAlpha(0)
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource);
+
+              const entities = dataSource.entities.values;
+              chinaSoilDistributionRef.current = entities; // 假设您有这个引用
+
+              // 根据土壤类型设置颜色
+              entities.forEach(entity => {
+                const soilType = entity.name;
+                if (soilType && soilColors[soilType]) {
+                  const colorScheme = soilColors[soilType];
+                  if (entity.polygon) {
+                    entity.polygon.material = colorScheme.fill;
+                    // @ts-ignore
+                    entity.polygon.outline = false;
+                    entity.polygon.outlineColor = colorScheme.stroke;
+                    // @ts-ignore
+                    entity.polygon.outlineWidth = 0;
+                  }
+                }
+              });
+
+              // 添加土壤类型文字标签
+              Object.keys(soilColors).forEach(soilType => {
+                const colorScheme = soilColors[soilType];
+                if (colorScheme.textPosition) {
+                  const [longitude, latitude] = colorScheme.textPosition;
+
+                  // 创建文字标签
+                  const text = viewerRef.current!.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
+                    label: {
+                      text: soilType,
+                      font: '14pt Microsoft YaHei', // 稍小一点的字体，因为名称较长
+                      fillColor: Cesium.Color.WHITE,
+                      outlineColor: Cesium.Color.BLACK,
+                      outlineWidth: 3,
+                      pixelOffset: new Cesium.Cartesian2(0, 0),
+                      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                      verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                    }
+                  });
+
+                  chinaSoilDistributionRef.current.push(text)
+                }
+              });
+
+              console.log("土壤分布分类:", uniqueNames);
+            });
+          });
+      }
+
+    } else {
+      chinaSoilDistributionRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  };
+
+  const drawChinaPlantDistribution = (checked: boolean) => {
+    if (checked) {
+
+      if (chinaPlantDistributionRef.current?.length) {
+
+        chinaPlantDistributionRef.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+
+        fetch(window.$$prefix + "/data/china/china-plant-distribution.geojson")
+          .then(res => res.json())
+          .then(data => {
+            // 为植被带类型定义颜色方案
+            const plantColors: any = {
+              '温带荒漠带': {
+                fill: Cesium.Color.fromCssColorString('#F0E68C').withAlpha(0.6), // 沙黄色
+                stroke: Cesium.Color.fromCssColorString('#DAA520'),
+                textPosition: [85.0, 42.0], // 新疆荒漠地区
+              },
+              '热带雨林带': {
+                fill: Cesium.Color.fromCssColorString('#228B22').withAlpha(0.6), // 深绿色
+                stroke: Cesium.Color.fromCssColorString('#006400'),
+                textPosition: [110.0, 18.0], // 海南、西双版纳
+              },
+              '寒温带针叶林': {
+                fill: Cesium.Color.fromCssColorString('#91a098ff').withAlpha(0.6), // 海绿色
+                stroke: Cesium.Color.fromCssColorString('#1E5B3A'),
+                textPosition: [122.0, 52.0], // 大兴安岭北部
+              },
+              '温带针叶阔叶林': {
+                fill: Cesium.Color.fromCssColorString('#3CB371').withAlpha(0.6), // 中绿色
+                stroke: Cesium.Color.fromCssColorString('#2E8B57'),
+                textPosition: [129.9085890708368, 45.408358156786555], // 小兴安岭、长白山
+              },
+              '温带草原带': {
+                fill: Cesium.Color.fromCssColorString('#486d48ff').withAlpha(0.6), // 浅绿色
+                stroke: Cesium.Color.fromCssColorString('#6B8E23'),
+                textPosition: [112.0, 44.0], // 内蒙古草原
+              },
+              '暖温带落叶阔叶林': {
+                fill: Cesium.Color.fromCssColorString('#32CD32').withAlpha(0.6), // 黄绿色
+                stroke: Cesium.Color.fromCssColorString('#228B22'),
+                textPosition: [115.0, 36.0], // 华北地区
+              },
+              '亚热带常绿阔叶林': {
+                fill: Cesium.Color.fromCssColorString('#008000').withAlpha(0.6), // 纯绿色
+                stroke: Cesium.Color.fromCssColorString('#006400'),
+                textPosition: [115.0, 28.0], // 长江以南地区
+              },
+              '高原植被': {
+                fill: Cesium.Color.fromCssColorString('#969696ff').withAlpha(0.6), // 淡绿色
+                stroke: Cesium.Color.fromCssColorString('#7CFC00'),
+                textPosition: [92.0, 32.0], // 青藏高原
+              }
+            };
+
+            // 获取所有唯一的名称
+            const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))];
+
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.BLACK.withAlpha(0),
+              strokeWidth: 0,
+              fill: Cesium.Color.WHITE.withAlpha(0)
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource);
+
+              const entities = dataSource.entities.values;
+              chinaPlantDistributionRef.current = entities; // 假设您有这个引用
+
+              // 根据植被带类型设置颜色
+              entities.forEach(entity => {
+                const vegetationType = entity.name;
+                if (vegetationType && plantColors[vegetationType]) {
+                  const colorScheme = plantColors[vegetationType];
+                  if (entity.polygon) {
+                    entity.polygon.material = colorScheme.fill;
+                    // @ts-ignore
+                    entity.polygon.outline = false;
+                    entity.polygon.outlineColor = colorScheme.stroke;
+                    // @ts-ignore
+                    entity.polygon.outlineWidth = 0;
+                  }
+                }
+              });
+
+              // 添加植被带类型文字标签
+              Object.keys(plantColors).forEach(vegetationType => {
+                const colorScheme = plantColors[vegetationType];
+                if (colorScheme.textPosition) {
+                  const [longitude, latitude] = colorScheme.textPosition;
+
+                  // 创建文字标签
+                  const text = viewerRef.current!.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
+                    label: {
+                      text: vegetationType,
+                      font: '14pt Microsoft YaHei',
+                      fillColor: Cesium.Color.WHITE,
+                      outlineColor: Cesium.Color.BLACK,
+                      outlineWidth: 3,
+                      pixelOffset: new Cesium.Cartesian2(0, 0),
+                      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                      verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                      showBackground: true,
+                      backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
+                      backgroundPadding: new Cesium.Cartesian2(6, 4)
+                    }
+                  });
+
+                  chinaPlantDistributionRef.current.push(text)
+                }
+              });
+
+              console.log("植被带分布分类:", uniqueNames);
+            });
+          });
+      }
+
+    } else {
+      chinaPlantDistributionRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  };
+
+
 
   const guiControls = {
     drawProvince: false,
@@ -807,6 +1104,8 @@ const HengduanMountains = () => {
     drawYalongjiangRiver: false,
     drawDaduheRiver: false,
     drawChinaClimateDistribution: false,
+    drawChinaSoilDistribution: false,
+    drawChinaPlantDistribution: false,
     drawPanda: false,
 
     drawShanshu: false,
@@ -836,13 +1135,16 @@ const HengduanMountains = () => {
 
     const climateControls = guiRef.current.addFolder('气候');
 
+    const soilControls = guiRef.current.addFolder('土壤');
+
     const plantControls = guiRef.current.addFolder('植被');
+
+
 
     const animalsControls = guiRef.current.addFolder('动物');
 
 
     /* 主要区域 */
-
     mainAreaControls.add(guiControls, 'drawProvince').name('相关省域').onChange((value: boolean) => {
       drawProvince(value)
     })
@@ -953,6 +1255,11 @@ const HengduanMountains = () => {
       drawChinaClimateDistribution(value)
     })
 
+    /* 土壤分布 */
+    soilControls.add(guiControls, 'drawChinaSoilDistribution').name('相关土壤分布').onChange((value: boolean) => {
+      drawChinaSoilDistribution(value)
+    })
+
     /* 动物分布 */
     animalsControls.add(guiControls, 'drawPanda').name('熊猫').onChange((value: boolean) => {
       if (value) {
@@ -971,7 +1278,14 @@ const HengduanMountains = () => {
     })
 
     /* 植被分布 */
-    plantControls.add(guiControls, 'drawShanshu').name('滇冷杉').onChange((value: boolean) => {
+    plantControls.add(guiControls, 'drawChinaPlantDistribution').name('相关植被分布').onChange((value: boolean) => {
+      drawChinaPlantDistribution(value)
+    })
+
+    /* 典型植被 */
+    const typeicalPlantControls = plantControls.addFolder('典型植被');
+
+    typeicalPlantControls.add(guiControls, 'drawShanshu').name('滇冷杉').onChange((value: boolean) => {
 
       if (value) {
         viewerRef.current!.camera.flyTo({

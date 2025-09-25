@@ -11,6 +11,10 @@ body,
   overflow: auto;
 }
 
+.lil-gui.root > button.title {
+  height: 40px;
+}
+
 .ant-notification {
   height: 100%;
 }
