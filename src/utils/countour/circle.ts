@@ -183,6 +183,11 @@ class CircleContour {
               style: Cesium.LabelStyle.FILL_AND_OUTLINE,
               verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
               pixelOffset: new Cesium.Cartesian2(0, -10), // 稍微向上偏移一点
+              showBackground: true,
+              backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
+              backgroundPadding: new Cesium.Cartesian2(6, 4),
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
             },
           })
 

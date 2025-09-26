@@ -1,9 +1,3 @@
-/*
- * 等高线绘制主类
- * @author BJGiser
- * @date 2024/03/27
- */
-
 import * as Cesium from 'cesium'
 import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/turf'
 import CreateRemindertip from './tips'
@@ -188,10 +182,17 @@ class DiyShape {
                 style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                 verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                 pixelOffset: new Cesium.Cartesian2(0, -50), // 稍微向上偏移一点
+                showBackground: true,
+                backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
+                backgroundPadding: new Cesium.Cartesian2(6, 4),
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
               },
             })
 
             $this.buttonEntity = buttonEntity
+          } else {
+            $this.buttonEntity.position = pointEntity.position
           }
         }
 

@@ -126,11 +126,12 @@ export const drawHengduanMountainsDiagram = (checked: boolean, viewerRef: React.
 
             HengduanMountainsDiagramRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.98771658991963, 30.29968842554559),
+                position: Cesium.Cartesian3.fromDegrees(99.9156783576662, 28.506240020807176),
                 label: {
                   text: '横断山区',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.ORANGE,
                 },
               })
             )
@@ -149,7 +150,7 @@ export const drawChangjiangRiver = (checked: boolean, viewerRef: React.RefObject
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(107.7708852, 31.14346632, 2668006.5),
+      destination: Cesium.Cartesian3.fromDegrees(107.7708852, 31.14346632, 3527892.68),
       orientation: {
         heading: 6.283185307179581,
         pitch: -1.5705328303764619,
@@ -182,6 +183,7 @@ export const drawChangjiangRiver = (checked: boolean, viewerRef: React.RefObject
                   text: '长江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -200,12 +202,12 @@ export const drawLancangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.14956911, 28.18666404, 2255604.99),
+      destination: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249, 3527892.68),
       orientation: {
-        heading: 6.283185307179585,
-        pitch: -1.5703257890797402,
-        roll: 0,
-      },
+        heading: 6.2831853071795845,
+        pitch: -1.5702702380948708,
+        roll: 0
+      }
     })
 
     if (lancangRiverRef.current?.length) {
@@ -233,6 +235,7 @@ export const drawLancangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
                   text: '澜沧江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -251,7 +254,7 @@ export const drawNujiangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(96.03191605, 28.98714853, 1998406.69),
+      destination: Cesium.Cartesian3.fromDegrees(96.03191605, 28.98714853, 3527892.68),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5705376995527884,
@@ -284,6 +287,7 @@ export const drawNujiangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
                   text: '怒江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -334,6 +338,7 @@ export const drawDulongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
                   text: '独龙江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -352,12 +357,12 @@ export const drawJinshajiangRiver = (checked: boolean, viewerRef: React.RefObjec
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.20323995, 27.63797317, 1997987.78),
+      destination: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249, 3527892.68),
       orientation: {
-        heading: 6.283185307179586,
-        pitch: -1.5704505892827205,
-        roll: 0,
-      },
+        heading: 6.2831853071795845,
+        pitch: -1.5702702380948708,
+        roll: 0
+      }
     })
 
     if (jinshajiangRiverRef.current?.length) {
@@ -385,6 +390,7 @@ export const drawJinshajiangRiver = (checked: boolean, viewerRef: React.RefObjec
                   text: '金沙江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -403,7 +409,7 @@ export const drawMinjiangRiver = (checked: boolean, viewerRef: React.RefObject<C
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(102.59084722, 29.99187433, 1998726.91),
+      destination: Cesium.Cartesian3.fromDegrees(102.59084722, 29.99187433, 3527892.68),
       orientation: {
         heading: 8.881784197001252e-16,
         pitch: -1.5705984938492015,
@@ -436,6 +442,7 @@ export const drawMinjiangRiver = (checked: boolean, viewerRef: React.RefObject<C
                   text: '岷江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -454,7 +461,7 @@ export const drawYalongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.49758224, 31.11454042, 2002648.82),
+      destination: Cesium.Cartesian3.fromDegrees(98.49758224, 31.11454042, 3527892.68),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707504947616706,
@@ -486,6 +493,7 @@ export const drawYalongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
                   text: '雅砻江',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -504,7 +512,7 @@ export const drawDaduheRiver = (checked: boolean, viewerRef: React.RefObject<Ces
   if (checked) {
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(101.60958657, 31.47050878, 1174339.69),
+      destination: Cesium.Cartesian3.fromDegrees(101.60958657, 31.47050878, 3527892.68),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.570685025933066,
@@ -537,6 +545,7 @@ export const drawDaduheRiver = (checked: boolean, viewerRef: React.RefObject<Ces
                   text: '大渡河',
                   font: '20px sans-serif',
                   ...labelConfig,
+                  fillColor: Cesium.Color.AQUA,
                 },
               })
             )
@@ -1301,7 +1310,7 @@ export const showGonggashanDetails = (value: boolean, notificationApi: Notificat
 /** @description  三江并流 */
 export const showSanjiangbingliuDetails = (value: boolean, notificationApi: NotificationInstance, viewerRef: React.RefObject<Cesium.Viewer | null>) => {
   viewerRef.current!.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(98.45607352, 28.12476188, 1998137.41),
+    destination: Cesium.Cartesian3.fromDegrees(98.45607352, 28.12476188, 3527892.68),
     orientation: {
       heading: 1.7763568394002505e-15,
       pitch: -1.5707142551692401,
@@ -1358,4 +1367,416 @@ export const initHigherMountainPonit = (viewerRef: React.RefObject<Cesium.Viewer
       instance,
     }
   })
+}
+
+/** @description 伯舒拉岭-高黎贡山 */
+export const drawBoshulaling = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, boshulalingRef: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.30),
+      orientation: {
+        heading: 6.283185307179583,
+        pitch: -1.5705000185647013,
+        roll: 0
+      }
+    });
+
+    if (boshulalingRef.current?.length) {
+      boshulalingRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/boshulaling-gaoligongshan.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            boshulalingRef.current = dataSource.entities.values
+
+            boshulalingRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(97.34634157900587,
+                  29.0430861127563),
+                label: {
+                  text: '伯舒拉岭',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+            /* viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(98.29562051, 28.14677066, 3036.39),
+                orientation: {
+                    heading: 6.16180360604343,
+                    pitch: -0.5573008123218886,
+                    roll: 6.283169868518325
+                }
+            }); */
+            boshulalingRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(98.37378003814831,
+                  26.79269786960716),
+                label: {
+                  text: '高黎贡山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    boshulalingRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+
+/** @description 他念他翁山-怒山 */
+export const drawTaniantawengshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, taniantawengshanRef: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.30),
+      orientation: {
+        heading: 6.283185307179583,
+        pitch: -1.5705000185647013,
+        roll: 0
+      }
+    });
+
+    if (taniantawengshanRef.current?.length) {
+      taniantawengshanRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/taniantawengshan-nushan.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            taniantawengshanRef.current = dataSource.entities.values
+
+            taniantawengshanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(97.75085382769366,
+                  30.033816565649452),
+                label: {
+                  text: '他念他翁山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+
+            taniantawengshanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(99.04154615423067,
+                  26.225806715977225),
+                label: {
+                  text: '怒山',
+                  font: '20px sans-serif',
+
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    taniantawengshanRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+/** @description 芒康山-云岭 */
+export const drawMangkangshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, mangkangshanRef: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.00),
+      orientation: {
+        heading: 6.283185307179583,
+        pitch: -1.5703899551321632,
+        roll: 0
+      }
+    });
+
+    if (mangkangshanRef.current?.length) {
+      mangkangshanRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/mangkangshan-yunling.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            mangkangshanRef.current = dataSource.entities.values
+
+            mangkangshanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(98.40665629320692,
+                  30.489661468408304),
+                label: {
+                  text: '芒康山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+
+            mangkangshanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(99.40211213896258,
+                  26.80612247599627),
+                label: {
+                  text: '云岭',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    mangkangshanRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+/** @description 沙鲁里山 */
+export const drawShalulishan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, shalulishanRef: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.00),
+      orientation: {
+        heading: 6.283185307179583,
+        pitch: -1.5703899551321632,
+        roll: 0
+      }
+    });
+
+    if (shalulishanRef.current?.length) {
+      shalulishanRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/shalulishan.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            shalulishanRef.current = dataSource.entities.values
+
+            shalulishanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(99.50471900227845,
+                  31.08962223183079),
+                label: {
+                  text: '沙鲁里山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    shalulishanRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+/** @description 大雪山 */
+export const drawDaxueshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, daxueshanRef: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.00),
+      orientation: {
+        heading: 6.283185307179583,
+        pitch: -1.5703899551321632,
+        roll: 0
+      }
+    });
+
+    if (daxueshanRef.current?.length) {
+      daxueshanRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/daxueshan.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            daxueshanRef.current = dataSource.entities.values
+
+            daxueshanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(101.36515981045625,
+                  31.574323857583252),
+                label: {
+                  text: '大雪山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    daxueshanRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+/** @description 大雪山 */
+export const drawQionglaishan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, qionglaishan: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(104.47583212, 31.42273029, 1888526.93),
+      orientation: {
+        heading: 6.283185307179582,
+        pitch: -1.5702841970739416,
+        roll: 0
+      }
+    });
+
+    if (qionglaishan.current?.length) {
+      qionglaishan.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/qionglaishan.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            qionglaishan.current = dataSource.entities.values
+
+            qionglaishan.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(102.80395867428174,
+                  32.28643306644907),
+                label: {
+                  text: '邛崃山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    qionglaishan.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+/** @description 大雪山 */
+export const drawMinshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, minshanRef: React.RefObject<Cesium.Entity[]>) => {
+  if (checked) {
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(107.18146906, 31.31457030, 3528324.44),
+      orientation: {
+        heading: 6.283185307179586,
+        pitch: -1.5705239714367836,
+        roll: 0
+      }
+    });
+
+    if (minshanRef.current?.length) {
+      minshanRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/minshan.geojson')
+        .then(res => res.json())
+        .then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            minshanRef.current = dataSource.entities.values
+
+            minshanRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(104.0434617314983,
+                  32.7493986221671),
+                label: {
+                  text: '岷山',
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+                },
+              })
+            )
+          })
+        })
+    }
+  } else {
+    minshanRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
 }

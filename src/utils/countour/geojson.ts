@@ -138,6 +138,8 @@ class DrawShapeByGeojson {
     }
 
     const linesJson = isolines(grid, breaks, { zProperty: 'height' })
+
+    console.log(linesJson, 'linesJson')
     const _countorLine = Cesium.GeoJsonDataSource.load(linesJson, { clampToGround: true })
 
     _countorLine.then(function (dataSource) {

@@ -4,21 +4,28 @@ import * as gui from 'lil-gui'
 import SampleLabel from '@/utils/plugins/sample-label'
 import { notification } from 'antd'
 import {
+  drawBoshulaling,
   drawChangjiangRiver,
   drawChinaBoundary,
   drawChinaClimateDistribution,
   drawChinaPlantDistribution,
   drawChinaSoilDistribution,
   drawDaduheRiver,
+  drawDaxueshan,
   drawDulongjiangRiver,
   drawHengduanMountainsDiagram,
   drawJinshajiangRiver,
   drawLancangRiver,
+  drawMangkangshan,
   drawMinjiangRiver,
+  drawMinshan,
   drawNujiangRiver,
   drawPanda,
   drawProvince,
+  drawQionglaishan,
+  drawShalulishan,
   drawShanshu,
+  drawTaniantawengshan,
   drawYalongjiangRiver,
   getCameraParams,
   initClickHandler,
@@ -55,6 +62,14 @@ const HengduanMountains = () => {
   const chinaSoilDistributionRef = useRef<Cesium.Entity[]>([])
   const chinaPlantDistributionRef = useRef<Cesium.Entity[]>([])
 
+  const boshulalingRef = useRef<Cesium.Entity[]>([])
+  const taniantawengshanRef = useRef<Cesium.Entity[]>([])
+  const mangkangshanRef = useRef<Cesium.Entity[]>([])
+  const shalulishanRef = useRef<Cesium.Entity[]>([])
+  const daxueshanRef = useRef<Cesium.Entity[]>([])
+  const qionglaishanRef = useRef<Cesium.Entity[]>([])
+  const minshanRef = useRef<Cesium.Entity[]>([])
+
   const pandaRef = useRef<Cesium.Model[]>([])
 
   const shanshuRef = useRef<Cesium.Model[]>([])
@@ -85,8 +100,15 @@ const HengduanMountains = () => {
     drawChinaSoilDistribution: false,
     drawChinaPlantDistribution: false,
     drawPanda: false,
-
     drawShanshu: false,
+
+    drawBoshulaling: false,
+    drawTaniantawengshan: false,
+    drawMangkangshan: false,
+    drawShalulishan: false,
+    drawDaxueshan: false,
+    drawQionglaishan: false,
+    drawMinshan: false,
 
     getCameraParams: () => {
       getCameraParams(viewerRef)
@@ -135,6 +157,8 @@ const HengduanMountains = () => {
 
     const mainAreaControls = guiRef.current.addFolder('主要区域')
 
+    const mainMountainsControls = guiRef.current.addFolder('主要山脉')
+
     const mainRiverControls = guiRef.current.addFolder('主要河流')
 
     const climateControls = guiRef.current.addFolder('气候')
@@ -165,6 +189,57 @@ const HengduanMountains = () => {
       .name('最高峰')
       .onChange((value: boolean) => {
         showGonggashanDetails(value, notificationApi, viewerRef, higherMountainPonitInstanceList)
+      })
+
+
+    /* 主要山脉 */
+    mainMountainsControls
+      .add(guiControls, 'drawBoshulaling')
+      .name('伯舒拉岭-高黎贡山')
+      .onChange((value: boolean) => {
+        drawBoshulaling(value, viewerRef, boshulalingRef)
+      })
+
+    mainMountainsControls
+      .add(guiControls, 'drawTaniantawengshan')
+      .name('他念他翁山-怒山')
+      .onChange((value: boolean) => {
+        drawTaniantawengshan(value, viewerRef, taniantawengshanRef)
+      })
+
+    mainMountainsControls
+      .add(guiControls, 'drawMangkangshan')
+      .name('芒康山-云岭')
+      .onChange((value: boolean) => {
+        drawMangkangshan(value, viewerRef, mangkangshanRef)
+      })
+
+    mainMountainsControls
+      .add(guiControls, 'drawShalulishan')
+      .name('沙鲁里山')
+      .onChange((value: boolean) => {
+        drawShalulishan(value, viewerRef, shalulishanRef)
+      })
+
+    mainMountainsControls
+      .add(guiControls, 'drawDaxueshan')
+      .name('大雪山')
+      .onChange((value: boolean) => {
+        drawDaxueshan(value, viewerRef, daxueshanRef)
+      })
+
+    mainMountainsControls
+      .add(guiControls, 'drawQionglaishan')
+      .name('邛崃山')
+      .onChange((value: boolean) => {
+        drawQionglaishan(value, viewerRef, qionglaishanRef)
+      })
+
+    mainMountainsControls
+      .add(guiControls, 'drawMinshan')
+      .name('岷山')
+      .onChange((value: boolean) => {
+        drawMinshan(value, viewerRef, minshanRef)
       })
 
     /* 主要河流 */
