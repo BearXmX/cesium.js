@@ -4,11 +4,9 @@ import { Viewer, Cartesian3, Cartesian2, SceneTransforms } from 'cesium'
 interface options {
   defaultVisible?: boolean
   clickCallback?: () => void
-  containerBackgroundUrlType?: 'normal' | 'position' | 'story' | 'subsection'
+  containerBackgroundUrlType?: 'normal' | 'position' | 'story' | 'subsection' | 'panda' | 'tree'
   indicationLineColor?: string
 }
-
-const defaultIconType = ['normal', 'position', 'story', 'subsection']
 
 class SampleLabel {
   viewer: Viewer
@@ -57,7 +55,7 @@ class SampleLabel {
 
     // 如果点不在屏幕内
     if (!windowPosition) {
-      this.container.style.display = 'none'
+      /*       this.container.style.display = 'none' */
       return
     }
 

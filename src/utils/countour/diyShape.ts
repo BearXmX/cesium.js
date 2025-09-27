@@ -337,6 +337,7 @@ class DiyShape {
     }
 
     const linesJson = isolines(grid, breaks, { zProperty: 'height' })
+
     const _countorLine = Cesium.GeoJsonDataSource.load(linesJson, { clampToGround: true })
 
     _countorLine.then(function (dataSource) {

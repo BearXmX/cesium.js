@@ -1,6 +1,8 @@
 import SampleLabel from '@/utils/plugins/sample-label'
 import type { NotificationInstance } from 'antd/es/notification/interface'
 import * as Cesium from 'cesium'
+import Panda from './panda'
+import Dianlengshan from './dianlengshan'
 
 export type sampleLabelType = {
   position: Cesium.Cartesian3
@@ -43,7 +45,7 @@ export const getCameraParams = (viewerRef: React.RefObject<Cesium.Viewer | null>
 }
 
 /** @description 点击事件 */
-export const initClickHandler = (viewerRef: React.RefObject<Cesium.Viewer | null>,) => {
+export const initClickHandler = (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
   const handler = new Cesium.ScreenSpaceEventHandler(viewerRef.current!.scene.canvas)
 
   handler.setInputAction((movement: { position: Cesium.Cartesian2 }) => {
@@ -85,7 +87,6 @@ export const labelConfig = {
 
 /** @description 绘制国界 */
 export const drawChinaBoundary = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>) => {
-
   if (checked) {
     fetch(window.$$prefix + '/data/china/china-boundary.geojson')
       .then(res => res.json())
@@ -100,18 +101,44 @@ export const drawChinaBoundary = (checked: boolean, viewerRef: React.RefObject<C
         })
       })
   }
-
-
 }
 
 /** @description 横断山区 */
-export const drawHengduanMountainsDiagram = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, HengduanMountainsDiagramRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawHengduanMountainsDiagram = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  HengduanMountainsDiagramRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
     if (HengduanMountainsDiagramRef.current?.length) {
       HengduanMountainsDiagramRef.current.forEach(item => {
         item.show = true
       })
     } else {
+      fetch(window.$$prefix + '/data/china/aaa.geojson')
+        .then(res => res.json())
+        .then(data => {
+          const list = []
+
+          data.features.forEach((item: any) => {
+            const parmas = {
+              features: [] as any,
+              type: 'FeatureCollection',
+            }
+            parmas.features.push(item)
+
+            Cesium.GeoJsonDataSource.load(parmas, {
+              stroke: Cesium.Color.fromCssColorString(item.properties.color),
+              fill: Cesium.Color.fromCssColorString(item.properties.color).withAlpha(0.5),
+              strokeWidth: 2,
+              markerSymbol: 'circle',
+              clampToGround: true,
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource)
+            })
+          })
+        })
+
       fetch(window.$$prefix + '/data/hengduan-mountains/hengduan-mountains-area.geojson')
         .then(res => res.json())
         .then(data => {
@@ -146,9 +173,12 @@ export const drawHengduanMountainsDiagram = (checked: boolean, viewerRef: React.
 }
 
 /** @description 长江 */
-export const drawChangjiangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, changjiangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawChangjiangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  changjiangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(107.7708852, 31.14346632, 3527892.68),
       orientation: {
@@ -171,6 +201,7 @@ export const drawChangjiangRiver = (checked: boolean, viewerRef: React.RefObject
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -198,16 +229,19 @@ export const drawChangjiangRiver = (checked: boolean, viewerRef: React.RefObject
 }
 
 /** @description 澜沧江 */
-export const drawLancangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, lancangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawLancangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  lancangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249, 3527892.68),
       orientation: {
         heading: 6.2831853071795845,
         pitch: -1.5702702380948708,
-        roll: 0
-      }
+        roll: 0,
+      },
     })
 
     if (lancangRiverRef.current?.length) {
@@ -223,6 +257,7 @@ export const drawLancangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -250,9 +285,12 @@ export const drawLancangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
 }
 
 /** @description 怒江 */
-export const drawNujiangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, nujiangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawNujiangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  nujiangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(96.03191605, 28.98714853, 3527892.68),
       orientation: {
@@ -275,6 +313,7 @@ export const drawNujiangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -302,9 +341,12 @@ export const drawNujiangRiver = (checked: boolean, viewerRef: React.RefObject<Ce
 }
 
 /** @description 独龙江 */
-export const drawDulongjiangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, dulongjiangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawDulongjiangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  dulongjiangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(98.59137891, 28.33325205, 715131.0),
       orientation: {
@@ -327,6 +369,7 @@ export const drawDulongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -353,16 +396,19 @@ export const drawDulongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
 }
 
 /** @description 金沙江 */
-export const drawJinshajiangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, jinshajiangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawJinshajiangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  jinshajiangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249, 3527892.68),
       orientation: {
         heading: 6.2831853071795845,
         pitch: -1.5702702380948708,
-        roll: 0
-      }
+        roll: 0,
+      },
     })
 
     if (jinshajiangRiverRef.current?.length) {
@@ -378,6 +424,7 @@ export const drawJinshajiangRiver = (checked: boolean, viewerRef: React.RefObjec
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -405,9 +452,12 @@ export const drawJinshajiangRiver = (checked: boolean, viewerRef: React.RefObjec
 }
 
 /** @description 岷江 */
-export const drawMinjiangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, minjiangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawMinjiangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  minjiangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(102.59084722, 29.99187433, 3527892.68),
       orientation: {
@@ -430,6 +480,7 @@ export const drawMinjiangRiver = (checked: boolean, viewerRef: React.RefObject<C
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -457,9 +508,12 @@ export const drawMinjiangRiver = (checked: boolean, viewerRef: React.RefObject<C
 }
 
 /** @description 雅砻江 */
-export const drawYalongjiangRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, yalongjiangRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawYalongjiangRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  yalongjiangRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(98.49758224, 31.11454042, 3527892.68),
       orientation: {
@@ -482,6 +536,7 @@ export const drawYalongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -508,9 +563,12 @@ export const drawYalongjiangRiver = (checked: boolean, viewerRef: React.RefObjec
 }
 
 /** @description 大渡河 */
-export const drawDaduheRiver = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, daduheRiverRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawDaduheRiver = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  daduheRiverRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(101.60958657, 31.47050878, 3527892.68),
       orientation: {
@@ -533,6 +591,7 @@ export const drawDaduheRiver = (checked: boolean, viewerRef: React.RefObject<Ces
             fill: Cesium.Color.AQUA.withAlpha(1),
             strokeWidth: 2,
             markerSymbol: 'circle',
+            clampToGround: true, // 贴地
           }).then(function (dataSource) {
             viewerRef.current!.dataSources.add(dataSource)
 
@@ -559,196 +618,9 @@ export const drawDaduheRiver = (checked: boolean, viewerRef: React.RefObject<Ces
   }
 }
 
-/** @description 杉树 */
-export const drawShanshu = async (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, shanshuRef: React.RefObject<Cesium.Model[]>) => {
-  if (!viewerRef.current) return
-
-  if (!checked) {
-    // 隐藏已有熊猫
-    shanshuRef.current?.forEach(model => {
-      model.show = false
-    })
-    return
-  }
-
-  viewerRef.current!.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(103.38251056, 32.59808678, 3105.23),
-    orientation: {
-      heading: 1.0299469580859508,
-      pitch: 0.08986601208615386,
-      roll: 0.0000027846895083172285,
-    },
-  })
-
-  if (shanshuRef.current?.length) {
-    // 已存在模型，显示即可
-    shanshuRef.current.forEach(model => {
-      model.show = true
-    })
-    return
-  }
-
-  // 熊猫列表
-  const pandaList = [
-    {
-      lon: 103.47117565227755,
-      lat: 32.63255030483799,
-      name: 'shanshu-01',
-      uri: window.$$prefix + '/models/tree/scene.gltf',
-      scale: 8,
-      rotation: { z: 0 },
-    },
-    {
-      lon: 103.48117565227755,
-      lat: 32.63255030483799,
-      name: 'shanshu-01',
-      uri: window.$$prefix + '/models/tree/scene.gltf',
-      scale: 8,
-      rotation: { z: 0 },
-    },
-  ]
-
-  // 转 Cartographic
-  const cartos = pandaList.map(item => Cesium.Cartographic.fromDegrees(item.lon, item.lat))
-
-  // 获取最精细地形高度
-  const updatedCartos = await Cesium.sampleTerrainMostDetailed(viewerRef.current.terrainProvider, cartos)
-
-  // 加载模型到 primitives
-  shanshuRef.current = []
-
-  for (let i = 0; i < pandaList.length; i++) {
-    const item = pandaList[i]
-    const carto = updatedCartos[i]
-
-    // 最终高度 = 地形高度 + 5 米偏移
-    const finalHeight = (carto.height || 0) + 1
-
-    const position = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, finalHeight)
-
-    // 朝向
-    const hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(item.rotation.z), 0, 0)
-
-    // 固定矩阵
-    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(position, hpr)
-
-    // 加载模型
-    const model = await Cesium.Model.fromGltfAsync({
-      url: item.uri,
-      modelMatrix,
-      scale: item.scale,
-    })
-
-    viewerRef.current.scene.primitives.add(model)
-    shanshuRef.current.push(model)
-  }
-}
-
-/** @description 大熊猫 */
-export const drawPanda = async (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, pandaRef: React.RefObject<Cesium.Model[]>) => {
-  if (!viewerRef.current) return
-
-  if (!checked) {
-    // 隐藏已有熊猫
-    pandaRef.current?.forEach(model => {
-      model.show = false
-    })
-    return
-  }
-
-  viewerRef.current!.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(103.37087154, 32.606162, 3017.33),
-    orientation: {
-      heading: 5.971222987539061,
-      pitch: 0.2683846352166457,
-      roll: 0.000003128307367816774,
-    },
-  })
-
-  if (pandaRef.current?.length) {
-    // 已存在模型，显示即可
-    pandaRef.current.forEach(model => {
-      model.show = true
-    })
-    return
-  }
-
-  // 熊猫列表
-  const pandaList = [
-    {
-      lon: 103.32256515068411,
-      lat: 32.704699998237025,
-      name: 'panda-01',
-      uri: window.$$prefix + '/models/panda/scene.gltf',
-      scale: 120,
-      rotation: { z: 90 },
-    },
-    {
-      lon: 103.32959582119511,
-      lat: 32.704699998237025,
-      name: 'panda-02',
-      uri: window.$$prefix + '/models/panda/scene.gltf',
-      scale: 120,
-      rotation: { z: 0 },
-    },
-    {
-      lon: 103.3388788815005,
-      lat: 32.704699998237025,
-      name: 'panda-03',
-      uri: window.$$prefix + '/models/panda/scene.gltf',
-      scale: 120,
-      rotation: { z: 180 },
-    },
-    {
-      lon: 103.34799934747307,
-      lat: 32.704699998237025,
-      name: 'panda-04',
-      uri: window.$$prefix + '/models/panda/scene.gltf',
-      scale: 120,
-      rotation: { z: 0 },
-    },
-  ]
-
-  // 转 Cartographic
-  const cartos = pandaList.map(item => Cesium.Cartographic.fromDegrees(item.lon, item.lat))
-
-  // 获取最精细地形高度
-  const updatedCartos = await Cesium.sampleTerrainMostDetailed(viewerRef.current.terrainProvider, cartos)
-
-  // 加载模型到 primitives
-  pandaRef.current = []
-
-  for (let i = 0; i < pandaList.length; i++) {
-    const item = pandaList[i]
-    const carto = updatedCartos[i]
-
-    // 最终高度 = 地形高度 + 5 米偏移
-    const finalHeight = (carto.height || 0) + 1
-    const position = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, finalHeight)
-
-    // 朝向
-    const hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(item.rotation.z), 0, 0)
-
-    // 固定矩阵
-    const modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(position, hpr)
-
-    // 加载模型
-    const model = await Cesium.Model.fromGltfAsync({
-      url: item.uri,
-      modelMatrix,
-      scale: item.scale,
-    })
-
-    viewerRef.current.scene.primitives.add(model)
-    pandaRef.current.push(model)
-  }
-
-}
-
 /** @description 相关省域 */
 export const drawProvince = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, provinceRef: React.RefObject<Cesium.Entity[]>) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(98.81428905, 30.26172082, 3156200.7),
       orientation: {
@@ -818,18 +690,20 @@ export const drawProvince = (checked: boolean, viewerRef: React.RefObject<Cesium
   }
 }
 
-
 /** @description 气候分布 */
-export const drawChinaClimateDistribution = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, chinaClimateDistributionRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawChinaClimateDistribution = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  chinaClimateDistributionRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(105.90676345, 35.09453359, 5884376.89),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707398108470874,
-        roll: 0
-      }
+        roll: 0,
+      },
     })
 
     if (chinaClimateDistributionRef.current?.length) {
@@ -930,15 +804,19 @@ export const drawChinaClimateDistribution = (checked: boolean, viewerRef: React.
 }
 
 /* 土壤分布 */
-export const drawChinaSoilDistribution = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, chinaSoilDistributionRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawChinaSoilDistribution = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  chinaSoilDistributionRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(105.90676345, 35.09453359, 5884376.89),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707398108470874,
-        roll: 0
-      }
+        roll: 0,
+      },
     })
 
     if (chinaSoilDistributionRef.current?.length) {
@@ -1094,16 +972,19 @@ export const drawChinaSoilDistribution = (checked: boolean, viewerRef: React.Ref
 }
 
 /** @description 植被分布 */
-export const drawChinaPlantDistribution = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, chinaPlantDistributionRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawChinaPlantDistribution = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  chinaPlantDistributionRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(105.90676345, 35.09453359, 5884376.89),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707398108470874,
-        roll: 0
-      }
+        roll: 0,
+      },
     })
 
     if (chinaPlantDistributionRef.current?.length) {
@@ -1219,17 +1100,24 @@ export const drawChinaPlantDistribution = (checked: boolean, viewerRef: React.Re
 }
 
 /** @description  滇冷杉介绍*/
-export const showShanshuDetails = (value: boolean, notificationApi: NotificationInstance) => {
+export const showDianlengshanDetails = (value: boolean, notificationApi: NotificationInstance) => {
   notificationApi.destroy()
   if (value) {
     notificationApi.info({
       message: `滇冷杉`,
       description: (
-        <div style={{ textIndent: '2em' }}>
-          <p>滇冷杉是分布于中国西南横断山脉及青藏高原东南缘的特有树种，多生长于海拔2500-4000米的高山针叶林带。 </p>
-          <p>其树冠呈尖塔形，叶片条形具芳香气味，球果成熟时呈黑褐色。</p>
-          <p>作为水源涵养林的主要组成树种，该物种在维持区域生态平衡中发挥重要作用。</p>
-          <p> 研究表明，第四纪冰期时滇冷杉曾以云南鹤庆盆地为避难所，现代分布区的稳定性与温度季节性和降雨季节性变化密切相关。</p>
+        <div>
+          <div style={{ textIndent: '2em' }}>
+            <p>滇冷杉是分布于中国西南横断山脉及青藏高原东南缘的特有树种，多生长于海拔2500-4000米的高山针叶林带。 </p>
+            <p>其树冠呈尖塔形，叶片条形具芳香气味，球果成熟时呈黑褐色。</p>
+            <p>作为水源涵养林的主要组成树种，该物种在维持区域生态平衡中发挥重要作用。</p>
+            <p> 研究表明，第四纪冰期时滇冷杉曾以云南鹤庆盆地为避难所，现代分布区的稳定性与温度季节性和降雨季节性变化密切相关。</p>
+          </div>
+
+          <br />
+          <div style={{ height: 300, width: '100%' }}>
+            <Dianlengshan></Dianlengshan>
+          </div>
         </div>
       ),
       placement: 'bottomLeft',
@@ -1247,10 +1135,17 @@ export const showPandaDetails = (value: boolean, notificationApi: NotificationIn
     notificationApi.info({
       message: `大熊猫`,
       description: (
-        <div style={{ textIndent: '2em' }}>
-          <p>大熊猫是中国特有的哺乳动物，属于熊科、大熊猫属，被誉为“活化石”和“中国国宝”。</p>
-          <p>它们栖息在海拔2600-3500米的茂密竹林中，以竹子为主要食物。</p>
-          <p>外表肥硕、黑白相间，善于爬树。野外寿命约18-20岁，数量有所增长，截至2021年1月，中国大熊猫野生种群达1864只。</p>
+        <div>
+          <div style={{ textIndent: '2em' }}>
+            <p>大熊猫是中国特有的哺乳动物，属于熊科、大熊猫属，被誉为“活化石”和“中国国宝”。</p>
+            <p>它们栖息在海拔2600-3500米的茂密竹林中，以竹子为主要食物。</p>
+            <p>外表肥硕、黑白相间，善于爬树。野外寿命约18-20岁，数量有所增长，截至2021年1月，中国大熊猫野生种群达1864只。</p>
+          </div>
+
+          <br />
+          <div style={{ height: 300, width: '100%' }}>
+            <Panda></Panda>
+          </div>
         </div>
       ),
       placement: 'bottomLeft',
@@ -1262,8 +1157,13 @@ export const showPandaDetails = (value: boolean, notificationApi: NotificationIn
 }
 
 /** @description 贡嘎山介绍 */
-export const showGonggashanDetails = (value: boolean, notificationApi: NotificationInstance, viewerRef: React.RefObject<Cesium.Viewer | null>, higherMountainPonitInstanceList: React.RefObject<sampleLabelType[]>) => {
-  higherMountainPonitInstanceList.current.forEach(item => {
+export const showGonggashanDetails = (
+  value: boolean,
+  notificationApi: NotificationInstance,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  higherMountainPointInstanceList: React.RefObject<sampleLabelType[]>
+) => {
+  higherMountainPointInstanceList.current.forEach(item => {
     item.instance.toggleVisible(value)
   })
 
@@ -1286,12 +1186,9 @@ export const showGonggashanDetails = (value: boolean, notificationApi: Notificat
           <p>贡嘎山（岷雅贡嘎，英语：Minya Konka），为横断山系大雪山主峰，被当地人称为木雅贡嘎。</p>
           <p>位于四川省甘孜藏族自治州康定市、泸定县、九龙县和雅安市石棉县之间。藏语的“贡”是冰雪之意，“嘎”为白色，意为白色冰山。</p>
           <p>
-            贡嘎山主峰海拔7508.9米（2023年公布
-            [18]），是四川省最高的山峰，被称为“蜀山之王”，为世界上高差最大的山之一，周围有海拔6000米上的高峰45座。
+            贡嘎山主峰海拔7508.9米（2023年公布 [18]），是四川省最高的山峰，被称为“蜀山之王”，为世界上高差最大的山之一，周围有海拔6000米上的高峰45座。
           </p>
-          <p>
-            贡嘎山北起康定折多山口，南抵泸定田湾河东到大渡河西至雅砻江。以贡嘎雪山为中心的贡嘎山风景名胜区是中国面积最大、环境容量最大的风景区。
-          </p>
+          <p>贡嘎山北起康定折多山口，南抵泸定田湾河东到大渡河西至雅砻江。以贡嘎雪山为中心的贡嘎山风景名胜区是中国面积最大、环境容量最大的风景区。</p>
           <p>在长期冰川作用下，山峰发育为锥状大角峰，周围绕着60°～70°的峭壁，攀登困难。</p>
           <p>
             贡嘎山有海螺沟、巴旺、燕子沟、磨子沟等冰川和木格措、五须海、巴旺海等高原湖泊以及康定二道桥等温泉，也是全球25个生物多样性热点地区之一。
@@ -1308,7 +1205,11 @@ export const showGonggashanDetails = (value: boolean, notificationApi: Notificat
 }
 
 /** @description  三江并流 */
-export const showSanjiangbingliuDetails = (value: boolean, notificationApi: NotificationInstance, viewerRef: React.RefObject<Cesium.Viewer | null>) => {
+export const showSanjiangbingliuDetails = (
+  value: boolean,
+  notificationApi: NotificationInstance,
+  viewerRef: React.RefObject<Cesium.Viewer | null>
+) => {
   viewerRef.current!.camera.flyTo({
     destination: Cesium.Cartesian3.fromDegrees(98.45607352, 28.12476188, 3527892.68),
     orientation: {
@@ -1347,9 +1248,11 @@ export const showSanjiangbingliuDetails = (value: boolean, notificationApi: Noti
 }
 
 /** @description  最高峰点位*/
-export const initHigherMountainPonit = (viewerRef: React.RefObject<Cesium.Viewer | null>, higherMountainPonitInstanceList: React.RefObject<sampleLabelType[]>) => {
-
-  higherMountainPonitInstanceList.current = [
+export const initHigherMountainPoint = (
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  higherMountainPointInstanceList: React.RefObject<sampleLabelType[]>
+) => {
+  higherMountainPointInstanceList.current = [
     {
       position: Cesium.Cartesian3.fromDegrees(101.88123898839554, 29.5935768399523, 7100.9),
       text: '贡嘎山',
@@ -1370,17 +1273,20 @@ export const initHigherMountainPonit = (viewerRef: React.RefObject<Cesium.Viewer
 }
 
 /** @description 伯舒拉岭-高黎贡山 */
-export const drawBoshulaling = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, boshulalingRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawBoshulaling = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  boshulalingRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.30),
+      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.3),
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5705000185647013,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (boshulalingRef.current?.length) {
       boshulalingRef.current.forEach(item => {
@@ -1401,8 +1307,7 @@ export const drawBoshulaling = (checked: boolean, viewerRef: React.RefObject<Ces
 
             boshulalingRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(97.34634157900587,
-                  29.0430861127563),
+                position: Cesium.Cartesian3.fromDegrees(97.34634157900587, 29.0430861127563),
                 label: {
                   text: '伯舒拉岭',
                   font: '20px sans-serif',
@@ -1421,8 +1326,7 @@ export const drawBoshulaling = (checked: boolean, viewerRef: React.RefObject<Ces
             }); */
             boshulalingRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(98.37378003814831,
-                  26.79269786960716),
+                position: Cesium.Cartesian3.fromDegrees(98.37378003814831, 26.79269786960716),
                 label: {
                   text: '高黎贡山',
                   font: '20px sans-serif',
@@ -1441,19 +1345,21 @@ export const drawBoshulaling = (checked: boolean, viewerRef: React.RefObject<Ces
   }
 }
 
-
 /** @description 他念他翁山-怒山 */
-export const drawTaniantawengshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, taniantawengshanRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawTaniantawengshan = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  taniantawengshanRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.30),
+      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.3),
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5705000185647013,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (taniantawengshanRef.current?.length) {
       taniantawengshanRef.current.forEach(item => {
@@ -1474,8 +1380,7 @@ export const drawTaniantawengshan = (checked: boolean, viewerRef: React.RefObjec
 
             taniantawengshanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(97.75085382769366,
-                  30.033816565649452),
+                position: Cesium.Cartesian3.fromDegrees(97.75085382769366, 30.033816565649452),
                 label: {
                   text: '他念他翁山',
                   font: '20px sans-serif',
@@ -1487,8 +1392,7 @@ export const drawTaniantawengshan = (checked: boolean, viewerRef: React.RefObjec
 
             taniantawengshanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.04154615423067,
-                  26.225806715977225),
+                position: Cesium.Cartesian3.fromDegrees(99.04154615423067, 26.225806715977225),
                 label: {
                   text: '怒山',
                   font: '20px sans-serif',
@@ -1509,17 +1413,20 @@ export const drawTaniantawengshan = (checked: boolean, viewerRef: React.RefObjec
 }
 
 /** @description 芒康山-云岭 */
-export const drawMangkangshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, mangkangshanRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawMangkangshan = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  mangkangshanRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.00),
+      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.0),
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5703899551321632,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (mangkangshanRef.current?.length) {
       mangkangshanRef.current.forEach(item => {
@@ -1540,8 +1447,7 @@ export const drawMangkangshan = (checked: boolean, viewerRef: React.RefObject<Ce
 
             mangkangshanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(98.40665629320692,
-                  30.489661468408304),
+                position: Cesium.Cartesian3.fromDegrees(98.40665629320692, 30.489661468408304),
                 label: {
                   text: '芒康山',
                   font: '20px sans-serif',
@@ -1553,8 +1459,7 @@ export const drawMangkangshan = (checked: boolean, viewerRef: React.RefObject<Ce
 
             mangkangshanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.40211213896258,
-                  26.80612247599627),
+                position: Cesium.Cartesian3.fromDegrees(99.40211213896258, 26.80612247599627),
                 label: {
                   text: '云岭',
                   font: '20px sans-serif',
@@ -1574,17 +1479,20 @@ export const drawMangkangshan = (checked: boolean, viewerRef: React.RefObject<Ce
 }
 
 /** @description 沙鲁里山 */
-export const drawShalulishan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, shalulishanRef: React.RefObject<Cesium.Entity[]>) => {
+export const drawShalulishan = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  shalulishanRef: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.00),
+      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.0),
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5703899551321632,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (shalulishanRef.current?.length) {
       shalulishanRef.current.forEach(item => {
@@ -1605,8 +1513,7 @@ export const drawShalulishan = (checked: boolean, viewerRef: React.RefObject<Ces
 
             shalulishanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.50471900227845,
-                  31.08962223183079),
+                position: Cesium.Cartesian3.fromDegrees(99.50471900227845, 31.08962223183079),
                 label: {
                   text: '沙鲁里山',
                   font: '20px sans-serif',
@@ -1628,15 +1535,14 @@ export const drawShalulishan = (checked: boolean, viewerRef: React.RefObject<Ces
 /** @description 大雪山 */
 export const drawDaxueshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, daxueshanRef: React.RefObject<Cesium.Entity[]>) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.00),
+      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.0),
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5703899551321632,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (daxueshanRef.current?.length) {
       daxueshanRef.current.forEach(item => {
@@ -1657,8 +1563,7 @@ export const drawDaxueshan = (checked: boolean, viewerRef: React.RefObject<Cesiu
 
             daxueshanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(101.36515981045625,
-                  31.574323857583252),
+                position: Cesium.Cartesian3.fromDegrees(101.36515981045625, 31.574323857583252),
                 label: {
                   text: '大雪山',
                   font: '20px sans-serif',
@@ -1678,17 +1583,20 @@ export const drawDaxueshan = (checked: boolean, viewerRef: React.RefObject<Cesiu
 }
 
 /** @description 大雪山 */
-export const drawQionglaishan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, qionglaishan: React.RefObject<Cesium.Entity[]>) => {
+export const drawQionglaishan = (
+  checked: boolean,
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  qionglaishan: React.RefObject<Cesium.Entity[]>
+) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(104.47583212, 31.42273029, 1888526.93),
       orientation: {
         heading: 6.283185307179582,
         pitch: -1.5702841970739416,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (qionglaishan.current?.length) {
       qionglaishan.current.forEach(item => {
@@ -1709,8 +1617,7 @@ export const drawQionglaishan = (checked: boolean, viewerRef: React.RefObject<Ce
 
             qionglaishan.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(102.80395867428174,
-                  32.28643306644907),
+                position: Cesium.Cartesian3.fromDegrees(102.80395867428174, 32.28643306644907),
                 label: {
                   text: '邛崃山',
                   font: '20px sans-serif',
@@ -1732,15 +1639,14 @@ export const drawQionglaishan = (checked: boolean, viewerRef: React.RefObject<Ce
 /** @description 大雪山 */
 export const drawMinshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, minshanRef: React.RefObject<Cesium.Entity[]>) => {
   if (checked) {
-
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(107.18146906, 31.31457030, 3528324.44),
+      destination: Cesium.Cartesian3.fromDegrees(107.18146906, 31.3145703, 3528324.44),
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5705239714367836,
-        roll: 0
-      }
-    });
+        roll: 0,
+      },
+    })
 
     if (minshanRef.current?.length) {
       minshanRef.current.forEach(item => {
@@ -1761,8 +1667,7 @@ export const drawMinshan = (checked: boolean, viewerRef: React.RefObject<Cesium.
 
             minshanRef.current.push(
               viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(104.0434617314983,
-                  32.7493986221671),
+                position: Cesium.Cartesian3.fromDegrees(104.0434617314983, 32.7493986221671),
                 label: {
                   text: '岷山',
                   font: '20px sans-serif',
@@ -1779,4 +1684,103 @@ export const drawMinshan = (checked: boolean, viewerRef: React.RefObject<Cesium.
       item.show = false
     })
   }
+}
+
+/** @description  大熊猫点位*/
+export const initPandaPoint = (viewerRef: React.RefObject<Cesium.Viewer | null>, pandaPointInstanceList: React.RefObject<sampleLabelType[]>) => {
+  pandaPointInstanceList.current = [
+    {
+      position: Cesium.Cartesian3.fromDegrees(103.12073346936057, 31.043327963060108, 7100.9),
+      text: '鞍子河大熊猫自然保护区',
+      instance: null,
+      key: 'anzihedaxiongmao',
+    },
+  ].map(item => {
+    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+      containerBackgroundUrlType: 'panda',
+      defaultVisible: false,
+    })
+
+    return {
+      ...item,
+      instance,
+    }
+  })
+}
+
+/** @description  滇冷杉点位*/
+export const initDianlengshanPoint = (
+  viewerRef: React.RefObject<Cesium.Viewer | null>,
+  dianlengshanPointInstanceList: React.RefObject<sampleLabelType[]>
+) => {
+  dianlengshanPointInstanceList.current = [
+    {
+      position: Cesium.Cartesian3.fromDegrees(99.9101808782321, 27.409176945433586, 7100.9),
+      text: '滇冷杉',
+      instance: null,
+      key: 'dianlengshan',
+    },
+  ].map(item => {
+    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+      containerBackgroundUrlType: 'tree',
+      defaultVisible: false,
+    })
+
+    return {
+      ...item,
+      instance,
+    }
+  })
+}
+
+/** @description  虎跳峡点位*/
+export const initCanyonPoint = (viewerRef: React.RefObject<Cesium.Viewer | null>, canyonPointInstanceList: React.RefObject<sampleLabelType[]>) => {
+  /*   28°27'20"N 99°49'51"E */
+  canyonPointInstanceList.current = [
+    {
+      position: Cesium.Cartesian3.fromDegrees(100.06127733028683, 27.170770691542253, 2044.04),
+      text: '虎跳峡',
+      instance: null,
+      key: 'hutiaoxia',
+    },
+    {
+      position: Cesium.Cartesian3.fromDegrees(99.48111671593866, 28.27192539810618, 3513.55),
+      text: '碧壤峡谷',
+      instance: null,
+      key: 'birangxiagu',
+    },
+  ].map(item => {
+    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
+      containerBackgroundUrlType: 'position',
+      defaultVisible: false,
+      clickCallback: () => {
+        if (item.key === 'hutiaoxia') {
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(100.07703196, 27.14042416, 3002.85),
+            orientation: {
+              heading: 5.919684370219261,
+              pitch: -0.28394899801853324,
+              roll: 6.2831255385928255,
+            },
+          })
+        }
+
+        if (item.key === 'birangxiagu') {
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(99.51016045, 28.26774769, 5180.68),
+            orientation: {
+              heading: 4.899541959295267,
+              pitch: -0.5643747357231286,
+              roll: 0.00001208640318672849,
+            },
+          })
+        }
+      },
+    })
+
+    return {
+      ...item,
+      instance,
+    }
+  })
 }

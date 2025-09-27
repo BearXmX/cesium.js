@@ -1,7 +1,6 @@
 import * as Cesium from 'cesium'
 import { useEffect, useRef } from 'react'
 import * as gui from 'lil-gui'
-import SampleLabel from '@/utils/plugins/sample-label'
 import { notification } from 'antd'
 import {
   drawBoshulaling,
@@ -20,22 +19,24 @@ import {
   drawMinjiangRiver,
   drawMinshan,
   drawNujiangRiver,
-  drawPanda,
   drawProvince,
   drawQionglaishan,
   drawShalulishan,
-  drawShanshu,
   drawTaniantawengshan,
   drawYalongjiangRiver,
   getCameraParams,
   initClickHandler,
-  initHigherMountainPonit,
+  initHigherMountainPoint,
+  initPandaPoint,
   showGonggashanDetails,
   showPandaDetails,
   showSanjiangbingliuDetails,
-  showShanshuDetails,
+  showDianlengshanDetails,
+  initDianlengshanPoint,
+  type sampleLabelType,
+  initCanyonPoint,
 } from './constance'
-
+import DrawCountour from '@/utils/countour'
 
 const HengduanMountains = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -70,19 +71,12 @@ const HengduanMountains = () => {
   const qionglaishanRef = useRef<Cesium.Entity[]>([])
   const minshanRef = useRef<Cesium.Entity[]>([])
 
-  const pandaRef = useRef<Cesium.Model[]>([])
+  const higherMountainPointInstanceList = useRef<sampleLabelType[]>([])
 
-  const shanshuRef = useRef<Cesium.Model[]>([])
+  const pandaPointInstanceList = useRef<sampleLabelType[]>([])
 
-  const higherMountainPonitInstanceList = useRef<
-    {
-      position: Cesium.Cartesian3
-      text: string
-      instance: SampleLabel
-      key: string
-    }[]
-  >([])
-
+  const dianlengshanPointInstanceList = useRef<sampleLabelType[]>([])
+  const canyonPointInstanceList = useRef<sampleLabelType[]>([])
 
   const guiControls = {
     drawProvince: false,
@@ -100,7 +94,7 @@ const HengduanMountains = () => {
     drawChinaSoilDistribution: false,
     drawChinaPlantDistribution: false,
     drawPanda: false,
-    drawShanshu: false,
+    drawDianlengshan: false,
 
     drawBoshulaling: false,
     drawTaniantawengshan: false,
@@ -109,6 +103,8 @@ const HengduanMountains = () => {
     drawDaxueshan: false,
     drawQionglaishan: false,
     drawMinshan: false,
+    drawHutiaoxia: false,
+    drawBirangxiagu: false,
 
     getCameraParams: () => {
       getCameraParams(viewerRef)
@@ -137,8 +133,6 @@ const HengduanMountains = () => {
       })
 
       showSanjiangbingliuDetails(true, notificationApi, viewerRef)
-
-
     },
   }
 
@@ -158,6 +152,8 @@ const HengduanMountains = () => {
     const mainAreaControls = guiRef.current.addFolder('主要区域')
 
     const mainMountainsControls = guiRef.current.addFolder('主要山脉')
+
+    const mainCanyon = guiRef.current.addFolder('主要峡谷')
 
     const mainRiverControls = guiRef.current.addFolder('主要河流')
 
@@ -188,9 +184,8 @@ const HengduanMountains = () => {
       .add(guiControls, 'drawHigherMountainPoint')
       .name('最高峰')
       .onChange((value: boolean) => {
-        showGonggashanDetails(value, notificationApi, viewerRef, higherMountainPonitInstanceList)
+        showGonggashanDetails(value, notificationApi, viewerRef, higherMountainPointInstanceList)
       })
-
 
     /* 主要山脉 */
     mainMountainsControls
@@ -240,6 +235,22 @@ const HengduanMountains = () => {
       .name('岷山')
       .onChange((value: boolean) => {
         drawMinshan(value, viewerRef, minshanRef)
+      })
+
+    /* 主要峡谷 */
+
+    mainCanyon
+      .add(guiControls, 'drawHutiaoxia')
+      .name('虎跳峡')
+      .onChange((value: boolean) => {
+        canyonPointInstanceList.current.find(item => item.key === 'hutiaoxia' && item.instance?.toggleVisible(value))
+      })
+
+    mainCanyon
+      .add(guiControls, 'drawBirangxiagu')
+      .name('碧壤峡谷')
+      .onChange((value: boolean) => {
+        canyonPointInstanceList.current.find(item => item.key === 'birangxiagu' && item.instance?.toggleVisible(value))
       })
 
     /* 主要河流 */
@@ -329,9 +340,9 @@ const HengduanMountains = () => {
     /* 动物分布 */
     animalsControls
       .add(guiControls, 'drawPanda')
-      .name('熊猫')
+      .name('大熊猫分布')
       .onChange((value: boolean) => {
-        drawPanda(value, viewerRef, pandaRef)
+        pandaPointInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
         showPandaDetails(value, notificationApi)
       })
 
@@ -347,11 +358,12 @@ const HengduanMountains = () => {
     const typeicalPlantControls = plantControls.addFolder('典型植被')
 
     typeicalPlantControls
-      .add(guiControls, 'drawShanshu')
+      .add(guiControls, 'drawDianlengshan')
       .name('滇冷杉')
       .onChange((value: boolean) => {
-        drawShanshu(value, viewerRef, shanshuRef)
-        showShanshuDetails(value, notificationApi)
+        dianlengshanPointInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
+        showDianlengshanDetails(value, notificationApi)
+        /*         showDianlengshanDetails(value, notificationApi) */
       })
   }
 
@@ -378,16 +390,17 @@ const HengduanMountains = () => {
       viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.8076862, 5000000),
       })
-    });
-
-    (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
+    })
+    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
     drawChinaBoundary(true, viewerRef)
     initClickHandler(viewerRef)
     initGui()
     drawHengduanMountainsDiagram(true, viewerRef, HengduanMountainsDiagramRef)
-    initHigherMountainPonit(viewerRef, higherMountainPonitInstanceList)
-
+    initHigherMountainPoint(viewerRef, higherMountainPointInstanceList)
+    initPandaPoint(viewerRef, pandaPointInstanceList)
+    initDianlengshanPoint(viewerRef, dianlengshanPointInstanceList)
+    initCanyonPoint(viewerRef, canyonPointInstanceList)
     return () => {
       viewer.destroy()
       guiRef.current?.destroy()

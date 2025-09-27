@@ -14,6 +14,7 @@ class DrawCountour {
   }
 
   static drawShapeByGeojson = (viewer: Cesium.Viewer, geojson: any, options?: ContourAnalysisOptions | {}) => {
+    // @ts-ignore
     return new Geojson(viewer, geojson, options)
   }
 
