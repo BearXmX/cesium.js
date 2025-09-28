@@ -36,6 +36,7 @@ import {
   type sampleLabelType,
   initCanyonPoint,
   drawVerticalNatureArea,
+  showVerticalNatureAreaDetails,
 } from './constance'
 import DrawCountour from '@/utils/countour'
 
@@ -330,6 +331,8 @@ const HengduanMountains = () => {
 
     verticalNatureAreaControls.add(guiControls, 'drawVerticalNatureArea').name('贡嘎山垂直自然带').onChange((value: boolean) => {
       drawVerticalNatureArea(value, viewerRef, verticalNatureAreaRef, higherMountainPointInstanceList)
+
+      showVerticalNatureAreaDetails(value, notificationApi)
     })
 
     /* 气候 */

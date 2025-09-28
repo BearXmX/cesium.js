@@ -3,6 +3,7 @@ import type { NotificationInstance } from 'antd/es/notification/interface'
 import * as Cesium from 'cesium'
 import Panda from './panda'
 import Dianlengshan from './dianlengshan'
+import VerticalNatureArea from '@/assets/nature-area.png'
 
 export type sampleLabelType = {
   position: Cesium.Cartesian3
@@ -1769,11 +1770,11 @@ export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObj
     higherMountainPointInstanceList.current.forEach(item => item.instance.toggleVisible(true))
 
     viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(101.67809053, 29.48429297, 22481.96),
+      destination: Cesium.Cartesian3.fromDegrees(101.66628020, 29.47521623, 23637.14),
       orientation: {
-        heading: 1.008690867455913,
-        pitch: -0.8111764033764395,
-        roll: 0.000002067771142755248
+        heading: 1.0086921425934001,
+        pitch: -0.8111771661888083,
+        roll: 3.091986808811953e-7
       }
     });
     if (verticalNatureAreaRef.current?.length) {
@@ -1792,9 +1793,7 @@ export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObj
             }
             parmas.features.push(item)
 
-            // 添加标注
-
-
+            // 添加标注this.generateParticles() this.intervalTimer = setInte
 
             Cesium.GeoJsonDataSource.load(parmas, {
               stroke: Cesium.Color.fromCssColorString(item.properties.color),
@@ -1826,5 +1825,27 @@ export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObj
     verticalNatureAreaRef.current!.forEach(item => {
       item.show = false
     })
+  }
+}
+
+/** @description 贡嘎山垂直自然带 */
+export const showVerticalNatureAreaDetails = (value: boolean, notificationApi: NotificationInstance) => {
+  notificationApi.destroy()
+  if (value) {
+    notificationApi.info({
+      message: `贡嘎山垂直自然带`,
+      style: {
+        width: 600
+      },
+      description: (
+        <div style={{ height: 600 }}>
+          <img src={VerticalNatureArea} alt="" style={{ display: 'block', width: '100%', height: '100%' }} />
+        </div>
+      ),
+      placement: 'bottomLeft',
+      duration: null,
+    })
+  } else {
+    notificationApi.destroy()
   }
 }

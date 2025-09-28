@@ -9,6 +9,7 @@ import Earthquake from './pages/earthquake/index.tsx'
 import SuzhouRiver from './pages/suzhou-river/index.tsx'
 import './index.css'
 import HengduanMountains from './pages/hengduan-mountains/index.tsx'
+import SolarSystem from './pages/solar-system/index.tsx'
 
 
 export const links = [
@@ -69,6 +70,16 @@ export const links = [
     element: (
       <Enhance>
         <HengduanMountains></HengduanMountains>
+      </Enhance>
+    ),
+  },
+  {
+    name: '太阳系',
+    path: '/solar-system',
+    content: '',
+    element: (
+      <Enhance>
+        <SolarSystem></SolarSystem>
       </Enhance>
     ),
   },
