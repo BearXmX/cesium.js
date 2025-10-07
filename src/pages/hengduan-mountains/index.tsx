@@ -35,6 +35,8 @@ import {
   initDianlengshanPoint,
   type sampleLabelType,
   initCanyonPoint,
+  drawVerticalNatureArea,
+  showVerticalNatureAreaDetails,
 } from './constance'
 import DrawCountour from '@/utils/countour'
 
@@ -78,6 +80,9 @@ const HengduanMountains = () => {
   const dianlengshanPointInstanceList = useRef<sampleLabelType[]>([])
   const canyonPointInstanceList = useRef<sampleLabelType[]>([])
 
+  // 垂直自然带
+  const verticalNatureAreaRef = useRef<Cesium.Entity[]>([])
+
   const guiControls = {
     drawProvince: false,
     drawHengduanMountainsDiagram: true,
@@ -95,6 +100,7 @@ const HengduanMountains = () => {
     drawChinaPlantDistribution: false,
     drawPanda: false,
     drawDianlengshan: false,
+    drawVerticalNatureArea: false,
 
     drawBoshulaling: false,
     drawTaniantawengshan: false,
@@ -156,6 +162,8 @@ const HengduanMountains = () => {
     const mainCanyon = guiRef.current.addFolder('主要峡谷')
 
     const mainRiverControls = guiRef.current.addFolder('主要河流')
+
+    const verticalNatureAreaControls = guiRef.current.addFolder('垂直自然带')
 
     const climateControls = guiRef.current.addFolder('气候')
 
@@ -321,6 +329,12 @@ const HengduanMountains = () => {
     guiControlsInstanceList.current.push(daduheControl)
     guiControlsInstanceList.current.push(minjiangControl)
 
+    verticalNatureAreaControls.add(guiControls, 'drawVerticalNatureArea').name('贡嘎山垂直自然带').onChange((value: boolean) => {
+      drawVerticalNatureArea(value, viewerRef, verticalNatureAreaRef, higherMountainPointInstanceList)
+
+      showVerticalNatureAreaDetails(value, notificationApi)
+    })
+
     /* 气候 */
     climateControls
       .add(guiControls, 'drawChinaClimateDistribution')
@@ -342,6 +356,11 @@ const HengduanMountains = () => {
       .add(guiControls, 'drawPanda')
       .name('大熊猫分布')
       .onChange((value: boolean) => {
+        if (value) {
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(103.12073346936057, 31.043327963060108, 300000),
+          })
+        }
         pandaPointInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
         showPandaDetails(value, notificationApi)
       })
@@ -361,6 +380,12 @@ const HengduanMountains = () => {
       .add(guiControls, 'drawDianlengshan')
       .name('滇冷杉')
       .onChange((value: boolean) => {
+        if (value) {
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(99.9101808782321, 27.409176945433586, 300000),
+          })
+        }
+
         dianlengshanPointInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
         showDianlengshanDetails(value, notificationApi)
         /*         showDianlengshanDetails(value, notificationApi) */
@@ -391,7 +416,7 @@ const HengduanMountains = () => {
         destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.8076862, 5000000),
       })
     })
-    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
+      ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
     drawChinaBoundary(true, viewerRef)
     initClickHandler(viewerRef)

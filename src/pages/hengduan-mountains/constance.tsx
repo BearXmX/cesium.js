@@ -3,6 +3,7 @@ import type { NotificationInstance } from 'antd/es/notification/interface'
 import * as Cesium from 'cesium'
 import Panda from './panda'
 import Dianlengshan from './dianlengshan'
+import VerticalNatureArea from '@/assets/nature-area.png'
 
 export type sampleLabelType = {
   position: Cesium.Cartesian3
@@ -115,29 +116,6 @@ export const drawHengduanMountainsDiagram = (
         item.show = true
       })
     } else {
-      fetch(window.$$prefix + '/data/china/aaa.geojson')
-        .then(res => res.json())
-        .then(data => {
-          const list = []
-
-          data.features.forEach((item: any) => {
-            const parmas = {
-              features: [] as any,
-              type: 'FeatureCollection',
-            }
-            parmas.features.push(item)
-
-            Cesium.GeoJsonDataSource.load(parmas, {
-              stroke: Cesium.Color.fromCssColorString(item.properties.color),
-              fill: Cesium.Color.fromCssColorString(item.properties.color).withAlpha(0.5),
-              strokeWidth: 2,
-              markerSymbol: 'circle',
-              clampToGround: true,
-            }).then(function (dataSource) {
-              viewerRef.current!.dataSources.add(dataSource)
-            })
-          })
-        })
 
       fetch(window.$$prefix + '/data/hengduan-mountains/hengduan-mountains-area.geojson')
         .then(res => res.json())
@@ -1783,4 +1761,91 @@ export const initCanyonPoint = (viewerRef: React.RefObject<Cesium.Viewer | null>
       instance,
     }
   })
+}
+
+/** @description  垂直自然区 */
+export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, verticalNatureAreaRef: React.RefObject<Cesium.Entity[]>, higherMountainPointInstanceList: React.RefObject<sampleLabelType[]>) => {
+
+  if (checked) {
+    higherMountainPointInstanceList.current.forEach(item => item.instance.toggleVisible(true))
+
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(101.66628020, 29.47521623, 23637.14),
+      orientation: {
+        heading: 1.0086921425934001,
+        pitch: -0.8111771661888083,
+        roll: 3.091986808811953e-7
+      }
+    });
+    if (verticalNatureAreaRef.current?.length) {
+      verticalNatureAreaRef.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      fetch(window.$$prefix + '/data/hengduan-mountains/vertical-nature-area.geojson')
+        .then(res => res.json())
+        .then(data => {
+
+          data.features.forEach((item: any) => {
+            const parmas = {
+              features: [] as any,
+              type: 'FeatureCollection',
+            }
+            parmas.features.push(item)
+
+            // 添加标注this.generateParticles() this.intervalTimer = setInte
+
+            Cesium.GeoJsonDataSource.load(parmas, {
+              stroke: Cesium.Color.fromCssColorString(item.properties.color),
+              fill: Cesium.Color.fromCssColorString(item.properties.color).withAlpha(0.5),
+              strokeWidth: 2,
+              markerSymbol: 'circle',
+              clampToGround: true,
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource)
+
+              verticalNatureAreaRef.current.push(...dataSource.entities.values)
+
+              verticalNatureAreaRef.current.push(
+                viewerRef.current!.entities.add({
+                  position: Cesium.Cartesian3.fromDegrees(item.geometry.coordinates[0][0][0], item.geometry.coordinates[0][0][1]),
+                  label: {
+                    text: item.properties.name,
+                    font: '20px sans-serif',
+                    ...labelConfig,
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                  }
+                })
+              )
+            })
+          })
+        })
+    }
+  } else {
+    verticalNatureAreaRef.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
+
+/** @description 贡嘎山垂直自然带 */
+export const showVerticalNatureAreaDetails = (value: boolean, notificationApi: NotificationInstance) => {
+  notificationApi.destroy()
+  if (value) {
+    notificationApi.info({
+      message: `贡嘎山垂直自然带`,
+      style: {
+        width: 600
+      },
+      description: (
+        <div style={{ height: 600 }}>
+          <img src={VerticalNatureArea} alt="" style={{ display: 'block', width: '100%', height: '100%' }} />
+        </div>
+      ),
+      placement: 'bottomLeft',
+      duration: null,
+    })
+  } else {
+    notificationApi.destroy()
+  }
 }
