@@ -1,317 +1,201 @@
-import * as Cesium from "cesium";
-import { useEffect, useRef } from "react";
-import WaterPrimitive from "@/utils/plugins/water-primitive";
+import * as Cesium from 'cesium'
+import { useEffect, useRef } from 'react'
+import WaterPrimitive from '@/utils/plugins/water-primitive'
 import * as gui from 'lil-gui'
-import SampleLabel from "@/utils/plugins/sample-label";
+import SampleLabel from '@/utils/plugins/sample-label'
 import { notification } from 'antd'
-import landUseType1958 from "@/assets/suzhou-river/land-use-type-1958.png";
-import landUseType1989 from "@/assets/suzhou-river/land-use-type-1989.png";
-import landUseType2021 from "@/assets/suzhou-river/land-use-type-2021.png";
+import landUseType1958 from '@/assets/suzhou-river/land-use-type-1958.png'
+import landUseType1989 from '@/assets/suzhou-river/land-use-type-1989.png'
+import landUseType2021 from '@/assets/suzhou-river/land-use-type-2021.png'
+import ImageText from '@/utils/plugins/image-text'
 
-type SuzhouRiverPropsType = {
+type SuzhouRiverPropsType = {}
 
-}
+const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
+  const [notificationApi, notificationContextHolder] = notification.useNotification()
 
-const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
-  const [notificationApi, notificationContextHolder] = notification.useNotification();
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<Cesium.Viewer | null>(null)
 
-  const viewerRef = useRef<Cesium.Viewer | null>(null);
+  const guiRef = useRef<gui.GUI | null>(null)
 
-  const guiRef = useRef<gui.GUI | null>(null);
+  const suzhouRiverWaterPrimitivesRef = useRef<any[]>([])
 
-  const suzhouRiverWaterPrimitivesRef = useRef<any[]>([]);
+  const huangpuRiverWaterPrimitivesRef = useRef<any[]>([])
 
-  const huangpuRiverWaterPrimitivesRef = useRef<any[]>([]);
+  const wenzaobangWaterPrimitivesRef = useRef<any[]>([])
 
-  const wenzaobangWaterPrimitivesRef = useRef<any[]>([]);
+  const wusongjiangWaterPrimitivesRef = useRef<any[]>([])
 
-  const suzhouRiverSubsectionInstanceList = useRef<{
-    position: Cesium.Cartesian3
-    text: string,
-    instance: SampleLabel
-    key: string
-  }[]>([]);
+  const pointInstanceList = useRef<
+    {
+      type: string
+      data: {
+        position: [number, number, number]
+        text: string
+        instance: SampleLabel | ImageText | null
+        key: string
+        [key: string]: any
+      }[]
+    }[]
+  >([])
 
-  const suzhouRiverWaterQualityCheckpointInstanceList = useRef<{
-    position: Cesium.Cartesian3
-    text: string,
-    instance: SampleLabel
-    key: string
-  }[]>([]);
+  const suzhouRiverDistrictArea = useRef<Cesium.Entity[]>([])
 
-  const suzhouOrganismSamplingPointInstanceList = useRef<{
-    position: Cesium.Cartesian3
-    text: string,
-    instance: SampleLabel
-    key: string
-  }[]>([]);
+  /** @description 获取当前相机参数 */
+  const getCameraParams = (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
+    const camera = viewerRef.current!.camera
 
+    // 获取相机位置（笛卡尔坐标）
+    const position = camera.position
 
-  const initSuzhouRiverSubsection = () => {
+    // 获取方向参数
+    const heading = camera.heading
+    const pitch = camera.pitch
+    const roll = camera.roll
 
-    suzhouRiverSubsectionInstanceList.current = [
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.3434840671743,
-          31.241460134456975, 20),
-        text: '上下游分界点：北新泾外环线附近',
-        instance: null,
-        key: 'waihuanxianjiaohechu'
-      },
-    ].map(item => {
-      const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-        containerBackgroundUrlType: 'subsection',
-        defaultVisible: false,
-        indicationLineColor: '#ff00e4'
-      });
+    // 转换为经纬度
+    const cartographic = Cesium.Cartographic.fromCartesian(position)
+    const lon = Cesium.Math.toDegrees(cartographic.longitude)
+    const lat = Cesium.Math.toDegrees(cartographic.latitude)
+    const height = cartographic.height
 
-      return {
-        ...item,
-        instance
+    // 生成flyTo代码
+    const code = `viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(${lon.toFixed(8)}, ${lat.toFixed(8)}, ${height.toFixed(2)}),
+      orientation: {
+          heading: ${heading},
+          pitch: ${pitch},
+          roll: ${roll}
       }
-    })
+  });`
+
+    console.log(code)
+
+    return code
   }
 
   const cartesian3ToDegrees = (cartesian: Cesium.Cartesian3, ellipsoid: Cesium.Ellipsoid) => {
     // 如果未指定椭球体，使用默认的WGS84椭球体
-    ellipsoid = ellipsoid || Cesium.Ellipsoid.WGS84;
+    ellipsoid = ellipsoid || Cesium.Ellipsoid.WGS84
 
     // 将笛卡尔坐标转换为弧度表示的地理坐标（包含经度、纬度和高度）
-    const cartographic = ellipsoid.cartesianToCartographic(cartesian);
+    const cartographic = ellipsoid.cartesianToCartographic(cartesian)
 
     // 将弧度转换为度
-    const longitude = Cesium.Math.toDegrees(cartographic.longitude);
-    const latitude = Cesium.Math.toDegrees(cartographic.latitude);
-    const height = cartographic.height;
+    const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+    const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+    const height = cartographic.height
 
     // 返回转换后的结果
     return {
-      longitude: longitude,  // 经度（度）
-      latitude: latitude,    // 纬度（度）
-      height: height         // 高度（米）
-    };
-  }
-
-  const initSuzhouRiverWaterQualityCheckpoint = () => {
-    suzhouRiverWaterQualityCheckpointInstanceList.current = [
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.06882662310454,
-          31.27132274728444, 20),
-        text: '赵屯采样点',
-        instance: null,
-        key: 'zhaotun'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.13957587143663,
-          31.276408039162483, 20),
-        text: '白鹤监测点',
-        instance: null,
-        key: 'baihe'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.2056800976854,
-          31.262942190328197, 20),
-        text: '黄渡监测点',
-        instance: null,
-        key: 'huangdu'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.29782792888692,
-          31.2325661633712, 20),
-        text: '华漕监测点',
-        instance: null,
-        key: 'huangcao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.3705260355628,
-          31.22211701517949, 20),
-        text: '北新泾桥检测点',
-        instance: null,
-        key: 'beixinjingqiao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.42163373492512,
-          31.238061858433714, 20),
-        text: '武宁路桥检测点',
-        instance: null,
-        key: 'wuningluqiao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.47199395014944,
-          31.24337872925361, 20),
-        text: '浙江路桥检测点',
-        instance: null,
-        key: 'zhejiangluqiao'
-      },
-    ].map(item => {
-      const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-        containerBackgroundUrlType: 'position',
-        defaultVisible: false,
-        indicationLineColor: '#ef561d',
-        clickCallback() {
-
-          const { longitude, latitude, height } = cartesian3ToDegrees(item.position, Cesium.Ellipsoid.WGS84);
-
-          viewerRef.current?.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500)
-          })
-        },
-      });
-
-      return {
-        ...item,
-        instance
-      }
-    })
-  }
-
-  const initSuzhouOrganismSamplingPoint = () => {
-    suzhouOrganismSamplingPointInstanceList.current = [
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.06882662310454,
-          31.27132274728444, 20),
-        text: '赵屯采样点',
-        instance: null,
-        key: 'zhaotun'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.13957587143663,
-          31.276408039162483, 20),
-        text: '白鹤采样点',
-        instance: null,
-        key: 'baihe'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.15127478095383,
-          31.24785027197842, 20),
-        text: '油墩港采样点',
-        instance: null,
-        key: 'youdungang'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.18644985325142,
-          31.286938997290594, 20),
-        text: '蕰藻浜采样点',
-        instance: null,
-        key: 'youdungang'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.2056800976854,
-          31.262942190328197, 20),
-        text: '黄渡采样点',
-        instance: null,
-        key: 'huangdu'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.21606433578347,
-          31.23870109831264, 20),
-        text: '新通波塘采样点',
-        instance: null,
-        key: 'xintongbotang'
-      },
-
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.3050986802439,
-          31.23013495530406, 20),
-        text: '封浜河口采样点',
-        instance: null,
-        key: 'fengbanghekou'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.3705260355628,
-          31.22211701517949, 20),
-        text: '北新泾采样点',
-        instance: null,
-        key: 'beixinjing'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.40609682263974,
-          31.224322543280437, 20),
-        text: '中山西路桥采样点',
-        instance: null,
-        key: 'zhongshanxiluqiao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.42163373492512,
-          31.238061858433714, 20),
-        text: '武宁路桥采样点',
-        instance: null,
-        key: 'wuningluqiao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.43933081962545,
-          31.25147040235041, 20),
-        text: '昌化路桥采样点',
-        instance: null,
-        key: 'changhualuqiao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.45839629705713,
-          31.243381599059376, 20),
-        text: '成都路桥采样点',
-        instance: null,
-        key: 'chengduluqiao'
-      },
-      {
-        position: Cesium.Cartesian3.fromDegrees(121.48578360715773,
-          31.24565877260106, 20),
-        text: '外白渡桥采样点',
-        instance: null,
-        key: 'waibaiduqiao'
-      },
-    ].map(item => {
-      const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-        containerBackgroundUrlType: 'position',
-        defaultVisible: false,
-        indicationLineColor: '#e5c07b',
-        clickCallback() {
-
-          const { longitude, latitude, height } = cartesian3ToDegrees(item.position, Cesium.Ellipsoid.WGS84);
-
-          viewerRef.current?.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500)
-          })
-        },
-      });
-
-      return {
-        ...item,
-        instance
-      }
-    })
+      longitude: longitude, // 经度（度）
+      latitude: latitude, // 纬度（度）
+      height: height, // 高度（米）
+    }
   }
 
   const showLandUseType = (value: boolean) => {
-
     if (value) {
       notificationApi.info({
         style: {
-          maxHeight: '100%'
+          maxHeight: '100%',
         },
         message: `用地类型分布图`,
-        description: <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#9ed08a' }}></span>农业用地&nbsp;&nbsp;
-            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#f1718b' }}></span>工业用地&nbsp;&nbsp;
-            <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#00a550' }}></span>城市绿地
-          </div>
-          <img src={landUseType2021} width={'100%'} alt="" />
-          <div style={{ textAlign: 'center' }}>2021年</div>
-          <img src={landUseType1989} width={'100%'} alt="" />
-          <div style={{ textAlign: 'center' }}>1989年</div>
-          <img src={landUseType1958} width={'100%'} alt="" />
-          <div style={{ textAlign: 'center' }}>1958年</div>
-        </>,
+        description: (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#9ed08a' }}></span>农业用地&nbsp;&nbsp;
+              <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#f1718b' }}></span>工业用地&nbsp;&nbsp;
+              <span style={{ display: 'inline-block', width: 20, height: 10, backgroundColor: '#00a550' }}></span>城市绿地
+            </div>
+            <img src={landUseType2021} width={'100%'} alt="" />
+            <div style={{ textAlign: 'center' }}>2021年</div>
+            <img src={landUseType1989} width={'100%'} alt="" />
+            <div style={{ textAlign: 'center' }}>1989年</div>
+            <img src={landUseType1958} width={'100%'} alt="" />
+            <div style={{ textAlign: 'center' }}>1958年</div>
+          </>
+        ),
         placement: 'bottomLeft',
         duration: null,
-      });
+      })
     } else {
-      notificationApi.destroy();
+      notificationApi.destroy()
     }
-
   }
 
+  const showSuzhouRiverDetails = (value: boolean) => {
+    notificationApi.destroy()
+    if (value) {
+      notificationApi.info({
+        message: `苏州河`,
+        description: (
+          <div>
+            <div style={{ textIndent: '2em' }}>
+              <p>苏州河是吴淞江进入上海市区段的俗称。 </p>
+              <p>发源于太湖瓜泾口，在上海市区外白渡桥附近汇入黄浦江，全长125公里，上海境内54公里。</p>
+              <p>古名“松江”，又因流域在古代吴国境内，故称之为“吴淞江”。</p>
+              <p>吴淞江源出太湖瓜泾口，穿过江南运河，流经吴江、昆山、嘉定、青浦等县市，在上海市区外白渡桥附近注入黄浦江。</p>
+            </div>
+          </div>
+        ),
+        placement: 'bottomLeft',
+        duration: null,
+      })
+    } else {
+      notificationApi.destroy()
+    }
+  }
+
+  const drawSuzhouRiverDistrictArea = (checked: boolean) => {
+    if (checked) {
+      if (suzhouRiverDistrictArea.current?.length) {
+        suzhouRiverDistrictArea.current.forEach(item => {
+          item.show = true
+        })
+      } else {
+        fetch(window.$$prefix + '/data/suzhou-river/district.geojson')
+          .then(res => res.json())
+          .then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              stroke: Cesium.Color.BROWN.withAlpha(1),
+              fill: Cesium.Color.WHITE.withAlpha(0.6),
+              strokeWidth: 2,
+              markerSymbol: 'circle',
+            }).then(function (dataSource) {
+              data.features.forEach((item: any) => {
+                const position = item.properties.center
+                const text = item.properties.name
+
+                const label = viewerRef.current!.entities.add({
+                  position: Cesium.Cartesian3.fromDegrees(...(position as [number, number, number])),
+                  label: {
+                    text: text,
+                    font: '20px sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    outlineWidth: 2,
+                    outlineColor: Cesium.Color.RED,
+                    fillColor: Cesium.Color.YELLOW,
+                    disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+                  },
+                })
+
+                suzhouRiverDistrictArea.current.push(label)
+              })
+
+              viewerRef.current!.dataSources.add(dataSource)
+              suzhouRiverDistrictArea.current = [...suzhouRiverDistrictArea.current, ...dataSource.entities.values]
+            })
+          })
+      }
+    } else {
+      suzhouRiverDistrictArea.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
 
   const guiControls = {
     drawSuzhouRiverSubsectionPoint: false,
@@ -320,41 +204,48 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
     drawSuzhouRiverUpstreamSegment: false,
     drawSuzhouRiverMidstreamSegment: false,
     drawSuzhouRiverLandUseType: false,
+    drawSuzhouRiverOrigin: false,
+    drawSuzhouRiverEnding: false,
+    drawSuzhouRiverIndustrialHeritage: false,
+    drawSuzhouRiverDistrictArea: false,
+
+    getCameraParams: () => {
+      getCameraParams(viewerRef)
+    },
 
     history: () => {
-      viewerRef.current?.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(121.44681124210383, 31.253252971821134, 300) });
+      viewerRef.current?.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(121.44681124210383, 31.253252971821134, 300) })
 
       // 添加瓦片图
       const imageryLayer = viewerRef.current!.imageryLayers.addImageryProvider(
         new Cesium.UrlTemplateImageryProvider({
-          url: window.$$prefix + "/image/tif-png7/{z}/{x}/{y}.png",
+          url: window.$$prefix + '/image/tif-png7/{z}/{x}/{y}.png',
           maximumLevel: 19,
         })
-      );
+      )
 
       // 设置右边显示历史影像
-      imageryLayer.splitDirection = Cesium.SplitDirection.RIGHT;
+      imageryLayer.splitDirection = Cesium.SplitDirection.RIGHT
 
       // slider 控制
-      const slider = document.getElementById("slider");
+      const slider = document.getElementById('slider')
 
-      slider!.style.display = "block";
+      slider!.style.display = 'block'
 
       // @ts-ignore
-      viewerRef.current!.scene.splitPosition = 0.5; // 默认中间分割
+      viewerRef.current!.scene.splitPosition = 0.5 // 默认中间分割
 
-      let handler = false;
-      slider!.addEventListener("mousedown", () => handler = true);
-      window.addEventListener("mouseup", () => handler = false);
-      window.addEventListener("mousemove", (e) => {
-        if (!handler) return;
-        const splitPos = e.clientX / window.innerWidth;
-        slider!.style.left = (splitPos * 100) + "%";
-        viewerRef.current!.scene.splitPosition = splitPos;
-      });
+      let handler = false
+      slider!.addEventListener('mousedown', () => (handler = true))
+      window.addEventListener('mouseup', () => (handler = false))
+      window.addEventListener('mousemove', e => {
+        if (!handler) return
+        const splitPos = e.clientX / window.innerWidth
+        slider!.style.left = splitPos * 100 + '%'
+        viewerRef.current!.scene.splitPosition = splitPos
+      })
     },
-
-  };
+  }
 
   const initGui = () => {
     if (guiRef.current) {
@@ -378,121 +269,188 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
 
     const organismControls = guiRef.current.addFolder('生物')
 
+    const industrialHeritageControls = guiRef.current.addFolder('沿岸遗产')
+
+    guiRef.current.add(guiControls, 'getCameraParams').name('获取相机参数')
 
     /* 历史影像 */
     historyControls.add(guiControls, 'history').name('加载恒丰路历史影像')
 
     /* 区域划分 */
-    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverSubsectionPoint').name('上下游分界点').onChange((value: boolean) => {
+    suzhouRiverAreaControls
+      .add(guiControls, 'drawSuzhouRiverDistrictArea')
+      .name('流经区县')
+      .onChange((value: boolean) => {
+        if (value) {
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.29767651, 31.2244611, 69639.55),
+            orientation: {
+              heading: 6.283185307179583,
+              pitch: -1.5707955853217404,
+              roll: 0,
+            },
+          })
+        }
+        drawSuzhouRiverDistrictArea(value)
+      })
 
-      suzhouRiverSubsectionInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
+    suzhouRiverAreaControls
+      .add(guiControls, 'drawSuzhouRiverOrigin')
+      .name('苏州河源头')
+      .onChange((value: boolean) => {
+        pointInstanceList.current
+          .find(item => item.type === 'originAndEndingPoint')
+          ?.data.find(item => item.key === 'origin' && item.instance?.toggleVisible(value))
 
-      if (value) {
-        viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.34345294112579,
-            31.241533962801665, 15000),
-        })
-      }
-    });
+        showSuzhouRiverDetails(value)
+        if (value) {
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(120.69966072, 31.21560048, 2632.72),
+            orientation: {
+              heading: 4.425380834609057,
+              pitch: -0.3008825357266769,
+              roll: 0.00005288277165060862,
+            },
+          })
+        }
+      })
 
-    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverUpstreamSegment').name('上游段').onChange((value: boolean) => {
-      suzhouRiverWaterPrimitivesRef.current[0].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.GREEN.withAlpha(0.6) : Cesium.Color.AQUA.withAlpha(0.6)
-      if (value) {
-        viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.21475984777767,
-            31.262530333046115, 15000),
-        })
-      }
-    });
+    suzhouRiverAreaControls
+      .add(guiControls, 'drawSuzhouRiverEnding')
+      .name('苏州河终点')
+      .onChange((value: boolean) => {
+        pointInstanceList.current
+          .find(item => item.type === 'originAndEndingPoint')
+          ?.data.find(item => item.key === 'ending' && item.instance?.toggleVisible(value))
+        showSuzhouRiverDetails(value)
+        if (value) {
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.44379233, 31.24547954, 1172.35),
+            orientation: {
+              heading: 1.6800656081066547,
+              pitch: -0.15615311443862656,
+              roll: 6.283181442675136,
+            },
+          })
+        }
+      })
 
-    suzhouRiverAreaControls.add(guiControls, 'drawSuzhouRiverMidstreamSegment').name('下游段').onChange((value: boolean) => {
-      suzhouRiverWaterPrimitivesRef.current[1].appearance.material.uniforms.baseWaterColor = value ? Cesium.Color.TOMATO.withAlpha(0.6) : Cesium.Color.AQUA.withAlpha(0.6)
-      if (value) {
-        viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.41021285316776,
-            31.230596040912467, 15000),
-        })
-      }
-    });
+    suzhouRiverAreaControls
+      .add(guiControls, 'drawSuzhouRiverSubsectionPoint')
+      .name('上下游分界点')
+      .onChange((value: boolean) => {
+        pointInstanceList.current.find(item => item.type === 'subsection')?.data.forEach(item => item.instance?.toggleVisible(value))
 
-    /* 水质 */
-    const drawWaterQualitycheckpointControl = waterQualityControls.add(guiControls, 'drawWaterQualitycheckpoint').name('水质检测点').onChange((value: boolean) => {
-      suzhouRiverWaterQualityCheckpointInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
+        if (value) {
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.34345294112579, 31.241533962801665, 15000),
+          })
+        }
+      })
 
-      if (value) {
-        suzhouOrganismSamplingPointInstanceList.current.forEach(item => item.instance?.toggleVisible(false))
-        drawSuzhouRiverOrganismSamplingPointControl.setValue(false)
-        drawSuzhouRiverOrganismSamplingPointControl.updateDisplay()
+    suzhouRiverAreaControls
+      .add(guiControls, 'drawSuzhouRiverUpstreamSegment')
+      .name('上游段')
+      .onChange((value: boolean) => {
+        suzhouRiverWaterPrimitivesRef.current[0].appearance.material.uniforms.baseWaterColor = value
+          ? Cesium.Color.GREEN.withAlpha(0.6)
+          : Cesium.Color.AQUA.withAlpha(0.6)
+        if (value) {
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.21475984777767, 31.262530333046115, 15000),
+          })
+        }
+      })
 
-        viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.2969150311974,
-            31.247713859928712, 50000),
-        })
-      }
-    });
-
-    /* 生物 */
-    const drawSuzhouRiverOrganismSamplingPointControl = organismControls.add(guiControls, 'drawSuzhouRiverOrganismSamplingPoint').name('生物采样点').onChange((value: boolean) => {
-      suzhouOrganismSamplingPointInstanceList.current.forEach(item => item.instance?.toggleVisible(value))
-
-      if (value) {
-        suzhouRiverWaterQualityCheckpointInstanceList.current.forEach(item => item.instance?.toggleVisible(false))
-        drawWaterQualitycheckpointControl.setValue(false)
-        drawWaterQualitycheckpointControl.updateDisplay()
-
-        viewerRef.current?.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.2969150311974,
-            31.247713859928712, 50000),
-        })
-      }
-    });
+    suzhouRiverAreaControls
+      .add(guiControls, 'drawSuzhouRiverMidstreamSegment')
+      .name('下游段')
+      .onChange((value: boolean) => {
+        suzhouRiverWaterPrimitivesRef.current[1].appearance.material.uniforms.baseWaterColor = value
+          ? Cesium.Color.TOMATO.withAlpha(0.6)
+          : Cesium.Color.AQUA.withAlpha(0.6)
+        if (value) {
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.41021285316776, 31.230596040912467, 15000),
+          })
+        }
+      })
 
     /* 用地类型 */
-    landUseTypeControls.add(guiControls, 'drawSuzhouRiverLandUseType').name('用地类型分布').onChange((value: boolean) => {
-      showLandUseType(value)
-    });
+    landUseTypeControls
+      .add(guiControls, 'drawSuzhouRiverLandUseType')
+      .name('用地类型分布')
+      .onChange((value: boolean) => {
+        showLandUseType(value)
+      })
 
+    /* 水质 */
+    const drawWaterQualitycheckpointControl = waterQualityControls
+      .add(guiControls, 'drawWaterQualitycheckpoint')
+      .name('水质检测点')
+      .onChange((value: boolean) => {
+        pointInstanceList.current.find(item => item.type === 'waterQualityCheckpoint')?.data.forEach(item => item.instance?.toggleVisible(value))
+
+        if (value) {
+          pointInstanceList.current.find(item => item.type === 'organismSamplingPoint')?.data.forEach(item => item.instance?.toggleVisible(false))
+          drawSuzhouRiverOrganismSamplingPointControl.setValue(false)
+          drawSuzhouRiverOrganismSamplingPointControl.updateDisplay()
+
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.2969150311974, 31.247713859928712, 50000),
+          })
+        }
+      })
+
+    /* 生物 */
+    const drawSuzhouRiverOrganismSamplingPointControl = organismControls
+      .add(guiControls, 'drawSuzhouRiverOrganismSamplingPoint')
+      .name('生物采样点')
+      .onChange((value: boolean) => {
+        pointInstanceList.current.find(item => item.type === 'organismSamplingPoint')?.data.forEach(item => item.instance?.toggleVisible(value))
+
+        if (value) {
+          pointInstanceList.current.find(item => item.type === 'waterQualityCheckpoint')?.data.forEach(item => item.instance?.toggleVisible(false))
+
+          drawWaterQualitycheckpointControl.setValue(false)
+          drawWaterQualitycheckpointControl.updateDisplay()
+
+          viewerRef.current?.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.2969150311974, 31.247713859928712, 50000),
+          })
+        }
+      })
+
+    industrialHeritageControls
+      .add(guiControls, 'drawSuzhouRiverIndustrialHeritage')
+      .name('工业遗产')
+      .onChange((value: boolean) => {
+        pointInstanceList.current.find(item => item.type === 'industrialHeritage')?.data.forEach(item => item.instance?.toggleVisible(value))
+      })
   }
 
   const initClickHandler = (viewer: Cesium.Viewer) => {
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
 
-    handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
+    handler.setInputAction((movement: { position: Cesium.Cartesian2 }) => {
       // 拾取椭球面上的点
-      const cartesian = viewer.camera.pickEllipsoid(
-        movement.position,
-        viewer.scene.globe.ellipsoid
-      );
-      if (!cartesian) return;
+      const cartesian = viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid)
+      if (!cartesian) return
 
       // 转换为经纬度
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-      const lon = Cesium.Math.toDegrees(cartographic.longitude);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude);
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+      const lon = Cesium.Math.toDegrees(cartographic.longitude)
+      const lat = Cesium.Math.toDegrees(cartographic.latitude)
 
       // 获取当前相机大致层级
-      const zoom = Math.round(
-        Math.log2(
-          (2 * Math.PI * 6378137) /
-          viewer.camera.getMagnitude()
-        )
-      );
+      const zoom = Math.round(Math.log2((2 * Math.PI * 6378137) / viewer.camera.getMagnitude()))
 
       // 经纬度 → XYZ 瓦片坐标
-      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
-      const y = Math.floor(
-        ((1 -
-          Math.log(
-            Math.tan((lat * Math.PI) / 180) +
-            1 / Math.cos((lat * Math.PI) / 180)
-          ) /
-          Math.PI) /
-          2) *
-        Math.pow(2, zoom)
-      );
+      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))
+      const y = Math.floor(((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * Math.pow(2, zoom))
 
-      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`)
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
   const addWaterRegion = (positions: any, instance: any[]) => {
@@ -502,28 +460,25 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       frequency: 1000.0,
       animationSpeed: 0.01,
       amplitude: 100,
-      specularIntensity: 100
-    });
+      specularIntensity: 100,
+    })
 
+    viewerRef.current!.scene.primitives.add(waterPrimitive) //添加到场景
 
-    viewerRef.current!.scene.primitives.add(waterPrimitive); //添加到场景
-
-    instance.push(waterPrimitive);
+    instance.push(waterPrimitive)
   }
 
   const coordinatesToPositions = (coordinates: any[]) => {
-
-    let positions = [] as any;
+    let positions = [] as any
     coordinates.map(c => {
-
       positions.push(Cesium.Cartesian3.fromDegrees(c[0], c[1], 0))
-    });
+    })
 
-    return positions;
+    return positions
   }
 
   useEffect(() => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN;
+    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN
 
     const viewer = new Cesium.Viewer(containerRef.current!, {
       infoBox: false,
@@ -535,137 +490,179 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       animation: false,
       timeline: false,
       fullscreenButton: false,
-    });
+    })
 
-    viewerRef.current = viewer;
+    viewerRef.current = viewer
 
-    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(
-      async (terrain) => {
-        viewer.terrainProvider = terrain;
+    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(async terrain => {
+      viewer.terrainProvider = terrain
 
-        viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(121.491185, 31.250281, 25000),
-        });
-      }
-    );
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(121.491185, 31.250281, 25000),
+      })
+    })
+    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
-    (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = "none";
+    fetch(window.$$prefix + '/data/china/china-boundary.geojson')
+      .then(res => res.json())
+      .then(data => {
+        Cesium.GeoJsonDataSource.load(data, {
+          stroke: Cesium.Color.BLUE,
+          fill: Cesium.Color.BLUE.withAlpha(0.2),
+          strokeWidth: 2,
+          markerSymbol: 'circle',
+        }).then(function (dataSource) {
+          viewer.dataSources.add(dataSource)
+        })
+      })
 
-    fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
-      Cesium.GeoJsonDataSource.load(data, {
-        stroke: Cesium.Color.BLUE,
-        fill: Cesium.Color.BLUE.withAlpha(0.2),
-        strokeWidth: 2,
-        markerSymbol: "circle"
-      }).then(function (dataSource) {
-        viewer.dataSources.add(dataSource)
-        /*         viewer.flyTo(dataSource); */
+    fetch(window.$$prefix + '/data/china/shanghai-area.geojson')
+      .then(res => res.json())
+      .then(data => {
+        Cesium.GeoJsonDataSource.load(data, {
+          stroke: Cesium.Color.PINK,
+          fill: Cesium.Color.PINK.withAlpha(0.2),
+          strokeWidth: 2,
+          markerSymbol: 'circle',
+        }).then(function (dataSource) {
+          viewer.dataSources.add(dataSource)
+        })
+      })
+
+    fetch(window.$$prefix + '/data/suzhou-river/suzhou-river.geojson')
+      .then(res => res.json())
+      .then(data => {
+        data.features.forEach((item: any) => {
+          const coordinates = item.geometry.coordinates[0]
+
+          const positions = coordinatesToPositions(coordinates)
+
+          addWaterRegion(positions, suzhouRiverWaterPrimitivesRef.current)
+        })
+      })
+
+    fetch(window.$$prefix + '/data/suzhou-river/huangpu-river.geojson')
+      .then(res => res.json())
+      .then(data => {
+        data.features.forEach((item: any) => {
+          const coordinates = item.geometry.coordinates[0]
+
+          const positions = coordinatesToPositions(coordinates)
+
+          addWaterRegion(positions, huangpuRiverWaterPrimitivesRef.current)
+        })
+      })
+
+    fetch(window.$$prefix + '/data/suzhou-river/wenzaobang.geojson')
+      .then(res => res.json())
+      .then(data => {
+        data.features.forEach((item: any) => {
+          const coordinates = item.geometry.coordinates[0]
+
+          const positions = coordinatesToPositions(coordinates)
+
+          addWaterRegion(positions, wenzaobangWaterPrimitivesRef.current)
+        })
+      })
+
+    fetch(window.$$prefix + '/data/suzhou-river/wusongjiang-river.geojson')
+      .then(res => res.json())
+      .then(data => {
+        data.features.forEach((item: any) => {
+          const coordinates = item.geometry.coordinates[0]
+
+          const positions = coordinatesToPositions(coordinates)
+
+          addWaterRegion(positions, wusongjiangWaterPrimitivesRef.current)
+        })
+      })
+
+    const texts = [
+      {
+        text: '苏州河',
+        position: [121.43424178657835, 31.264846739529258],
+        fontSize: '30px',
+      },
+      {
+        text: '黄埔江',
+        position: [121.531185, 31.241281],
+        fontSize: '40px',
+      },
+      {
+        text: '蕰藻浜',
+        position: [121.17507739975338, 31.297054818748347],
+        fontSize: '26px',
+      },
+      {
+        text: '太湖',
+        position: [120.42534535422851, 31.18036513944, 1000],
+        fontSize: '40px',
+      },
+    ]
+
+    texts.forEach(item => {
+      viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(...(item.position as [number, number, number])),
+        label: {
+          text: item.text,
+          font: item.fontSize + ' sans-serif',
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          outlineWidth: 4,
+          outlineColor: Cesium.Color.BLACK,
+          fillColor: Cesium.Color.YELLOW,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+        },
       })
     })
 
-    fetch(window.$$prefix + "/data/china/shanghai-area.geojson").then(res => res.json()).then(data => {
-      Cesium.GeoJsonDataSource.load(data, {
-        stroke: Cesium.Color.PINK,
-        fill: Cesium.Color.PINK.withAlpha(0.2),
-        strokeWidth: 2,
-        markerSymbol: "circle"
-      }).then(function (dataSource) {
-        viewer.dataSources.add(dataSource)
-      })
-    })
-
-    fetch(window.$$prefix + "/data/suzhou-river/suzhou-river.geojson").then(res => res.json()).then(data => {
-
-      data.features.forEach((item: any) => {
-
-        const coordinates = item.geometry.coordinates[0];
-
-        const positions = coordinatesToPositions(coordinates);
-
-        addWaterRegion(positions, suzhouRiverWaterPrimitivesRef.current)
-
-      })
-
-      // 绘制文字
-      viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(121.43424178657835, 31.264846739529258),
-        label: {
-          text: "苏州河",
-          font: "30px sans-serif",
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          outlineWidth: 2,
-          outlineColor: Cesium.Color.BLACK,
-          fillColor: Cesium.Color.YELLOW,
-        }
-      })
-
-    });
-
-    fetch(window.$$prefix + "/data/suzhou-river/huangpu-river.geojson").then(res => res.json()).then(data => {
-
-      data.features.forEach((item: any) => {
-
-        const coordinates = item.geometry.coordinates[0];
-
-        const positions = coordinatesToPositions(coordinates);
-
-        addWaterRegion(positions, huangpuRiverWaterPrimitivesRef.current)
-
-      })
-
-      // 绘制文字
-      viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(121.531185, 31.241281),
-        label: {
-          text: "黄埔江",
-          font: "40px sans-serif",
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          outlineWidth: 2,
-          outlineColor: Cesium.Color.BLACK,
-          fillColor: Cesium.Color.YELLOW,
-        }
-      })
-    });
-
-    fetch(window.$$prefix + "/data/suzhou-river/wenzaobang.geojson").then(res => res.json()).then(data => {
-
-      data.features.forEach((item: any) => {
-
-        const coordinates = item.geometry.coordinates[0];
-
-        const positions = coordinatesToPositions(coordinates);
-
-        addWaterRegion(positions, wenzaobangWaterPrimitivesRef.current)
-      })
-
-      // 绘制文字
-      viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(121.17507739975338, 31.297054818748347),
-        label: {
-          text: "蕰藻浜",
-          font: "26px sans-serif",
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          outlineWidth: 2,
-          outlineColor: Cesium.Color.BLACK,
-          fillColor: Cesium.Color.YELLOW,
-        }
-      })
-    })
-
-    initClickHandler(viewer);
+    initClickHandler(viewer)
 
     initGui()
 
-    initSuzhouRiverSubsection()
-    initSuzhouRiverWaterQualityCheckpoint()
-    initSuzhouOrganismSamplingPoint()
+    fetch(window.$$prefix + '/data/suzhou-river/points.json')
+      .then(res => res.json())
+      .then(data => {
+        const list = data as {
+          data: typeof pointInstanceList.current
+        }
+        pointInstanceList.current = list.data.map(item => {
+          return {
+            ...item,
+            data: item.data.map(v => {
+              const instance =
+                v.type === 'SampleLabel'
+                  ? new SampleLabel(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.text, {
+                      containerBackgroundUrlType: v.containerBackgroundUrlType,
+                      defaultVisible: v.defaultVisible,
+                      indicationLineColor: v.indicationLineColor,
+                      clickCallback() {
+                        const [longitude, latitude, height] = v.position
+
+                        viewerRef.current?.camera.flyTo({
+                          destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
+                        })
+                      },
+                    })
+                  : v.type === 'ImageText'
+                  ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.image, v.content, {
+                      defaultVisible: v.defaultVisible,
+                    })
+                  : null
+
+              return {
+                ...v,
+                instance,
+              }
+            }),
+          }
+        })
+      })
 
     return () => {
       viewer.destroy()
       guiRef.current?.destroy()
-    };
-  }, []);
-
+    }
+  }, [])
 
   return (
     <div className="canvas-container">
@@ -673,7 +670,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = (props) => {
       <div className="canvas-container-body" ref={containerRef} />
       <div id="slider" style={{ display: 'none' }}></div>
     </div>
-  );
+  )
 }
 
 export default SuzhouRiver

@@ -107,7 +107,7 @@ class SampleLabel {
     leftLine.style.backgroundColor = options.indicationLineColor
 
     /* 文字 */
-    let label = document.createElement('div')
+    const label = document.createElement('div')
 
     label.addEventListener('mouseenter', function () {
       label.style.color = options.indicationLineColor
@@ -117,7 +117,7 @@ class SampleLabel {
       label.style.color = '#fff' // 恢复默认
     })
 
-    let labelIcon = document.createElement('span')
+    const labelIcon = document.createElement('span')
 
     labelIcon.classList.add('point-sample-label-icon')
 
@@ -141,7 +141,7 @@ class SampleLabel {
     }
 
     // 添加关闭按钮
-    let close = document.createElement('div')
+    const close = document.createElement('div')
     close.classList.add('point-sample-label-close')
     close.addEventListener('click', () => {
       this.container.style.display = 'none'
