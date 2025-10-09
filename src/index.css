@@ -155,6 +155,7 @@ body,
   width: 20px;
   height: 20px;
   vertical-align: middle;
+  margin-right: 5px;
 }
 
 .point-sample-label-container .point-sample-label-text .point-sample-label-icon-story {
@@ -175,6 +176,10 @@ body,
 
 .point-sample-label-container .point-sample-label-text .point-sample-label-icon-tree {
   background: url(@/assets/story-sample-label-icon-tree.png) 0px 0px no-repeat;
+}
+
+.point-sample-label-container .point-sample-label-text .point-sample-label-icon-mountain {
+  background: url(@/assets/story-sample-label-icon-mountain.png) 0px 0px no-repeat;
 }
 
 .point-sample-label-container .point-sample-label-text-click {
