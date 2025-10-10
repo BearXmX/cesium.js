@@ -95,7 +95,7 @@ const Earthquake = () => {
 
     const globalControls = guiRef.current.addFolder('全球相关')
 
-    videoControls.add(guiControls, 'showVideo').name('什么是地震？')
+    /*     videoControls.add(guiControls, 'showVideo').name('什么是地震？') */
 
     /* 国内相关 */
     mainControls.add(guiControls, 'drawChinaEarthquakeArea').name('中国主要地震带').onChange((value: boolean) => {
