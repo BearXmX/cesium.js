@@ -18,17 +18,19 @@ const Enhance: React.FC<EnhancePropsType> = (props) => {
   }, [])
 
   return <>
-    <Select
-      value={import.meta.env.PROD ? (window.location.hash === '' ? '/' : window.location.hash).replace('#', '') : window.location.pathname}
-      style={{ width: 120, position: 'absolute', top: 10, left: 10, zIndex: 2 }}
-      options={routes.slice(1).map((item, index) => ({
-        value: item.path,
-        label: item.name,
-      }))}
-      onChange={(val) => {
-        navigate(val)
-      }}
-    />
+    {
+      process.env.NODE_ENV !== 'production' && <Select
+        value={import.meta.env.PROD ? (window.location.hash === '' ? '/' : window.location.hash).replace('#', '') : window.location.pathname}
+        style={{ width: 120, position: 'absolute', top: 10, left: 10, zIndex: 2 }}
+        options={routes.slice(1).map((item, index) => ({
+          value: item.path,
+          label: item.name,
+        }))}
+        onChange={(val) => {
+          navigate(val)
+        }}
+      />
+    }
     {props.children}
   </>
 

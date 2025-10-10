@@ -491,7 +491,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       timeline: false,
       fullscreenButton: false,
     })
-
+    viewer.scene.globe.showGroundAtmosphere = false;
     viewerRef.current = viewer
 
     Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(async terrain => {
@@ -501,7 +501,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         destination: Cesium.Cartesian3.fromDegrees(121.491185, 31.250281, 25000),
       })
     })
-    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
+      ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
     fetch(window.$$prefix + '/data/china/china-boundary.geojson')
       .then(res => res.json())
@@ -632,22 +632,22 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
               const instance =
                 v.type === 'SampleLabel'
                   ? new SampleLabel(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.text, {
-                      containerBackgroundUrlType: v.containerBackgroundUrlType,
-                      defaultVisible: v.defaultVisible,
-                      indicationLineColor: v.indicationLineColor,
-                      clickCallback() {
-                        const [longitude, latitude, height] = v.position
+                    containerBackgroundUrlType: v.containerBackgroundUrlType,
+                    defaultVisible: v.defaultVisible,
+                    indicationLineColor: v.indicationLineColor,
+                    clickCallback() {
+                      const [longitude, latitude, height] = v.position
 
-                        viewerRef.current?.camera.flyTo({
-                          destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
-                        })
-                      },
-                    })
+                      viewerRef.current?.camera.flyTo({
+                        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
+                      })
+                    },
+                  })
                   : v.type === 'ImageText'
-                  ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.image, v.content, {
+                    ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.image, v.content, {
                       defaultVisible: v.defaultVisible,
                     })
-                  : null
+                    : null
 
               return {
                 ...v,

@@ -77,6 +77,76 @@
           "defaultVisible": false,
           "indicationLineColor": "#ffb20e",
           "type": "SampleLabel"
+        },
+        {
+          "position": [114.9181521443926, 35.84151157787916, 20],
+          "text": "商胡埽决口",
+          "instance": null,
+          "key": "shanghusaojuekou",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [117.26095275524415, 37.84287738576768, 20],
+          "text": "瀛洲、沧州决河",
+          "instance": null,
+          "key": "cangzhoujuehe",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [114.56643458617901, 35.22796493474452, 20],
+          "text": "杜充自决黄河",
+          "instance": null,
+          "key": "duchongzijuehuanghe",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [115.54658441512163, 34.92097596134248, 20],
+          "text": "贾鲁治河",
+          "instance": null,
+          "key": "jialuzhihe",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [114.7604178601743, 34.92833125262554, 20],
+          "text": "刘大夏太行古堤",
+          "instance": null,
+          "key": "taihanggudi",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [114.72518924096642, 34.894459870606894, 20],
+          "text": "1933大洪水",
+          "instance": null,
+          "key": "dahongshui",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [113.66065082655547, 34.9151151808567, 20],
+          "text": "花园口决堤",
+          "instance": null,
+          "key": "huayuankoujuedi",
+          "containerBackgroundUrlType": "story",
+          "defaultVisible": false,
+          "indicationLineColor": "#ffb20e",
+          "type": "SampleLabel"
         }
       ]
     },
@@ -88,6 +158,16 @@
           "text": "郑州市",
           "instance": null,
           "key": "zhengzhoushi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#00ffcc",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [114.33487161891696, 34.89927004663319, 20],
+          "text": "开封市",
+          "instance": null,
+          "key": "kaifengshi",
           "containerBackgroundUrlType": "position",
           "defaultVisible": false,
           "indicationLineColor": "#00ffcc",
@@ -189,7 +269,7 @@
       "type": "mountain",
       "data": [
         {
-          "position": [114.53278148628146, 35.668649951738615, 20],
+          "position": [114.43908574271099, 35.36476054139797, 20],
           "text": "大伾山",
           "instance": null,
           "key": "dapishan",

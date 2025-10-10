@@ -406,7 +406,7 @@ const HengduanMountains = () => {
       timeline: false,
       fullscreenButton: false,
     })
-
+    viewer.scene.globe.showGroundAtmosphere = false;
     viewerRef.current = viewer
 
     Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(async terrain => {
