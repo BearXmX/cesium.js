@@ -89,7 +89,7 @@ const Earthquake = () => {
 
     guiRef.current.title('地震相关')
 
-    const videoControls = guiRef.current.addFolder('科普视频')
+    /*     const videoControls = guiRef.current.addFolder('科普视频') */
 
     const mainControls = guiRef.current.addFolder('国内相关')
 
