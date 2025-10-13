@@ -1,42 +1,48 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef, useState, type JSX } from "react";
-import { Button, Checkbox, Form, Modal } from 'antd'
+import { Button, Checkbox, Form, Modal, notification } from 'antd'
 import * as gui from 'lil-gui'
 import SampleLabel from "@/utils/plugins/sample-label";
 import ImageText from "@/utils/plugins/image-text";
-import { cangzhoujueheStory, dahongshuiStory, dayuzhishuiStory, duchongzijuehuangheStory, handaidiyicijuekouStory, huayuankoujuediStory, jialuzhiheStory, jindiStory, jinfuzhiheStory, shanghusaojuekouStory, taihanggudiStory, zhihesanceStory } from "./constance";
+import { cangzhoujueheStory, dahongshuiStory, dayuzhishuiStory, duchongzijuehuangheStory, handaidiyicijuekouStory, huangfanquReason, huayuankoujuediStory, jialuzhiheStory, jindiStory, jinfuzhiheStory, sanmenxiashuiku, shanghusaojuekouStory, taihanggudiStory, xiaolangdishuiku, xingxiuhai, yellowRiverEnding, yellowRiverOrigin, zhihesanceStory } from "./constance";
+import CommonMap, { type CommonMapInstanceType } from "@/components/common-map";
 
 const YellowRiver = () => {
-
+  const [notificationApi, notificationContextHolder] = notification.useNotification()
   const [modal, modalContext] = Modal.useModal();
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const viewerRef = useRef<Cesium.Viewer | null>(null);
-
+  const mapIntance = useRef<CommonMapInstanceType>(null);
+  const viewerRef = useRef<Cesium.Viewer>(null);
   const guiRef = useRef<gui.GUI | null>(null);
 
   const administrativeRegionRef = useRef<Cesium.Entity[]>([]);
-
   const yellowRiverBranchRef = useRef<Cesium.Entity[]>([]);
-
   const yellowRiverAreaProvinceRef = useRef<Cesium.Entity[]>([]);
-
   const loessPlateauAreaRef = useRef<Cesium.Entity[]>([]);
-
   const yuhegudaoRef = useRef<Cesium.Entity[]>([]);
   const xihangudaoRef = useRef<Cesium.Entity[]>([]);
   const donghangudaoRef = useRef<Cesium.Entity[]>([]);
   const beisonggudaoRef = useRef<Cesium.Entity[]>([]);
   const mingqinggudaoRef = useRef<Cesium.Entity[]>([]);
   const nansonggudaoRef = useRef<Cesium.Entity[]>([]);
-
   const daluzeRef = useRef<Cesium.Entity[]>([]);
   const dayezeRef = useRef<Cesium.Entity[]>([]);
   const luoshuiRef = useRef<Cesium.Entity[]>([]);
   const jishuiRef = useRef<Cesium.Entity[]>([]);
   const huaiheRef = useRef<Cesium.Entity[]>([]);
   const huangfanqu = useRef<Cesium.Entity[]>([]);
+  const qianhaianxianRef = useRef<Cesium.Entity[]>([]);
+  const haianxian11Ref = useRef<Cesium.Entity[]>([]);
+  const haianxian1048Ref = useRef<Cesium.Entity[]>([]);
+  const haianxian1128Ref = useRef<Cesium.Entity[]>([]);
+  const haianxian1855Ref = useRef<Cesium.Entity[]>([]);
+
+  const xingxiuhaiRef = useRef<Cesium.Entity[]>([]);
+  const yanshanshanmaiRef = useRef<Cesium.Entity[]>([]);
+  const taihangshanmaiRef = useRef<Cesium.Entity[]>([])
+  const dabieshanRef = useRef<Cesium.Entity[]>([])
+  const taishanRef = useRef<Cesium.Entity[]>([])
+  const shandongqiulingRef = useRef<Cesium.Entity[]>([])
 
   const pointInstanceList = useRef<
     {
@@ -104,6 +110,7 @@ const YellowRiver = () => {
     drawLoessPlateauArea: false,
     drawYellowRiverAreaCity: false,
     drawYellowRiverSubsectionPoint: false,
+    drawXingxiuhai: false,
 
     drawYuhegudao: false,
     drawXihangudao: false,
@@ -119,6 +126,25 @@ const YellowRiver = () => {
     drawJishui: false,
     drawHuaihe: false,
     drawHuangfanqu: false,
+    drawHuangfanquCity: false,
+    drawYellowRiverOrigin: false,
+    drawYellowRiverEnding: false,
+
+    drawQianhaianxian: false,
+    draw11haianxian: false,
+    draw1048haianxian: false,
+    draw1128haianxian: false,
+    draw1855haianxian: false,
+
+    drawSanmenxiashuiku: false,
+    drawXiaolangdishuiku: false,
+
+    drawYanshan: false,
+    drawTaihangshan: false,
+    drawDabieshan: false,
+    drawTaishan: false,
+
+    drawShandongqiuling: false,
 
     showVideo: () => {
       modal.info({
@@ -234,19 +260,92 @@ const YellowRiver = () => {
 
     const mainControls = guiRef.current.addFolder('相关区域')
 
+    const mountainsControls = guiRef.current.addFolder('相关山脉&丘陵')
+
     const historyChangeContols = guiRef.current.addFolder('黄河历史')
+    const comprehensiveManagementContols = guiRef.current.addFolder('综合治理')
 
     /* 主要区域 */
     regionControls.add(guiControls, 'drawAdministrativeRegion').name('行政区域').onChange((value: boolean) => {
       drawAdministrativeRegion(value)
+
+      if (value) {
+        cameraFlyTo(106.42574140217508, 37.565051396604, 7000000)
+      }
     })
 
     /* 科普视频 */
     videoControls.add(guiControls, 'showVideo').name('我们的母亲河')
 
     /* 主要区域 */
+
+
+    mainControls.add(guiControls, 'drawYellowRiverOrigin').name('黄河源').onChange((value: boolean) => {
+      const visible = pointInstanceList.current.find(item => item.type === 'subsection')?.data.find(item => item.key === 'huangheyuan')?.instance?.toggleVisible(value)
+      notificationApi.destroy()
+
+      if (visible) {
+        cameraFlyTo(97.04069987777802, 34.958347022701574, 332850.10)
+
+        notificationApi.info({
+          style: {
+            maxHeight: '100%',
+          },
+          message: `黄河源`,
+          description: yellowRiverOrigin,
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      } else {
+
+      }
+    })
+
+    mainControls.add(guiControls, 'drawYellowRiverEnding').name('黄河终点').onChange((value: boolean) => {
+      const visible = pointInstanceList.current.find(item => item.type === 'subsection')?.data.find(item => item.key === 'huanghezhongdian')?.instance?.toggleVisible(value)
+      notificationApi.destroy()
+
+      if (visible) {
+        cameraFlyTo(119.26772836452857, 37.78279740624965, 332850.10)
+
+        notificationApi.info({
+          style: {
+            maxHeight: '100%',
+          },
+          message: `黄河终点`,
+          description: yellowRiverEnding,
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      }
+    })
+
+    mainControls.add(guiControls, 'drawXingxiuhai').name('星宿海').onChange((value: boolean) => {
+      drawXingxiuhai(value)
+      notificationApi.destroy()
+      if (value) {
+        cameraFlyTo(96.86575686785437,
+          35.09537674678664, 232850.10)
+
+
+        notificationApi.info({
+          style: {
+            maxHeight: '100%',
+          },
+          message: `星宿海`,
+          description: xingxiuhai,
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      }
+    })
+
     mainControls.add(guiControls, 'drawYellowRiverBranch').name('黄河支流').onChange((value: boolean) => {
       drawYellowRiverBranch(value)
+
+      if (value) {
+        cameraFlyTo(106.42574140217508, 37.565051396604, 4000000)
+      }
     })
 
     const yellowRiverAreaProvinceControl = mainControls.add(guiControls, 'drawYellowRiverAreaProvince').name('黄河流域').onChange((value: boolean) => {
@@ -268,7 +367,7 @@ const YellowRiver = () => {
     })
 
     mainControls.add(guiControls, 'drawYellowRiverSubsectionPoint').name('上中下游分界点').onChange((value: boolean) => {
-      pointInstanceList.current.find(item => item.type === 'subsection')?.data.forEach(item => item.instance?.toggleVisible(value))
+      pointInstanceList.current.find(item => item.type === 'subsection')?.data.filter(item => item.key === 'hekouzhen' || item.key === 'taohuayu').forEach(item => item.instance?.toggleVisible(value))
 
       if (value) {
         cameraFlyTo(113.07157684715946, 38.465983825955824, 2000000)
@@ -276,7 +375,49 @@ const YellowRiver = () => {
     })
 
 
+    mountainsControls.add(guiControls, 'drawYanshan').name('燕山山脉').onChange((value: boolean) => {
+      drawYanshan(value)
 
+      if (value) {
+        cameraFlyTo(116.78817946526377, 40.6572191087334, 1178754.27)
+      }
+    })
+
+    mountainsControls.add(guiControls, 'drawTaihangshan').name('太行山脉').onChange((value: boolean) => {
+      drawTaihangshan(value)
+
+      if (value) {
+        cameraFlyTo(113.78817946526377, 38.6572191087334, 1178754.27)
+      }
+    })
+
+    mountainsControls.add(guiControls, 'drawDabieshan').name('大别山').onChange((value: boolean) => {
+      drawDabieshan(value)
+
+      if (value) {
+        cameraFlyTo(114.98085265425988, 31.022506540238034, 1178754.27)
+      }
+    })
+
+    mountainsControls.add(guiControls, 'drawTaishan').name('泰山').onChange((value: boolean) => {
+      drawTaishan(value)
+
+      if (value) {
+        cameraFlyTo(117.43052049639384, 36.60956250931563, 1178754.27)
+      }
+    })
+
+    mountainsControls.add(guiControls, 'drawShandongqiuling').name('山东丘陵').onChange((value: boolean) => {
+      drawShandongqiuling(value)
+
+      if (value) {
+        cameraFlyTo(119.05410235919894, 36.26120646107691, 1178754.27)
+      }
+    })
+
+
+
+    /* 历史改道 */
     const shangguHistoryChangeContols = historyChangeContols.addFolder('上古时期')
     const xihanHistoryChangeContols = historyChangeContols.addFolder('西汉时期')
     const donghanHistoryChangeContols = historyChangeContols.addFolder('东汉时期')
@@ -285,15 +426,19 @@ const YellowRiver = () => {
     const mingqingHistoryChangeContols = historyChangeContols.addFolder('明清时期')
     const minguoHistoryChangeContols = historyChangeContols.addFolder('民国现代')
 
-    /* 历史改道 */
-
-
     /* 上古时期 */
     shangguHistoryChangeContols.add(guiControls, 'drawYuhegudao').name('禹河故道').onChange((value: boolean) => {
       if (value) {
         cameraFlyTo(...historyChangeFlyTo)
       }
       drawYuhegudao(value)
+    })
+
+    shangguHistoryChangeContols.add(guiControls, 'drawQianhaianxian').name('前602年海岸线').onChange((value: boolean) => {
+      if (value) {
+        cameraFlyTo(...[117.35668606, 38.71223645, 386645.66])
+      }
+      drawQianhaianxian(value)
     })
 
     shangguHistoryChangeContols.add(guiControls, 'drawDaluze').name('大陆泽').onChange((value: boolean) => {
@@ -342,6 +487,13 @@ const YellowRiver = () => {
       drawXihangudao(value)
     })
 
+    xihanHistoryChangeContols.add(guiControls, 'draw11haianxian').name('11年海岸线').onChange((value: boolean) => {
+      if (value) {
+        cameraFlyTo(...[119.21084204606973, 36.79462374587151, 386645.66])
+      }
+      draw11haianxian(value)
+    })
+
     xihanHistoryChangeContols.add(guiControls, 'jindi').name('秦始皇修金堤')
 
     xihanHistoryChangeContols.add(guiControls, 'handaidiyicijuekou').name('汉代第一次重大决口')
@@ -365,6 +517,15 @@ const YellowRiver = () => {
       drawBeisonggudao(value)
     })
 
+
+    beisongHistoryChangeContols.add(guiControls, 'draw1048haianxian').name('1048年海岸线').onChange((value: boolean) => {
+      if (value) {
+        cameraFlyTo(...[118.14110060972419,
+          38.59447489359524, 486645.66])
+      }
+      draw1048haianxian(value)
+    })
+
     beisongHistoryChangeContols.add(guiControls, 'shanghusaojuekou').name('商胡埽决口')
     beisongHistoryChangeContols.add(guiControls, 'cangzhoujuehe').name('瀛洲、沧州决河')
 
@@ -375,6 +536,14 @@ const YellowRiver = () => {
         cameraFlyTo(...historyChangeFlyTo)
       }
       drawNansonggudao(value)
+    })
+
+    nansongHistoryChangeContols.add(guiControls, 'draw1128haianxian').name('1128年海岸线').onChange((value: boolean) => {
+      if (value) {
+        cameraFlyTo(...[118.07657317356775,
+          38.06196564614787, 386645.66])
+      }
+      draw1128haianxian(value)
     })
 
     nansongHistoryChangeContols.add(guiControls, 'drawDayeze').name('大野泽').onChange((value: boolean) => {
@@ -396,6 +565,14 @@ const YellowRiver = () => {
 
       drawMingqinggudao(value)
     })
+    mingqingHistoryChangeContols.add(guiControls, 'draw1855haianxian').name('1855年海岸线').onChange((value: boolean) => {
+      if (value) {
+        cameraFlyTo(...[119.05540293025302,
+          37.44453910849387, 386645.66])
+      }
+      draw1855haianxian(value)
+    })
+
     mingqingHistoryChangeContols.add(guiControls, 'taihanggudi').name('刘大夏太行古堤')
     mingqingHistoryChangeContols.add(guiControls, 'jinfuzhihe').name('靳辅治河')
 
@@ -404,12 +581,84 @@ const YellowRiver = () => {
     minguoHistoryChangeContols.add(guiControls, 'huayuankoujuedi').name('花园口决堤')
 
     minguoHistoryChangeContols.add(guiControls, 'drawHuangfanqu').name('黄泛区').onChange((value: boolean) => {
+      notificationApi.destroy()
 
       if (value) {
         cameraFlyTo(...[116.73033509260588, 32.792614986138204, historyChangeFlyTo[2]])
+        notificationApi.info({
+          style: {
+            maxHeight: '100%',
+          },
+          message: `黄泛区蔓延的地理因素`,
+          description: huangfanquReason,
+          placement: 'bottomLeft',
+          duration: null,
+        })
       }
 
       drawHuangfanqu(value)
+    })
+    minguoHistoryChangeContols.add(guiControls, 'drawHuangfanquCity').name('黄泛区主要城市').onChange((value: boolean) => {
+      const visible = pointInstanceList.current.find(item => item.type === 'huangfanqu-city')?.data.forEach(item => item?.instance?.toggleVisible(value))
+
+      if (value) {
+        cameraFlyTo(...[116.47675963287809, 33.87155722863262, historyChangeFlyTo[2] / 2.8])
+      }
+    })
+
+    /* 综合治理 */
+    comprehensiveManagementContols.add(guiControls, 'drawXiaolangdishuiku').name('小浪底水库').onChange((value: boolean) => {
+      const visible = pointInstanceList.current.find(item => item.type === 'reservoir')?.data.find(item => item.key === 'xiaolangdishuiku')?.instance?.toggleVisible(value)
+      notificationApi.destroy()
+
+      if (value) {
+
+        viewerRef.current!.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(112.53075748, 34.88594434, 1548.71),
+          orientation: {
+            heading: 5.073720142042852,
+            pitch: -1.2591800141292224,
+            roll: 0.00010255291219962714
+          }
+        });
+
+        notificationApi.info({
+          style: {
+            maxHeight: '100%',
+          },
+          message: `小浪底水库`,
+          description: xiaolangdishuiku,
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      }
+    })
+
+    comprehensiveManagementContols.add(guiControls, 'drawSanmenxiashuiku').name('三门峡水库').onChange((value: boolean) => {
+      const visible = pointInstanceList.current.find(item => item.type === 'reservoir')?.data.find(item => item.key === 'sanmenxiashuiku')?.instance?.toggleVisible(value)
+      notificationApi.destroy()
+
+      if (value) {
+
+        viewerRef.current!.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(111.11700500, 34.77034728, 3817.55),
+          orientation: {
+            heading: 1.2687880432952277,
+            pitch: -1.4791303213012164,
+            roll: 0.0014787389090145098
+          }
+        });
+
+        notificationApi.info({
+          style: {
+            maxHeight: '100%',
+          },
+          message: `三门峡水库`,
+          description: sanmenxiashuiku,
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      }
     })
   }
 
@@ -419,175 +668,37 @@ const YellowRiver = () => {
     })
   }
 
-  const initClickHandler = (viewer: Cesium.Viewer) => {
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-
-    handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
-      // 拾取椭球面上的点
-      const cartesian = viewer.camera.pickEllipsoid(
-        movement.position,
-        viewer.scene.globe.ellipsoid
-      );
-      if (!cartesian) return;
-
-      // 转换为经纬度
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-      const lon = Cesium.Math.toDegrees(cartographic.longitude);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude);
-
-      // 获取当前相机大致层级
-      const zoom = Math.round(
-        Math.log2(
-          (2 * Math.PI * 6378137) /
-          viewer.camera.getMagnitude()
-        )
-      );
-
-      // 经纬度 → XYZ 瓦片坐标
-      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
-      const y = Math.floor(
-        ((1 -
-          Math.log(
-            Math.tan((lat * Math.PI) / 180) +
-            1 / Math.cos((lat * Math.PI) / 180)
-          ) /
-          Math.PI) /
-          2) *
-        Math.pow(2, zoom)
-      );
-
-      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-  }
-
   const drawAdministrativeRegion = (checked: boolean) => {
-    if (checked) {
+    drawHistoryRiver(checked, administrativeRegionRef, window.$$prefix + "/data/china/china.geojson", [], {
+      stroke: Cesium.Color.BROWN.withAlpha(0.8),
+      fill: Cesium.Color.WHITE.withAlpha(0.5),
+      strokeWidth: 0.8,
+    })
 
-      if (administrativeRegionRef.current?.length) {
-
-        administrativeRegionRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/china/china.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.BROWN.withAlpha(0.8),
-            fill: Cesium.Color.WHITE.withAlpha(0.5),
-            strokeWidth: 0.8,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            administrativeRegionRef.current = dataSource.entities.values
-          });
-
-        });
-      }
-
-    } else {
-      administrativeRegionRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
   };
 
   const drawYellowRiverBranch = (checked: boolean) => {
-    if (checked) {
-
-      if (yellowRiverBranchRef.current?.length) {
-
-        yellowRiverBranchRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-
-        fetch(window.$$prefix + "/data/yellow-river/yellow-river-branch.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.YELLOW,
-            fill: Cesium.Color.YELLOW.withAlpha(0.1),
-            strokeWidth: 0.5,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            yellowRiverBranchRef.current = dataSource.entities.values
-          });
-
-        });
-      }
-
-    } else {
-      yellowRiverBranchRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
+    drawHistoryRiver(checked, yellowRiverBranchRef, window.$$prefix + "/data/yellow-river/yellow-river-branch.geojson", [], {
+      stroke: Cesium.Color.YELLOW,
+      fill: Cesium.Color.YELLOW.withAlpha(0.1),
+      strokeWidth: 0.5,
+    })
   }
 
   const drawYellowRiverAreaProvince = (checked: boolean) => {
-    if (checked) {
-
-      if (yellowRiverAreaProvinceRef.current?.length) {
-
-        yellowRiverAreaProvinceRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-
-        fetch(window.$$prefix + "/data/yellow-river/yellow-river-area-province.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.PINK,
-            fill: Cesium.Color.PINK.withAlpha(0.5),
-            strokeWidth: 0.5,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            yellowRiverAreaProvinceRef.current = dataSource.entities.values
-          });
-
-        });
-      }
-
-    } else {
-      yellowRiverAreaProvinceRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
+    drawHistoryRiver(checked, yellowRiverAreaProvinceRef, window.$$prefix + "/data/yellow-river/yellow-river-area-province.geojson", [], {
+      stroke: Cesium.Color.PINK,
+      fill: Cesium.Color.PINK.withAlpha(0.5),
+      strokeWidth: 0.5,
+    })
   }
 
   const drawLoessPlateauArea = (checked: boolean) => {
-    if (checked) {
-
-      if (loessPlateauAreaRef.current?.length) {
-
-        loessPlateauAreaRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-
-        fetch(window.$$prefix + "/data/yellow-river/loess-plateau-area.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGE,
-            fill: Cesium.Color.ORANGE.withAlpha(0.4),
-            strokeWidth: 0.5,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            loessPlateauAreaRef.current = dataSource.entities.values
-          });
-
-        });
-      }
-
-    } else {
-      loessPlateauAreaRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
+    drawHistoryRiver(checked, loessPlateauAreaRef, window.$$prefix + "/data/yellow-river/loess-plateau-area.geojson", [], {
+      stroke: Cesium.Color.ORANGE,
+      fill: Cesium.Color.ORANGE.withAlpha(0.4),
+      strokeWidth: 0.5,
+    })
   }
 
   const drawYuhegudao = (checked: boolean) => {
@@ -795,59 +906,208 @@ const YellowRiver = () => {
     })
   }
 
-  useEffect(() => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN;
+  const drawQianhaianxian = (checked: boolean) => {
+    const color = Cesium.Color.fromCssColorString('#006eff')
 
-    const viewer = new Cesium.Viewer(containerRef.current!, {
-      infoBox: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      baseLayerPicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-    });
-
-    viewer.scene.globe.showGroundAtmosphere = false;
-    viewerRef.current = viewer;
-
-
-    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(
-      async (terrain) => {
-        viewer.terrainProvider = terrain;
-        cameraFlyTo(106.42574140217508, 37.565051396604, 4000000)
+    drawHistoryRiver(checked, qianhaianxianRef, window.$$prefix + "/data/yellow-river/qian-602-haianxian.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(116.86843775419166,
+          39.42381075024779),
+        text: "前602年海岸线",
       }
-    );
+    ], {
+      stroke: color.withAlpha(0.8),
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
 
-    (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = "none";
+    })
+  }
 
-    fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
-      Cesium.GeoJsonDataSource.load(data, {
-        stroke: Cesium.Color.BROWN,
-        fill: Cesium.Color.BROWN.withAlpha(0.2),
-        strokeWidth: 2,
-        markerSymbol: "circle"
-      }).then(function (dataSource) {
-        viewer.dataSources.add(dataSource)
-      })
+  const draw11haianxian = (checked: boolean) => {
+    const color = Cesium.Color.fromCssColorString('#00ffffff')
+
+    drawHistoryRiver(checked, haianxian11Ref, window.$$prefix + "/data/yellow-river/11-haianxian.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(119.21084204606973,
+          36.79462374587151),
+        text: "11年海岸线",
+      }
+    ], {
+      stroke: color.withAlpha(0.8),
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+
+    })
+  }
+
+  const draw1048haianxian = (checked: boolean) => {
+    const color = Cesium.Color.fromCssColorString('#00ff88ff')
+
+    drawHistoryRiver(checked, haianxian1048Ref, window.$$prefix + "/data/yellow-river/1048-haianxian.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(118.0322329489798,
+          39.71886717899871),
+        text: "1048年海岸线",
+      }
+    ], {
+      stroke: color.withAlpha(0.8),
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+
+    })
+  }
+
+  const draw1128haianxian = (checked: boolean) => {
+    const color = Cesium.Color.fromCssColorString('#77f700ff')
+
+    drawHistoryRiver(checked, haianxian1128Ref, window.$$prefix + "/data/yellow-river/1128-haianxian.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(118.07657317356775,
+          38.06196564614787),
+        text: "1128年海岸线",
+      }
+    ], {
+      stroke: color.withAlpha(0.8),
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+
+    })
+  }
+
+  const draw1855haianxian = (checked: boolean) => {
+    const color = Cesium.Color.fromCssColorString('#4a00f7ff')
+
+    drawHistoryRiver(checked, haianxian1855Ref, window.$$prefix + "/data/yellow-river/1855-haianxian.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(119.05540293025302,
+          37.44453910849387),
+        text: "1855年海岸线",
+      }
+    ], {
+      stroke: color.withAlpha(0.8),
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+
+    })
+  }
+
+  const drawXingxiuhai = (checked: boolean) => {
+
+    const color = Cesium.Color.CYAN
+
+    drawHistoryRiver(checked, xingxiuhaiRef, window.$$prefix + "/data/yellow-river/xingxiuhai.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(96.86575686785437,
+          35.09537674678664),
+        text: "星宿海",
+      }
+    ], {
+      stroke: color,
+      fill: color.withAlpha(0.2),
+      strokeWidth: 4,
+    })
+  }
+
+  const drawYanshan = (checked: boolean) => {
+
+    const color = Cesium.Color.fromCssColorString('#43e479ff')
+
+    drawHistoryRiver(checked, yanshanshanmaiRef, window.$$prefix + "/data/yellow-river/yanshan.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(116.39553953124192,
+          40.90127913930519),
+        text: "燕山",
+      }
+    ], {
+      stroke: color,
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+    })
+  }
+
+  const drawTaihangshan = (checked: boolean) => {
+
+    const color = Cesium.Color.fromCssColorString('#43e479ff')
+
+    drawHistoryRiver(checked, taihangshanmaiRef, window.$$prefix + "/data/yellow-river/taihangshan.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(112.96971001677872,
+          39.61792177702133),
+        text: "太行山脉",
+      }
+    ], {
+      stroke: color,
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+    })
+  }
+
+  const drawDabieshan = (checked: boolean) => {
+
+    const color = Cesium.Color.fromCssColorString('#43e479ff')
+
+    drawHistoryRiver(checked, dabieshanRef, window.$$prefix + "/data/yellow-river/dabieshan.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(114.41424974288323,
+          31.141458547179752),
+        text: "大别山",
+      }
+    ], {
+      stroke: color,
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+    })
+  }
+
+  const drawTaishan = (checked: boolean) => {
+
+    const color = Cesium.Color.fromCssColorString('#43e479ff')
+
+    drawHistoryRiver(checked, taishanRef, window.$$prefix + "/data/yellow-river/taishan.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(117.48050375009417,
+          36.71990242407065),
+        text: "泰山",
+      }
+    ], {
+      stroke: color,
+      fill: color.withAlpha(0.8),
+      strokeWidth: 2,
+    })
+  }
+
+  const drawShandongqiuling = (checked: boolean) => {
+
+    const color = Cesium.Color.fromCssColorString('#43e479ff')
+
+    drawHistoryRiver(checked, shandongqiulingRef, window.$$prefix + "/data/yellow-river/shandongqiuling.geojson", [
+      {
+        position: Cesium.Cartesian3.fromDegrees(118.76230518148944,
+          36.122097885429966),
+        text: "山东丘陵",
+        fontSize: 18,
+      }
+    ], {
+      stroke: color,
+      fill: color.withAlpha(0.4),
+      strokeWidth: 2,
+    })
+  }
+
+  useEffect(() => {
+    viewerRef.current = mapIntance.current?.getViewer()!
+
+    drawHistoryRiver(true, { current: [] }, window.$$prefix + "/data/china/china-boundary.geojson", [], {
+      stroke: Cesium.Color.BROWN,
+      fill: Cesium.Color.BROWN.withAlpha(0.2),
+      strokeWidth: 4,
     })
 
-    fetch(window.$$prefix + "/data/yellow-river/yellow-river.geojson").then(res => res.json()).then(data => {
-      Cesium.GeoJsonDataSource.load(data, {
-        stroke: Cesium.Color.YELLOW,
-        fill: Cesium.Color.YELLOW.withAlpha(0.2),
-        strokeWidth: 4,
-        markerSymbol: "circle"
-      }).then(function (dataSource) {
-        viewer.dataSources.add(dataSource)
-        /*         viewer.flyTo(dataSource); */
-      });
-
-    });
-
-    initClickHandler(viewer)
+    drawHistoryRiver(true, { current: [] }, window.$$prefix + "/data/yellow-river/yellow-river.geojson", [], {
+      stroke: Cesium.Color.YELLOW,
+      fill: Cesium.Color.YELLOW.withAlpha(0.2),
+      strokeWidth: 4,
+    })
 
     initGui()
 
@@ -868,13 +1128,6 @@ const YellowRiver = () => {
                     defaultVisible: v.defaultVisible,
                     indicationLineColor: v.indicationLineColor,
                     clickCallback() {
-                      /*                       const [longitude, latitude, height] = v.position
-                      
-                                            viewerRef.current?.camera.flyTo({
-                                              destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
-                                            }) */
-
-
                       if (item.type === 'story') {
                         const modalOptions = {
                           icon: null,
@@ -925,18 +1178,73 @@ const YellowRiver = () => {
         })
       })
 
+
+
+    const texts = [
+      {
+        text: '华',
+        position: [111.3262674547979, 38.53333697645296]
+      },
+      {
+        text: '北',
+        position: [113.41137405293155, 38.53333697645296]
+      },
+      {
+        text: '平',
+        position: [115.4602985897172, 38.41332308710166]
+      },
+      {
+        text: '原',
+        position: [117.23490100647336, 38.50714501772409]
+      },
+      {
+        text: '江',
+        position: [113.08432723857378, 32.03840482886292]
+      },
+      {
+        text: '淮',
+        position: [115.3880323330428, 32.03840482886292]
+      },
+      {
+        text: '平',
+        position: [117.77939040052772, 32.03840482886292]
+      },
+      {
+        text: '原',
+        position: [120.02831898723194, 32.03840482886292]
+      }
+    ]
+
+    texts.forEach(item => {
+      viewerRef.current?.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(...item.position as [number, number]),
+        label: {
+          text: item.text,
+          font: `28px sans-serif`,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          outlineWidth: 2,
+          outlineColor: Cesium.Color.RED,
+          fillColor: Cesium.Color.WHITE,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+        }
+      })
+    })
+
     return () => {
-      viewer.destroy();
       guiRef.current?.destroy()
     }
   }, []);
 
-
   return (
-    <div className="canvas-container">
+    <>
+      {notificationContextHolder}
       {modalContext}
-      <div className="canvas-container-body" ref={containerRef} />
-    </div>
+      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+        cameraFlyTo(106.42574140217508, 37.565051396604, 4000000)
+
+      }}></CommonMap>
+    </>
+
   );
 };
 

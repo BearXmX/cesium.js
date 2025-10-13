@@ -1,3 +1,5 @@
+import { div } from "three/tsl"
+
 export const dayuzhishuiStory = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
   <p>
     大约在4000多年前，中国的黄河流域洪水为患，尧命鲧负责领导与组织治水工作。鲧采取“水来土挡”的策略治水。鲧治水失败后由其独子禹主持治水大任。</p>
@@ -253,4 +255,40 @@ export const huayuankoujuediStory = <div style={{ textIndent: '2em', maxHeight: 
     1250万人流离失所，并形成了连年灾荒、瘟疫横行、生态剧变的“黄泛区”，其惨痛影响持续近九年之久
     ，直至1947年堤口才被成功堵复。花园口决堤作为抗日战争中最悲壮的牺牲之一，其军事上的得失至今仍有争议，但它给中原人民带来的深重苦难，已成为民族记忆中无法磨灭的伤痕。
   </p>
+</div>
+
+export const huangfanquReason = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
+  <p>
+    <span style={{ fontWeight: 'bold' }}>地势平坦</span>：黄河下游是广袤的华北平原和江淮平原，地势极为低平，落差很小。一旦失去河道约束，洪水无处可泄，只能缓慢地向东南方向漫延，淹没范围极广。
+  </p>
+  <p> <span style={{ fontWeight: 'bold' }}>地上悬河</span>：由于黄河含沙量极高，下游河道淤积严重，河床高于两岸地面。决堤后，高位的河水倾泻而下，势能巨大，冲击力和覆盖范围都远超普通河流决口。</p>
+  <p> <span style={{ fontWeight: 'bold' }}>水系紊乱</span>：黄河南泛的洪水侵入了淮河流域，打乱了淮河原有的水系。黄河泥沙淤塞了淮河的干流和支流，使得淮河本身也排水不畅，内涝加剧，进一步扩大了灾区的范围。</p>
+</div>
+
+
+export const yellowRiverOrigin = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
+  <p>黄河源（三江源之一）是黄河流域的源头区域，位于青藏高原东北部龙羊峡水库以上，涉及青海、四川、甘肃3省的6个州、18个县，总面积约13.2万平方公里。该区域由<span style={{ color: 'yellow' }}>扎曲</span>、<span style={{ color: 'yellow' }}>约古宗列曲</span>、<span style={{ color: 'yellow' }}>卡日曲</span>三条源流组成，1978年科考认定卡日曲为黄河正源，2018年入围“神奇西北100景”榜单 [1]。核心区青海省玛多县境内分布着扎陵湖、鄂陵湖等高原湖泊群，蓄水量达165亿立方米，占黄河流量的28%</p>
+</div>
+
+export const yellowRiverEnding = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
+  <p>黄河的终点在<span style={{ color: 'yellow' }}>山东省东营市垦利区</span>的黄海入海口，归入渤海。她在这里完成了自己的使命，将生命的活力与文化的底蕴带给了这片土地。黄河的历史文化悠久而深厚，她见证了中华民族的发展壮大，也滋养了华夏文明的繁荣昌盛。</p>
+</div>
+
+export const xiaolangdishuiku = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
+  <p>小浪底水利枢纽位于河南省洛阳市孟津区与济源市之间，三门峡水利枢纽下游130公里、河南省洛阳市以北40公里的黄河干流上，控制流域面积69.4万平方公里，占黄河流域面积的92.3%。
+    坝址所在地南岸为洛阳市孟津区小浪底村，北岸为济源市蓼坞村，是黄河中游最后一段峡谷的出口，是黄河干流三门峡以下唯一能取得较大库容的控制性工程</p>
+  <p>黄河小浪底水利枢纽工程是黄河干流上的一座集减淤、防洪、防凌、供水灌溉、发电等为一体的大型综合性水利工程，
+    是治理开发黄河的关键性工程。小浪底水利枢纽是国家4A级旅游景区，河南省十大旅游热点景区，更被誉为“小千岛湖”。</p>
+</div>
+
+export const sanmenxiashuiku = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
+  <p>三门峡水库，黄河上的第一个大型水利枢纽工程。1957年4月13日，新中国在黄河上修建的第一座大型水库——三门峡水利枢纽工程开工兴建。
+    三门峡水利枢纽是治黄工程体系最重要的组成部分，担负着黄河下游防洪、防凌的重任，保护着冀、豫、鲁、皖、苏5省25万平方公里范围内1．7亿人口的生命财产安全。
+    该枢纽运营45年来，已经形成了独特的生态系统和自然环境。</p>
+</div>
+
+export const xingxiuhai = <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
+  <p>星宿海位于青海省玛多县，邻近扎陵湖和黄河源流玛曲，藏语称“错岔”，意为“花海子”。海拔高，地形狭长，曾被认为是黄河源头。
+    该地有无数湖沼，阳光下光彩夺目，周边生长各种野花，野生动物繁多。黄河水至此流速减缓，形成沼泽和湖泊，如同夜空中闪烁的星星。
+    星宿海有三条支流：扎曲、约古宗列曲和卡日曲，其中卡日曲原为认定的黄河正源，但后经更正，玛曲（约古宗列曲）才是黄河正源。</p>
 </div>

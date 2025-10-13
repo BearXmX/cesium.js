@@ -10,9 +10,11 @@ import SuzhouRiver from './pages/suzhou-river/index.tsx'
 import './index.css'
 import HengduanMountains from './pages/hengduan-mountains/index.tsx'
 import SolarSystem from './pages/solar-system/index.tsx'
+import CommonMap from './components/common-map/index.tsx'
 
 
 export const links = [
+
   {
     name: '首页',
     path: '/',

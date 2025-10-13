@@ -4,6 +4,26 @@
       "type": "subsection",
       "data": [
         {
+          "position": [97.04069987777802, 34.958347022701574, 20],
+          "text": "黄河源",
+          "instance": null,
+          "key": "huangheyuan",
+          "containerBackgroundUrlType": "subsection",
+          "defaultVisible": false,
+          "indicationLineColor": "#ff00e4",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [119.26772836452857, 37.78279740624965, 20],
+          "text": "黄河终点",
+          "instance": null,
+          "key": "huanghezhongdian",
+          "containerBackgroundUrlType": "subsection",
+          "defaultVisible": false,
+          "indicationLineColor": "#ff00e4",
+          "type": "SampleLabel"
+        },
+        {
           "position": [111.05715607250661, 40.259150486471185, 20],
           "text": "上中游分界点：河口镇",
           "instance": null,
@@ -276,6 +296,126 @@
           "containerBackgroundUrlType": "mountain",
           "defaultVisible": false,
           "indicationLineColor": "#00ffcc",
+          "type": "SampleLabel"
+        }
+      ]
+    },
+    {
+      "type": "huangfanqu-city",
+      "data": [
+        {
+          "position": [113.63347196165603, 34.749234812398115, 20],
+          "text": "郑州市",
+          "instance": null,
+          "key": "zhengzhoushi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [114.33487161891696, 34.89927004663319, 20],
+          "text": "开封市",
+          "instance": null,
+          "key": "kaifengshi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [114.6279582242584, 33.63226141690291, 20],
+          "text": "周口市",
+          "instance": null,
+          "key": "kaifengshi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [115.82208841710019, 32.91711237930116, 20],
+          "text": "阜阳市",
+          "instance": null,
+          "key": "fuyangshi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [116.99925599436318, 32.601594823113984, 20],
+          "text": "淮南市",
+          "instance": null,
+          "key": "huainanshi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [117.34502642811464, 32.923847586120644, 20],
+          "text": "蚌埠市",
+          "instance": null,
+          "key": "bengbushi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [118.33009113113519, 33.659961292168944, 20],
+          "text": "宿迁市",
+          "instance": null,
+          "key": "suqianshi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [119.41992850432382, 32.471943119658945, 20],
+          "text": "扬州市",
+          "instance": null,
+          "key": "yangzhoushi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [118.96708380881051, 33.54565263388473, 20],
+          "text": "淮安市",
+          "instance": null,
+          "key": "huaianshi",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        }
+      ]
+    },
+    {
+      "type": "reservoir",
+      "data": [
+        {
+          "position": [112.52428938923623, 34.88970492197289, 20],
+          "text": "小浪底水库",
+          "instance": null,
+          "key": "xiaolangdishuiku",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
+          "type": "SampleLabel"
+        },
+        {
+          "position": [111.12104442718986, 34.771751934966964, 20],
+          "text": "三门峡水库",
+          "instance": null,
+          "key": "sanmenxiashuiku",
+          "containerBackgroundUrlType": "position",
+          "defaultVisible": false,
+          "indicationLineColor": "#4bc86b",
           "type": "SampleLabel"
         }
       ]
