@@ -175,8 +175,6 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       <div className="canvas-container">
         <div className="canvas-container-body" ref={containerRef} />
       </div>
-
-
     </>
 
   );

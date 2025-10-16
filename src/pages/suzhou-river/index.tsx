@@ -1,24 +1,35 @@
 import * as Cesium from 'cesium'
-import { useEffect, useRef } from 'react'
-import WaterPrimitive from '@/utils/plugins/water-primitive'
+import { useEffect, useRef, useState } from 'react'
 import * as gui from 'lil-gui'
 import SampleLabel from '@/utils/plugins/sample-label'
-import { notification } from 'antd'
+import { notification, Slider } from 'antd'
 import landUseType1958 from '@/assets/suzhou-river/land-use-type-1958.png'
 import landUseType1989 from '@/assets/suzhou-river/land-use-type-1989.png'
 import landUseType2021 from '@/assets/suzhou-river/land-use-type-2021.png'
 import ImageText from '@/utils/plugins/image-text'
+import type { CommonMapInstanceType } from '@/components/common-map'
+import CommonMap from '@/components/common-map'
+import { addWaterRegion, coordinatesToPositions } from './constance'
+import WaterQualityCharts from './water-quality-charts'
+import CesiumDrawHexagonalGrid from '@/utils/plugins/polygon'
+import './index.css'
 
 type SuzhouRiverPropsType = {}
 
+const defaultMinYear = 1986
+const defaultMaxYear = 2020
 const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
-  const [notificationApi, notificationContextHolder] = notification.useNotification()
+  const mapIntance = useRef<CommonMapInstanceType>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [notificationApi, notificationContextHolder] = notification.useNotification()
 
   const viewerRef = useRef<Cesium.Viewer | null>(null)
 
   const guiRef = useRef<gui.GUI | null>(null)
+
+  const [showTimeLine, setShowTimeLine] = useState<string[]>([])
+
+  const [year, setYear] = useState<number>(defaultMinYear)
 
   const suzhouRiverWaterPrimitivesRef = useRef<any[]>([])
 
@@ -27,6 +38,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   const wenzaobangWaterPrimitivesRef = useRef<any[]>([])
 
   const wusongjiangWaterPrimitivesRef = useRef<any[]>([])
+
+  const [showSuzhouRiverWaterQualityCharts, setShowSuzhouRiverWaterQualityCharts] = useState<boolean>(false)
 
   const pointInstanceList = useRef<
     {
@@ -41,58 +54,66 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     }[]
   >([])
 
-  const suzhouRiverDistrictArea = useRef<Cesium.Entity[]>([])
+  const suzhouRiverDistrictAreaRef = useRef<Cesium.Entity[]>([])
 
-  /** @description 获取当前相机参数 */
-  const getCameraParams = (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
-    const camera = viewerRef.current!.camera
+  const suzhouRiverBoxRef = useRef<Cesium.Entity[]>([])
 
-    // 获取相机位置（笛卡尔坐标）
-    const position = camera.position
-
-    // 获取方向参数
-    const heading = camera.heading
-    const pitch = camera.pitch
-    const roll = camera.roll
-
-    // 转换为经纬度
-    const cartographic = Cesium.Cartographic.fromCartesian(position)
-    const lon = Cesium.Math.toDegrees(cartographic.longitude)
-    const lat = Cesium.Math.toDegrees(cartographic.latitude)
-    const height = cartographic.height
-
-    // 生成flyTo代码
-    const code = `viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(${lon.toFixed(8)}, ${lat.toFixed(8)}, ${height.toFixed(2)}),
-      orientation: {
-          heading: ${heading},
-          pitch: ${pitch},
-          roll: ${roll}
-      }
-  });`
-
-    console.log(code)
-
-    return code
+  const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}) => {
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+      ...options,
+    })
   }
 
-  const cartesian3ToDegrees = (cartesian: Cesium.Cartesian3, ellipsoid: Cesium.Ellipsoid) => {
-    // 如果未指定椭球体，使用默认的WGS84椭球体
-    ellipsoid = ellipsoid || Cesium.Ellipsoid.WGS84
+  const drawGeometry = (show: boolean, ref: React.RefObject<Cesium.Entity[]>, url: string, texts: { position: Cesium.Cartesian3, text: string, fontSize?: number }[], options: Cesium.GeoJsonDataSource.LoadOptions & {
+    color?: Cesium.Color,
+    loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
+  }) => {
+    if (show) {
 
-    // 将笛卡尔坐标转换为弧度表示的地理坐标（包含经度、纬度和高度）
-    const cartographic = ellipsoid.cartesianToCartographic(cartesian)
+      if (ref.current?.length) {
 
-    // 将弧度转换为度
-    const longitude = Cesium.Math.toDegrees(cartographic.longitude)
-    const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-    const height = cartographic.height
+        ref.current.forEach(item => {
+          item.show = true
+        })
 
-    // 返回转换后的结果
-    return {
-      longitude: longitude, // 经度（度）
-      latitude: latitude, // 纬度（度）
-      height: height, // 高度（米）
+      } else {
+        fetch(url).then(res => res.json()).then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            markerSymbol: "circle",
+            ...options
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            ref.current.push(...dataSource.entities.values)
+
+            texts.forEach(item => {
+              ref.current.push(viewerRef.current!.entities.add({
+                position: item.position,
+                label: {
+                  text: item.text,
+                  font: `${item.fontSize || 16}px sans-serif`,
+                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                  outlineWidth: 2,
+                  outlineColor: options.color || options.fill?.withAlpha(1),
+                  fillColor: Cesium.Color.WHITE,
+                  disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+                }
+              }))
+            })
+
+            if (typeof options.loadedDataCallback === 'function') {
+              options.loadedDataCallback(data, dataSource)
+            }
+          });
+        });
+
+
+      }
+
+    } else {
+      ref.current!.forEach(item => {
+        item.show = false
+      })
     }
   }
 
@@ -150,49 +171,47 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   }
 
   const drawSuzhouRiverDistrictArea = (checked: boolean) => {
-    if (checked) {
-      if (suzhouRiverDistrictArea.current?.length) {
-        suzhouRiverDistrictArea.current.forEach(item => {
-          item.show = true
-        })
-      } else {
-        fetch(window.$$prefix + '/data/suzhou-river/district.geojson')
-          .then(res => res.json())
-          .then(data => {
-            Cesium.GeoJsonDataSource.load(data, {
-              stroke: Cesium.Color.BROWN.withAlpha(1),
-              fill: Cesium.Color.WHITE.withAlpha(0.6),
-              strokeWidth: 2,
-              markerSymbol: 'circle',
-            }).then(function (dataSource) {
-              data.features.forEach((item: any) => {
-                const position = item.properties.center
-                const text = item.properties.name
+    drawGeometry(checked, suzhouRiverDistrictAreaRef, window.$$prefix + "/data/suzhou-river/district.geojson", [], {
+      stroke: Cesium.Color.BROWN.withAlpha(1),
+      fill: Cesium.Color.WHITE.withAlpha(0.6),
+      strokeWidth: 2,
+      loadedDataCallback(data) {
+        data.features.forEach((item: any) => {
+          const position = item.properties.center
+          const text = item.properties.name
 
-                const label = viewerRef.current!.entities.add({
-                  position: Cesium.Cartesian3.fromDegrees(...(position as [number, number, number])),
-                  label: {
-                    text: text,
-                    font: '20px sans-serif',
-                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    outlineWidth: 2,
-                    outlineColor: Cesium.Color.RED,
-                    fillColor: Cesium.Color.YELLOW,
-                    disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-                  },
-                })
-
-                suzhouRiverDistrictArea.current.push(label)
-              })
-
-              viewerRef.current!.dataSources.add(dataSource)
-              suzhouRiverDistrictArea.current = [...suzhouRiverDistrictArea.current, ...dataSource.entities.values]
-            })
+          const label = viewerRef.current!.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(...(position as [number, number, number])),
+            label: {
+              text: text,
+              font: '20px sans-serif',
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              outlineWidth: 4,
+              outlineColor: Cesium.Color.BLACK,
+              fillColor: Cesium.Color.YELLOW,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+            },
           })
-      }
-    } else {
-      suzhouRiverDistrictArea.current!.forEach(item => {
-        item.show = false
+
+          suzhouRiverDistrictAreaRef.current.push(label)
+        })
+      },
+    })
+  }
+
+  const handleLandUseBox = () => {
+
+    if (!showTimeLine.includes('landUse')) return
+
+    suzhouRiverBoxRef.current.forEach(item => {
+      item.show = false
+    })
+
+    if (year < 1989) {
+      suzhouRiverBoxRef.current.filter(item => {
+        return item.properties!.year < 1989;
+      }).forEach(item => {
+        item.show = true
       })
     }
   }
@@ -208,10 +227,9 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     drawSuzhouRiverEnding: false,
     drawSuzhouRiverIndustrialHeritage: false,
     drawSuzhouRiverDistrictArea: false,
+    drawWaterQualitycheckCharts: false,
+    drawSuzhouRiverLandUseTypeTimeline: false,
 
-    getCameraParams: () => {
-      getCameraParams(viewerRef)
-    },
 
     history: () => {
       viewerRef.current?.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(121.44681124210383, 31.253252971821134, 300) })
@@ -256,8 +274,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     guiRef.current = new gui.GUI({})
 
     guiRef.current.title('苏州河')
-
-    const historyControls = guiRef.current.addFolder('历史影像')
+    /* 
+        const historyControls = guiRef.current.addFolder('历史影像') */
 
     const suzhouRiverAreaControls = guiRef.current.addFolder('区域划分')
 
@@ -271,10 +289,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
 
     const industrialHeritageControls = guiRef.current.addFolder('沿岸遗产')
 
-    guiRef.current.add(guiControls, 'getCameraParams').name('获取相机参数')
-
     /* 历史影像 */
-    historyControls.add(guiControls, 'history').name('加载恒丰路历史影像')
+    /*     historyControls.add(guiControls, 'history').name('加载恒丰路历史影像') */
 
     /* 区域划分 */
     suzhouRiverAreaControls
@@ -384,6 +400,38 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         showLandUseType(value)
       })
 
+
+    landUseTypeControls
+      .add(guiControls, 'drawSuzhouRiverLandUseTypeTimeline')
+      .name('用地类型历年分布')
+      .onChange((value: boolean) => {
+        setYear(defaultMinYear)
+
+        if (value) {
+          setShowTimeLine((prev) => {
+            return [...prev, 'landUse']
+          })
+
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(121.42319435, 31.24046338, 13696.69),
+            orientation: {
+              heading: 6.283185307179581,
+              pitch: -1.5707961669977455,
+              roll: 0
+            }
+          });
+        } else {
+
+          setShowTimeLine((prev) => {
+            return [...prev].filter(item => item !== 'landUse')
+          })
+
+          suzhouRiverBoxRef.current.forEach(item => {
+            item.show = false
+          })
+        }
+      })
+
     /* 水质 */
     const drawWaterQualitycheckpointControl = waterQualityControls
       .add(guiControls, 'drawWaterQualitycheckpoint')
@@ -398,6 +446,23 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
 
           viewerRef.current?.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(121.2969150311974, 31.247713859928712, 50000),
+          })
+        }
+      })
+
+    waterQualityControls.add(guiControls, 'drawWaterQualitycheckCharts')
+      .name('水质变化历年图表')
+      .onChange((value: boolean) => {
+        setYear(defaultMinYear)
+        setShowSuzhouRiverWaterQualityCharts(value)
+
+        if (value) {
+          setShowTimeLine((prev) => {
+            return [...prev, 'waterQuality']
+          })
+        } else {
+          setShowTimeLine((prev) => {
+            return [...prev].filter(item => item !== 'waterQuality')
           })
         }
       })
@@ -429,153 +494,75 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       })
   }
 
-  const initClickHandler = (viewer: Cesium.Viewer) => {
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+  const drawRiver = (url: string, ref: React.RefObject<any[]>, options?: {
+    loadDataCallback?: (data: any) => void
 
-    handler.setInputAction((movement: { position: Cesium.Cartesian2 }) => {
-      // 拾取椭球面上的点
-      const cartesian = viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid)
-      if (!cartesian) return
+  }) => {
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        data.features.forEach((item: any) => {
+          const coordinates = item.geometry.coordinates[0]
+          const positions = coordinatesToPositions(coordinates)
+          addWaterRegion(positions, ref.current, viewerRef)
+        })
 
-      // 转换为经纬度
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
-      const lon = Cesium.Math.toDegrees(cartographic.longitude)
-      const lat = Cesium.Math.toDegrees(cartographic.latitude)
-
-      // 获取当前相机大致层级
-      const zoom = Math.round(Math.log2((2 * Math.PI * 6378137) / viewer.camera.getMagnitude()))
-
-      // 经纬度 → XYZ 瓦片坐标
-      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))
-      const y = Math.floor(((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * Math.pow(2, zoom))
-
-      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`)
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-  }
-
-  const addWaterRegion = (positions: any, instance: any[]) => {
-    let waterPrimitive = new WaterPrimitive(positions, {
-      baseWaterColor: Cesium.Color.AQUA.withAlpha(0.6),
-      normalMap: window.$$prefix + '/waterNormalsSmall.jpg',
-      frequency: 1000.0,
-      animationSpeed: 0.01,
-      amplitude: 100,
-      specularIntensity: 100,
-    })
-
-    viewerRef.current!.scene.primitives.add(waterPrimitive) //添加到场景
-
-    instance.push(waterPrimitive)
-  }
-
-  const coordinatesToPositions = (coordinates: any[]) => {
-    let positions = [] as any
-    coordinates.map(c => {
-      positions.push(Cesium.Cartesian3.fromDegrees(c[0], c[1], 0))
-    })
-
-    return positions
+        if (typeof options?.loadDataCallback === 'function') {
+          options.loadDataCallback(data)
+        }
+      })
   }
 
   useEffect(() => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN
 
-    const viewer = new Cesium.Viewer(containerRef.current!, {
-      infoBox: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      baseLayerPicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
+    viewerRef.current = mapIntance.current?.getViewer()!
+
+    drawGeometry(true, { current: [] }, window.$$prefix + '/data/china/china-boundary.geojson', [], {
+      stroke: Cesium.Color.BROWN,
+      fill: Cesium.Color.BROWN.withAlpha(0.2),
+      strokeWidth: 4,
     })
-    viewer.scene.globe.showGroundAtmosphere = false;
-    viewerRef.current = viewer
 
-    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(async terrain => {
-      viewer.terrainProvider = terrain
-
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(121.491185, 31.250281, 25000),
-      })
+    drawGeometry(true, { current: [] }, window.$$prefix + '/data/china/shanghai-area.geojson', [], {
+      stroke: Cesium.Color.YELLOW,
+      fill: Cesium.Color.TRANSPARENT,
+      strokeWidth: 3,
     })
-      ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
-    fetch(window.$$prefix + '/data/china/china-boundary.geojson')
-      .then(res => res.json())
-      .then(data => {
-        Cesium.GeoJsonDataSource.load(data, {
-          stroke: Cesium.Color.BLUE,
-          fill: Cesium.Color.BLUE.withAlpha(0.2),
-          strokeWidth: 2,
-          markerSymbol: 'circle',
-        }).then(function (dataSource) {
-          viewer.dataSources.add(dataSource)
+    drawRiver(window.$$prefix + '/data/suzhou-river/suzhou-river.geojson', suzhouRiverWaterPrimitivesRef, {
+    })
+    drawRiver(window.$$prefix + '/data/suzhou-river/huangpu-river.geojson', huangpuRiverWaterPrimitivesRef)
+    drawRiver(window.$$prefix + '/data/suzhou-river/wenzaobang.geojson', wenzaobangWaterPrimitivesRef)
+    drawRiver(window.$$prefix + '/data/suzhou-river/wusongjiang-river.geojson', wusongjiangWaterPrimitivesRef)
+
+    drawGeometry(true, suzhouRiverBoxRef, window.$$prefix + '/data/suzhou-river/land-use-1958.geojson', [], {
+      stroke: Cesium.Color.TRANSPARENT,
+      fill: Cesium.Color.BROWN,
+      strokeWidth: 4,
+      loadedDataCallback(data, dataSource) {
+        dataSource.entities.values.forEach((entity) => {
+          entity.show = false
+          entity.properties!.year = 1958
+          // 获取自定义属性
+          const use = entity.properties!.use.getValue();
+
+          if (use === 1) {
+            // @ts-ignore
+            entity.polygon.material = Cesium.Color.fromCssColorString('#9dcf88').withAlpha(0.7)
+          }
+
+          if (use === 2) {
+            // @ts-ignore
+            entity.polygon.material = Cesium.Color.fromCssColorString('#ed6f8a').withAlpha(0.7)
+          }
+
+          if (use === 3) {
+            // @ts-ignore
+            entity.polygon.material = Cesium.Color.fromCssColorString('#05a552').withAlpha(0.7)
+          }
         })
-      })
-
-    fetch(window.$$prefix + '/data/china/shanghai-area.geojson')
-      .then(res => res.json())
-      .then(data => {
-        Cesium.GeoJsonDataSource.load(data, {
-          stroke: Cesium.Color.PINK,
-          fill: Cesium.Color.PINK.withAlpha(0.2),
-          strokeWidth: 2,
-          markerSymbol: 'circle',
-        }).then(function (dataSource) {
-          viewer.dataSources.add(dataSource)
-        })
-      })
-
-    fetch(window.$$prefix + '/data/suzhou-river/suzhou-river.geojson')
-      .then(res => res.json())
-      .then(data => {
-        data.features.forEach((item: any) => {
-          const coordinates = item.geometry.coordinates[0]
-
-          const positions = coordinatesToPositions(coordinates)
-
-          addWaterRegion(positions, suzhouRiverWaterPrimitivesRef.current)
-        })
-      })
-
-    fetch(window.$$prefix + '/data/suzhou-river/huangpu-river.geojson')
-      .then(res => res.json())
-      .then(data => {
-        data.features.forEach((item: any) => {
-          const coordinates = item.geometry.coordinates[0]
-
-          const positions = coordinatesToPositions(coordinates)
-
-          addWaterRegion(positions, huangpuRiverWaterPrimitivesRef.current)
-        })
-      })
-
-    fetch(window.$$prefix + '/data/suzhou-river/wenzaobang.geojson')
-      .then(res => res.json())
-      .then(data => {
-        data.features.forEach((item: any) => {
-          const coordinates = item.geometry.coordinates[0]
-
-          const positions = coordinatesToPositions(coordinates)
-
-          addWaterRegion(positions, wenzaobangWaterPrimitivesRef.current)
-        })
-      })
-
-    fetch(window.$$prefix + '/data/suzhou-river/wusongjiang-river.geojson')
-      .then(res => res.json())
-      .then(data => {
-        data.features.forEach((item: any) => {
-          const coordinates = item.geometry.coordinates[0]
-
-          const positions = coordinatesToPositions(coordinates)
-
-          addWaterRegion(positions, wusongjiangWaterPrimitivesRef.current)
-        })
-      })
+      },
+    })
 
     const texts = [
       {
@@ -584,7 +571,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         fontSize: '30px',
       },
       {
-        text: '黄埔江',
+        text: '黄浦江',
         position: [121.531185, 31.241281],
         fontSize: '40px',
       },
@@ -601,7 +588,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     ]
 
     texts.forEach(item => {
-      viewer.entities.add({
+      viewerRef.current?.entities.add({
         position: Cesium.Cartesian3.fromDegrees(...(item.position as [number, number, number])),
         label: {
           text: item.text,
@@ -614,8 +601,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         },
       })
     })
-
-    initClickHandler(viewer)
 
     initGui()
 
@@ -659,17 +644,60 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       })
 
     return () => {
-      viewer.destroy()
       guiRef.current?.destroy()
     }
   }, [])
 
+
+  useEffect(() => {
+    if (showTimeLine.includes('landUse')) {
+      handleLandUseBox()
+    }
+
+  }, [year, showTimeLine])
+
   return (
-    <div className="canvas-container">
+    <>
       {notificationContextHolder}
-      <div className="canvas-container-body" ref={containerRef} />
+      {
+        showTimeLine.length > 0 && <div className='suzhou-river-timeline-container'>
+          {/*           <div className='suzhou-river-timeline-title'>时间轴</div> */}
+          <div className='suzhou-river-timeline'>
+            <Slider styles={{
+              track: {
+                backgroundColor: 'transparent',
+              },
+              tracks: {
+                background: '#00b96b',
+              },
+              handle: {
+                backgroundColor: '#fff',
+
+              },
+            }} marks={{
+              1986: '1986',
+              1990: '1990',
+              1995: '1995',
+              2000: '2000',
+              2005: '2005',
+              2010: '2010',
+              2015: '2015',
+              2020: '2020',
+            }} step={1} value={year} min={defaultMinYear} max={defaultMaxYear} onChange={(value) => {
+              setYear(value)
+            }} />
+          </div>
+        </div>
+      }
+      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+        cameraFlyTo(121.491185, 31.250281, 25000)
+      }}></CommonMap>
       <div id="slider" style={{ display: 'none' }}></div>
-    </div>
+      {
+        showSuzhouRiverWaterQualityCharts && <WaterQualityCharts year={year}></WaterQualityCharts>
+      }
+    </>
+
   )
 }
 
