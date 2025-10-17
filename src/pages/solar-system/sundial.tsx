@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as THREE from 'three'
+import { latitudePositionInit, longitudePositionInit } from './contant'
 
 
 type SundialPropsType = {
@@ -10,24 +11,39 @@ type SundialPropsType = {
     currentTimeStr: string
     targetPositionCurrentTimeStr: string
   }
+
+  options: {
+    location: 'beijing' | 'other'
+  }
 }
 
 const Sundial: React.FC<SundialPropsType> = (props) => {
-  const { params } = props
+  const { params, options: { location } } = props
 
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
+
   const currentTimeSpanRef = useRef<HTMLSpanElement>(null)
   const targetTimeSpanRef = useRef<HTMLSpanElement>(null)
 
   const shadowRef = useRef<THREE.Mesh | null>(null)
   const cylinderGroupRef = useRef<THREE.Group | null>(null)
 
+  const [containerWidth, setContainerWidth] = useState(0)
+  const [containerHeight, setContainerHeight] = useState(0)
+
+
+
   // 常量定义
   const CYLINDER_RADIUS = 3
   const CYLINDER_THICKNESS = 1
+
   const CENTER_Y = CYLINDER_THICKNESS / 2 // 圆柱中心Y坐标
+
   const BASE_SHADOW_LENGTH = CYLINDER_RADIUS * 0.25  // 基础保留长度（19-6点）
+
   const MAX_SHADOW_LENGTH = CYLINDER_RADIUS * 2.5  // 最大长度（13点）
+
   const INITIAL_24H_ANGLE = -Math.PI / 2; // 24点初始角度（-90°）
 
   const main = () => {
@@ -45,7 +61,7 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
 
     // 3. 场景与光源
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x1a1a2e) // 深色背景
+    scene.background = new THREE.Color('#050515') // 深色背景
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
     scene.add(ambientLight)
 
@@ -120,15 +136,20 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
 
       // 刻度线（24小时制）
       const markerGroup = new THREE.Group()
+
       for (let i = 0; i < 24; i++) {
         const angle = (i * 15) * (Math.PI / 180) // 每小时15度
         const x = Math.cos(angle) * CYLINDER_RADIUS
         const y = Math.sin(angle) * CYLINDER_RADIUS
 
+        const flag = [0, 3, 6, 9, 12, 15, 18, 21].map(item => (item - 6 + 24) % 24).includes(i)
+
+        // 原刻度线
         const marker = new THREE.Mesh(
-          new THREE.BoxGeometry(0.5, 0.05, 0.05),
-          new THREE.MeshStandardMaterial({ color: 0x333333 })
+          new THREE.BoxGeometry(flag ? 0.5 : 0.25, 0.05, 0.05),
+          new THREE.MeshStandardMaterial({ color: flag ? '#622f0a' : 0x333333 })
         )
+
         marker.position.set(
           (x + Math.cos(angle) * 0.25) / 1.2,
           (y + Math.sin(angle) * 0.25) / 1.2,
@@ -136,9 +157,32 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
         )
         marker.rotation.z = angle
         markerGroup.add(marker)
+
+        // 刻度线下面的平面Mesh（贴在圆柱表面）
+        const plane = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.5, 0.5),
+          new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 1,
+            side: THREE.DoubleSide
+          })
+        )
+
+        // 贴在圆柱表面
+        plane.position.set(
+          (x + Math.cos(angle) * 0.25) / 1.5,
+          (y + Math.sin(angle) * 0.25) / 1.5,
+          -0.5
+        )
+        plane.rotation.z = angle
+
+        /*         markerGroup.add(plane) */
       }
-      markerGroup.rotation.x = Math.PI / 2 // 刻度盘平躺
+
+      markerGroup.rotation.x = Math.PI / 2
       cylinderGroup.add(markerGroup)
+
 
       riGuiGroup.add(cylinderGroup)
       cylinderGroupRef.current = cylinderGroup
@@ -200,6 +244,20 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
     const handleResize = () => {
       if (!canvas.current) return
       const { clientWidth: width, clientHeight: height } = canvas.current!
+
+      const { clientWidth: containerWidth, clientHeight: containerHeight } = containerRef.current?.parentElement!
+
+      const halfContainerParentHeight = containerHeight / 2
+
+      if (containerWidth * 2 > containerHeight) {
+
+        setContainerHeight(halfContainerParentHeight)
+        setContainerWidth(halfContainerParentHeight)
+      } else {
+        setContainerHeight(containerWidth)
+        setContainerWidth(containerWidth)
+      }
+
       renderer.setSize(width, height, false)
       camera.aspect = 1
       camera.updateProjectionMatrix()
@@ -222,11 +280,11 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
 
       requestAnimationFrame(render)
       handleResize()
-      updateShadow(params.targetPositionCurrentTimeStr) // 用目标时间实时更新
+      updateShadow(location === 'beijing' ? params.currentTimeStr : params.targetPositionCurrentTimeStr) // 用目标时间实时更新
 
       // 刻度盘倾斜逻辑
       if (cylinderGroupRef.current) {
-        const latitude = params.latitudePosition
+        const latitude = location === 'beijing' ? latitudePositionInit : params.latitudePosition
 
         cylinderGroupRef.current.rotation.x = Math.abs(latitude) * (Math.PI / 180)
 
@@ -234,8 +292,13 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
       }
 
       // 更新时间显示
-      currentTimeSpanRef.current!.innerText = params.currentTimeStr
-      targetTimeSpanRef.current!.innerText = params.targetPositionCurrentTimeStr
+      if (currentTimeSpanRef.current) {
+        currentTimeSpanRef.current!.innerText = params.currentTimeStr
+      }
+
+      if (targetTimeSpanRef.current) {
+        targetTimeSpanRef.current!.innerText = params.targetPositionCurrentTimeStr
+      }
 
       renderer.render(scene, camera)
       controls.update()
@@ -269,13 +332,20 @@ const Sundial: React.FC<SundialPropsType> = (props) => {
 
   // ---------------------- 渲染DOM ----------------------
   return (
-    <div className='sundial-container' style={{ position: 'absolute', left: 0, bottom: 0 }}>
-      <div style={{ color: '#fff', marginBottom: 8 }}>
-        北京时间：<span ref={currentTimeSpanRef}>{params.currentTimeStr}</span>
-        <br />
-        目标时间：<span ref={targetTimeSpanRef}>{params.targetPositionCurrentTimeStr}</span>
+    <div className='sundial-container' style={{ height: containerHeight, width: containerWidth, position: 'relative' }} ref={containerRef}>
+      <div style={{ color: '#fff', width: '100%', marginBottom: 8, position: 'absolute', bottom: 10, left: 0, zIndex: 999, textAlign: 'center' }}>
+        {location === 'beijing' &&
+          <>
+            <div style={{ fontSize: 12 }}>北京坐标：<span>东经 {longitudePositionInit} 北纬 {latitudePositionInit} </span></div>
+            <div style={{ fontSize: 12 }}>北京时间：<span ref={currentTimeSpanRef} >{params.currentTimeStr}</span></div>
+          </>}
+        {location === 'other' &&
+          <>
+            <div style={{ fontSize: 12 }}>目标坐标：<span>{params.longitudePosition < 0 ? '西' : '东'}经 {params.longitudePosition} {params.latitudePosition < 0 ? '南' : '北'}纬 {params.latitudePosition} </span></div>
+            <div style={{ fontSize: 12 }}>目标时间：<span ref={targetTimeSpanRef}>{params.targetPositionCurrentTimeStr}</span></div>
+          </>}
       </div>
-      <div style={{ width: 400, height: 400 }}>
+      <div style={{ height: '100%' }}>
         <canvas className="canvas-container-body" ref={canvas}></canvas>
       </div>
     </div>

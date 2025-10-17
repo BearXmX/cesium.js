@@ -200,7 +200,7 @@ export const makeStars = () => {
   const colors = new Float32Array(count * 3);
 
   for (let i = 0; i < count * 3; i++) {
-    positions[i] = (Math.random() - 0.5) * staticConfig.radius * 2;
+    positions[i] = (Math.random() - 0.5) * staticConfig.radius * 4;
     colors[i] = Math.random() * 10;
   }
 

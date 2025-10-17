@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import {
@@ -9,7 +9,6 @@ import {
   makeSolarTermsEarth,
   makeStars,
   getEarthCenterPos,
-  latLonToPosition,
   makeAmbientLight_AxesHelper_OrbitControls,
   makeOrbit,
   makeSun,
@@ -22,10 +21,15 @@ import {
   latitudePositionInit,
   longitudePositionInit,
   INITIAL_BASE_MINUTES_INIT,
+  latLonToPosition,
 } from './contant';
 import Sundial from './sundial';
+import { Button, message, Modal } from 'antd';
+import PickEarth, { type PickEarthInstanceType } from './pick-earth';
+import { log } from 'three/src/nodes/TSL.js';
 
 const SolarSystem: React.FC = () => {
+  const [messageApi, messageContext] = message.useMessage()
   // 基础DOM和Three.js对象引用
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -45,6 +49,9 @@ const SolarSystem: React.FC = () => {
 
   const sunRef = useRef<THREE.Mesh | null>(null);
 
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const pickEarthRef = useRef<PickEarthInstanceType | null>(null);
+
   // 自转
   const lastFrameTimeRef = useRef<number>(0);
   const initialRotationYRef = useRef<number>(0); // 初始旋转角度（用于计算相对旋转量）
@@ -54,8 +61,8 @@ const SolarSystem: React.FC = () => {
   const latitudeGuiRef = useRef<any>(null);
   const longitudeGuiRef = useRef<any>(null);
 
-  // 标记点引用
-  const markersRef = useRef<THREE.Mesh[]>([]);
+  const [confirmPickLocation, setConfrmPickLocation] = useState<[lon: number, lat: number] | []>([])
+  const markersRef = useRef<THREE.Mesh[]>([])
 
   // GUI配置参数（初始时间设置为8:00）
   const guiConfigParamsRef = useRef({
@@ -81,13 +88,54 @@ const SolarSystem: React.FC = () => {
     latitudePosition: latitudePositionInit,   // 北京纬度
     longitudePosition: longitudePositionInit,  // 北京经度
     currentTimeStr: currentTimeStrInit, // 初始北京时间
-    targetPositionCurrentTimeStr: currentTimeStrInit
+    targetPositionCurrentTimeStr: currentTimeStrInit,
+
+    pickEarthPosition: () => {
+      setModalVisible(true);
+    },
   });
 
   // 新增：初始时间基准（8:00对应的分钟数）
   const INITIAL_BASE_MINUTES = INITIAL_BASE_MINUTES_INIT // 8:00 = 480分钟
 
   const revolutionGuiRef = useRef<any>(null);
+
+  /** 销毁旧标记点 */
+  const destroyOldMarkers = () => {
+    if (markersRef.current.length === 0) return
+    markersRef.current.forEach(marker => {
+      if (marker.name !== 'init') {
+        if (marker.parent) marker.parent.remove(marker)
+        marker.geometry.dispose()
+        if (Array.isArray(marker.material)) {
+          marker.material.forEach(mat => mat.dispose())
+        } else {
+          marker.material.dispose()
+        }
+      }
+    })
+    markersRef.current = markersRef.current.filter(marker => marker.name === 'init')
+  }
+
+  /** 创建标记点 */
+  const createMarker = (params: { lat: number, lon: number, color?: string, size?: number, name?: string }): THREE.Mesh => {
+    if (!earthRef.current) return new THREE.Mesh()
+    destroyOldMarkers()
+
+    const { lat, lon, color = '#00b96b', size = 0.05, name = '' } = params
+    const earthMesh = earthRef.current
+    const earthScale = earthMesh.scale.x
+    const actualEarthRadius = earthRadius / earthScale
+    const position = latLonToPosition(lat, lon, actualEarthRadius)
+    const geometry = new THREE.SphereGeometry(size, 16, 16)
+    const material = new THREE.MeshBasicMaterial({ color })
+    const marker = new THREE.Mesh(geometry, material)
+    if (name) marker.name = name
+    marker.position.copy(position)
+    markersRef.current.push(marker)
+    earthMesh.add(marker)
+    return marker
+  }
 
   const initScene = () => {
     if (!canvasRef.current) return;
@@ -129,7 +177,7 @@ const SolarSystem: React.FC = () => {
     };
 
     // 创建各类相机
-    const mainCamera = createCamera([75, window.innerWidth / window.innerHeight, 0.1, 1000], [0, 15, 40], '主相机');
+    const mainCamera = createCamera([75, window.innerWidth / window.innerHeight, 0.1, 1000], [2, 4, 40], '主相机');
     const observeInnerEarthCamera = createCamera([75, window.innerWidth / window.innerHeight, 0.001, 1000], [0, 0, 0], '观察内圈地球相机');
     const observeOutEarthCamera = createCamera([75, window.innerWidth / window.innerHeight, 0.1, 1000], [0, 0, 0], '观察外圈地球相机');
     const observeEarthNorthPoleCamera = createCamera([80, window.innerWidth / window.innerHeight, 0.1, 300], [0, 0, 0], '观察地球北极相机', false);
@@ -140,128 +188,7 @@ const SolarSystem: React.FC = () => {
     // 初始化控制器
     const { controls } = makeAmbientLight_AxesHelper_OrbitControls(scene, mainCamera, renderer);
 
-    /* 点击事件 */
-    const addEarthClickEvent = () => {
-      if (!canvasRef.current || !earthGroupRef.current) return;
 
-      const raycaster = new THREE.Raycaster();
-
-      const mouse = new THREE.Vector2();
-
-      const onCanvasClick = (event: MouseEvent) => {
-        const earthMesh = earthRef.current;
-        const currentCamera = cameraInstanceList[guiConfigParamsRef.current.activeCameraIndex];
-        if (!earthMesh || !currentCamera) return;
-
-        // 1. 计算鼠标归一化坐标（不变）
-        const rect = canvasRef.current!.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        // 2. 更新相机矩阵（不变）
-        currentCamera.updateMatrixWorld();
-        raycaster.setFromCamera(mouse, currentCamera);
-        raycaster.params.Mesh.threshold = 0.1;
-
-        // 3. 检测地球本体（不变）
-        const intersects = raycaster.intersectObject(earthMesh, false);
-        if (intersects.length === 0) return;
-
-        // 4. 坐标转换（不变）
-        const worldPoint = intersects[0].point.clone();
-        const earthToWorldMatrix = earthMesh.matrixWorld;
-        const worldToEarthMatrix = new THREE.Matrix4().copy(earthToWorldMatrix).invert();
-        const earthLocalPoint = worldPoint.applyMatrix4(worldToEarthMatrix);
-
-        // 5. 计算实际地球半径（不变）
-        const scaleFactor = (earthMesh.scale.x + earthMesh.scale.y + earthMesh.scale.z) / 3;
-        const actualEarthRadius = earthRadius * scaleFactor;
-
-        // 🔥 彻底重构经纬度计算逻辑（关键修复）
-        const lat = Math.asin(earthLocalPoint.y / actualEarthRadius) * (180 / Math.PI);
-
-        const reversedX = -earthLocalPoint.x; // 关键：X轴取反
-
-        // 核心公式：通过已知目标反推正确参数
-        // 当点击东经120°时，强制让计算结果接近120°
-        const rawLon = Math.atan2(earthLocalPoint.z, reversedX) * (180 / Math.PI);
-
-        // 步骤3：根据你的数据计算偏移（东经120°对应当前-30°，差150°）
-        const offset = 180; // 120 - (-30) = 150，填补这个差值
-        let lon = (rawLon + offset) % 360;
-
-        // 步骤4：归一化到[-180, 180]
-        if (lon > 180) lon -= 360;
-        else if (lon < -180) lon += 360;
-
-        const _lat = Number(lat.toFixed(1));
-        const _lon = Number(lon.toFixed(1))
-
-        createMarker({ lat: _lat, lon: _lon });
-
-        guiConfigParamsRef.current.latitudePosition = _lat;
-        guiConfigParamsRef.current.longitudePosition = _lon;
-
-        latitudeGuiRef.current?.updateDisplay()
-        longitudeGuiRef.current?.updateDisplay()
-      };
-
-      canvasRef.current.addEventListener('click', onCanvasClick);
-    };
-
-
-    // 创建标记点
-    const createMarker = (params: { lat: number, lon: number, color?: string, size?: number, name?: string }): THREE.Mesh => {
-      if (!earthRef.current) return new THREE.Mesh();
-
-      destroyOldMarkers();
-
-      const { lat, lon, color = '#00b96b', size = 0.05, name = '' } = params;
-
-      const earthMesh = earthRef.current;
-      const earthScale = earthMesh.scale.x;
-      const actualEarthRadius = earthRadius / earthScale;
-
-      const position = latLonToPosition(lat, lon, actualEarthRadius);
-
-      const geometry = new THREE.SphereGeometry(size, 16, 16);
-
-      const material = new THREE.MeshBasicMaterial({ color });
-
-      const marker = new THREE.Mesh(geometry, material);
-
-      if (name) {
-        marker.name = name;
-      }
-
-      marker.position.copy(position);
-
-      markersRef.current.push(marker);
-
-      earthMesh.add(marker);
-      return marker;
-    };
-
-    // 销毁旧标记点
-    const destroyOldMarkers = () => {
-      if (markersRef.current.length === 0) return;
-
-      markersRef.current.forEach(marker => {
-
-        if (marker.name !== 'init') {
-          if (marker.parent) marker.parent.remove(marker);
-          marker.geometry.dispose();
-          if (Array.isArray(marker.material)) {
-            marker.material.forEach(mat => mat.dispose());
-          } else {
-            marker.material.dispose();
-          }
-        }
-
-      });
-
-      markersRef.current = markersRef.current.filter(marker => marker.name === 'init');
-    };
 
     // 更新太阳光目标
     const updateSunlightTarget = () => {
@@ -338,15 +265,6 @@ const SolarSystem: React.FC = () => {
       lineGroupRef.current = latLonLines;
       earthMesh.add(latLonLines);
 
-      // 创建初始标记点（北京）
-      createMarker({
-        lon: guiConfigParamsRef.current.longitudePosition,
-        lat: guiConfigParamsRef.current.latitudePosition,
-        color: 'red',
-        size: 0.08,
-        name: 'init'
-      });
-
       // 配置特殊视角相机
       observeEarthNorthPoleCamera.position.set(0.1, 6, -0.1);
       observeEarthNorthPoleCamera.lookAt(earthGroup.position);
@@ -376,6 +294,14 @@ const SolarSystem: React.FC = () => {
       // 初始化时间
       guiConfigParamsRef.current.revolutionStartTime = performance.now();
       lastFrameTimeRef.current = performance.now();
+
+      createMarker({
+        lon: longitudePositionInit,
+        lat: latitudePositionInit,
+        color: 'red',
+        size: 0.08,
+        name: 'init',
+      })
     };
 
     // 创建GUI控制器
@@ -531,29 +457,23 @@ const SolarSystem: React.FC = () => {
           if (marker) marker.visible = val;
         });
 
-      const latitudeAndLongitudeFolder = guiRef.current.addFolder('经纬度标点控制');
+      const latitudeAndLongitudeFolder = guiRef.current.addFolder('坐标控制');
 
-      latitudeGuiRef.current = latitudeAndLongitudeFolder.add(params, 'latitudePosition')
-        .min(-90).max(90).step(0.1)
-        .name('纬度')
-        .onFinishChange((val: number) => {
-          createMarker({
-            lat: val,
-            lon: params.longitudePosition
-          });
+      /*       latitudeGuiRef.current = latitudeAndLongitudeFolder.add(params, 'latitudePosition')
+              .min(-90).max(90).step(0.1)
+              .name('纬度')
+              .onFinishChange((val: number) => {
+      
+              });
+      
+            longitudeGuiRef.current = latitudeAndLongitudeFolder.add(params, 'longitudePosition')
+              .min(-180).max(180).step(0.1)
+              .name('经度')
+              .onFinishChange((val: number) => {
+              }); */
 
-        });
-
-      longitudeGuiRef.current = latitudeAndLongitudeFolder.add(params, 'longitudePosition')
-        .min(-180).max(180).step(0.1)
-        .name('经度')
-        .onFinishChange((val: number) => {
-          createMarker({
-            lat: params.latitudePosition,
-            lon: val
-          });
-
-        });
+      latitudeAndLongitudeFolder.add(params, 'pickEarthPosition')
+        .name('选取坐标')
     };
 
     // 初始化场景
@@ -562,7 +482,6 @@ const SolarSystem: React.FC = () => {
       createOrbit();
       createEarth();
       createGUI();
-      addEarthClickEvent();
     };
 
     make();
@@ -694,7 +613,6 @@ const SolarSystem: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       renderer?.dispose();
       guiRef.current?.destroy();
-      destroyOldMarkers();
     };
   };
 
@@ -705,15 +623,72 @@ const SolarSystem: React.FC = () => {
   }, []);
 
   return (
-    <div className='canvas-container' style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <canvas
-        className='canvas-container-body'
-        ref={canvasRef}
-        style={{ width: '100%', height: '100%' }}
-      ></canvas>
 
-      <Sundial params={guiConfigParamsRef.current}></Sundial>
-    </div>
+    <>
+      {messageContext}
+      <div className='canvas-container' style={{ width: '100vw', height: '100vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div className='canvas-container-left' style={{ height: 'calc(100%)', width: 350, maxWidth: '25%', background: '#050515', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Sundial params={guiConfigParamsRef.current} options={{
+            location: 'beijing'
+          }}></Sundial>
+          <Sundial params={guiConfigParamsRef.current} options={{
+            location: 'other'
+          }}></Sundial>
+        </div>
+
+        <div className='canvas-container-right' style={{ height: '100%', flex: 1 }}>
+          <canvas
+            className='canvas-container-body'
+            ref={canvasRef}
+            style={{ width: '100%', height: '100%' }}
+          ></canvas>
+        </div>
+
+        <Modal title='选取坐标' afterOpenChange={(visible) => {
+          if (!visible) {
+            pickEarthRef.current?.setPickLocation([])
+          } else {
+            if (confirmPickLocation.length) {
+              pickEarthRef.current?.setPickLocation(confirmPickLocation)
+            }
+          }
+        }} open={modalVisible} onCancel={() => setModalVisible(false)} width={800} zIndex={1002} maskClosable={false} footer={
+          <>
+            <Button onClick={() => setModalVisible(false)}>关闭</Button>
+
+            <Button type='primary' onClick={() => {
+              const location = pickEarthRef.current?.getPickLocation() || []
+
+              if (!location.length) {
+                messageApi.error('请选取点位')
+                return
+              }
+
+              createMarker({
+                lon: location[0],
+                lat: location[1],
+                color: '#00b96b',
+                size: 0.04,
+                name: 'other',
+              }
+              )
+              setConfrmPickLocation(location)
+
+              setModalVisible(false)
+
+              guiConfigParamsRef.current.longitudePosition = location[0]
+              guiConfigParamsRef.current.latitudePosition = location[1]
+
+              /*               latitudeGuiRef.current.updateDisplay()
+                            longitudeGuiRef.current.updateDisplay()
+               */
+            }}>确定</Button>
+          </>
+        }>
+          <PickEarth ref={pickEarthRef} confirmPickLocation={confirmPickLocation} modalVisible={modalVisible}></PickEarth>
+        </Modal>
+      </div></>
+
   );
 };
 
