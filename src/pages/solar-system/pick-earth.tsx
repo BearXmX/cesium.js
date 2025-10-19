@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useImperativeHandle } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { createDebugLatLonSphere, earthRadius, latitudePositionInit, latLonToPosition, longitudePositionInit, obliquityRad } from './contant'
+import { createDebugLatLonSphere, earthRadius, latitudePositionInit, latLonToPosition, longitudePositionInit, obliquityRad } from './constance'
 
 export type PickEarthPropsType = {
   confirmPickLocation: [lon: number, lat: number] | []
@@ -14,7 +14,6 @@ export type PickEarthInstanceType = {
 }
 
 const PickEarth = React.forwardRef<PickEarthInstanceType, PickEarthPropsType>((props, ref) => {
-
   const { confirmPickLocation, modalVisible } = props
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -43,7 +42,7 @@ const PickEarth = React.forwardRef<PickEarthInstanceType, PickEarthPropsType>((p
   }
 
   /** 创建标记点 */
-  const createMarker = (params: { lat: number, lon: number, color?: string, size?: number, name?: string }): THREE.Mesh => {
+  const createMarker = (params: { lat: number; lon: number; color?: string; size?: number; name?: string }): THREE.Mesh => {
     if (!earthRef.current) return new THREE.Mesh()
     destroyOldMarkers()
 
@@ -128,14 +127,13 @@ const PickEarth = React.forwardRef<PickEarthInstanceType, PickEarthPropsType>((p
 
         const _lat = Number(lat.toFixed(1))
         const _lon = Number(lon.toFixed(1))
-        console.log(`点击经纬度：${_lon < 0 ? '西经' : '东经'}${_lon},${_lat < 0 ? '南纬' : '北纬'}${_lat}`)
 
         setPickLocation([_lon, _lat])
         createMarker({ lon: _lon, lat: _lat, color: '#00b96b', size: 0.04, name: 'other' })
       }
 
       canvasRef.current.addEventListener('click', onCanvasClick)
-        ; (canvasRef.current as any)._hasClickEvent = true // ✅ 标记已绑定
+      ;(canvasRef.current as any)._hasClickEvent = true // ✅ 标记已绑定
     }
 
     /** 创建地球 */
@@ -148,8 +146,7 @@ const PickEarth = React.forwardRef<PickEarthInstanceType, PickEarthPropsType>((p
 
       textureLoader.load(
         window.$$prefix + '/models/earth/textures/Material.002_diffuse.jpg',
-        (earthTexture) => {
-
+        earthTexture => {
           const material = new THREE.MeshStandardMaterial({
             map: earthTexture,
             color: '#fff',
@@ -179,7 +176,7 @@ const PickEarth = React.forwardRef<PickEarthInstanceType, PickEarthPropsType>((p
           })
         },
         undefined,
-        (err) => console.error('贴图加载失败', err)
+        err => console.error('贴图加载失败', err)
       )
     }
 
@@ -242,22 +239,18 @@ const PickEarth = React.forwardRef<PickEarthInstanceType, PickEarthPropsType>((p
         createMarker({ lon, lat, color: '#00b96b', size: 0.04, name: 'other' })
       }
     } else {
-      console.log('confirmPickLocation', confirmPickLocation, modalVisible)
       setPickLocation([])
       destroyOldMarkers()
     }
-
-
   }, [modalVisible])
 
   return (
-    <div className='pick-earth' style={{ width: '100%', height: '400px', position: 'relative' }}>
+    <div className="pick-earth" style={{ width: '100%', height: '400px', position: 'relative' }}>
       <span style={{ position: 'absolute', top: 10, left: 10, color: '#fff' }}>
         {pickLocation.length > 0 &&
-          `坐标：${pickLocation[0]! < 0 ? '西经' : '东经'}${pickLocation[0]},${pickLocation[1]! < 0 ? '南纬' : '北纬'
-          }${pickLocation[1]}`}
+          `坐标：${pickLocation[0]! < 0 ? '西经' : '东经'}${pickLocation[0]},${pickLocation[1]! < 0 ? '南纬' : '北纬'}${pickLocation[1]}`}
       </span>
-      <canvas className='pick-earth-body' ref={canvasRef} style={{ width: '100%', height: '100%' }}></canvas>
+      <canvas className="pick-earth-body" ref={canvasRef} style={{ width: '100%', height: '100%' }}></canvas>
     </div>
   )
 })

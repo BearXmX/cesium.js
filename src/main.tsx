@@ -1,4 +1,3 @@
-
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, HashRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Button, ConfigProvider, Space, theme } from 'antd'
@@ -10,11 +9,9 @@ import SuzhouRiver from './pages/suzhou-river/index.tsx'
 import './index.css'
 import HengduanMountains from './pages/hengduan-mountains/index.tsx'
 import SolarSystem from './pages/solar-system/index.tsx'
-import CommonMap from './components/common-map/index.tsx'
-
+import Seismograph from './pages/seismograph/index.tsx'
 
 export const links = [
-
   {
     name: '首页',
     path: '/',
@@ -85,6 +82,16 @@ export const links = [
       </Enhance>
     ),
   },
+  {
+    name: '地震仪',
+    path: '/seismograph',
+    content: '',
+    element: (
+      <Enhance>
+        <Seismograph></Seismograph>
+      </Enhance>
+    ),
+  },
 ]
 
 window.$$prefix = import.meta.env.PROD ? import.meta.env.VITE_APP_GITHUB_PROJECT_PATH : ''
@@ -99,21 +106,22 @@ createRoot(document.getElementById('root')!).render(
       },
     }}
   >
-    {
-      import.meta.env.PROD ? <HashRouter>
+    {import.meta.env.PROD ? (
+      <HashRouter>
         <Routes>
           {links.map(route => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
         </Routes>
-      </HashRouter> : <BrowserRouter>
+      </HashRouter>
+    ) : (
+      <BrowserRouter>
         <Routes>
           {links.map(route => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
         </Routes>
       </BrowserRouter>
-    }
-
+    )}
   </ConfigProvider>
 )
