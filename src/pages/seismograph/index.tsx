@@ -6,38 +6,65 @@ import * as gui from 'lil-gui'
 const Seismograph: React.FC = () => {
   const canvas = useRef<HTMLCanvasElement>(null)
   const guiRef = useRef<gui.GUI | null>(null)
-  // ---------- 参数与 GUI ----------
-  const params = {
+
+  // ---------- GUI 参数 ----------
+  const guiParams = useRef({
+    // 实际用于动画的参数
     earthquakeLevel: 5,
     waveSpeed: 5,
     isQuaking: false,
+
+    // GUI 用的临时值（滑动中）
+    _tempEarthquakeLevel: 5,
+    _tempWaveSpeed: 5,
+
     startEarthquake: () => {
-      params.isQuaking = true
+      guiParams.current.isQuaking = true
     },
     stopEarthquake: () => {
-      params.isQuaking = false
+      guiParams.current.isQuaking = false
     },
-  }
+  })
 
+  // ---------- 初始化 GUI ----------
   const initGUI = () => {
     if (guiRef.current) {
       guiRef.current.destroy()
       guiRef.current = null
     }
 
+    const params = guiParams.current
     guiRef.current = new gui.GUI({})
-
     guiRef.current.title('地震模拟')
-    guiRef.current.add(params, 'earthquakeLevel', 0, 9, 0.1).name('地震等级').listen()
-    guiRef.current.add(params, 'waveSpeed', 1, 10, 0.1).name('波动速度')
-    guiRef.current.add(params, 'startEarthquake').name('⚡ 开始地震')
-    guiRef.current.add(params, 'stopEarthquake').name('⏸ 暂停地震')
+
+    guiRef.current
+      .add(params, '_tempEarthquakeLevel')
+      .min(0)
+      .max(9)
+      .step(0.1)
+      .name('地震等级')
+      .onFinishChange((val: number) => {
+        params.earthquakeLevel = val // ✅ 松开滑条才生效
+      })
+
+    guiRef.current
+      .add(params, '_tempWaveSpeed')
+      .min(1)
+      .max(10)
+      .step(0.1)
+      .name('波动速度')
+      .onFinishChange((val: number) => {
+        params.waveSpeed = val // ✅ 同理
+      })
+
+    guiRef.current.add(params, 'startEarthquake').name('⚡ 开始模拟地震')
+    guiRef.current.add(params, 'stopEarthquake').name('⏸ 暂停模拟')
   }
 
   useEffect(() => {
     if (!canvas.current) return
 
-    // ---------- 初始化渲染器 ----------
+    // ---------- 渲染器 ----------
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas.current })
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.shadowMap.enabled = true
@@ -85,7 +112,7 @@ const Seismograph: React.FC = () => {
     pendulumGroup.position.set(0, 4.9, 0)
     scene.add(pendulumGroup)
 
-    // ---------- 弹簧（一直曲线） ----------
+    // ---------- 弹簧 ----------
     const spring = new THREE.Mesh(
       new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(
@@ -125,13 +152,16 @@ const Seismograph: React.FC = () => {
     pendulumGroup.add(pen)
 
     // ---------- 纸 ----------
-    const paper = new THREE.Mesh(new THREE.PlaneGeometry(baseLength, 2), new THREE.MeshStandardMaterial({ color: '#e6d7b9', side: THREE.DoubleSide }))
+    const paper = new THREE.Mesh(
+      new THREE.PlaneGeometry(baseLength, 2),
+      new THREE.MeshStandardMaterial({ color: '#e6d7b9', side: THREE.DoubleSide })
+    )
     paper.rotation.x = -Math.PI / 2
     paper.position.set(0, 0.1, 0)
     paper.receiveShadow = true
     scene.add(paper)
 
-    // ---------- 纸上波形 ----------
+    // ---------- 波形 ----------
     const pointCount = 600
     const positions = new Float32Array(pointCount * 3)
     const waveGeo = new THREE.BufferGeometry()
@@ -140,7 +170,10 @@ const Seismograph: React.FC = () => {
     wave.position.set(0, 0.12, 0)
     scene.add(wave)
 
-    // 窗口大小调整
+    // ---------- GUI 初始化 ----------
+    initGUI()
+
+    // ---------- 自适应 ----------
     const handleResize = () => {
       if (!canvas.current) return
       const width = window.innerWidth
@@ -150,8 +183,8 @@ const Seismograph: React.FC = () => {
       camera.updateProjectionMatrix()
     }
 
-    initGUI()
     handleResize()
+    window.addEventListener('resize', handleResize)
 
     // ---------- 动画 ----------
     let t = 0
@@ -161,16 +194,20 @@ const Seismograph: React.FC = () => {
 
     const animate = () => {
       requestAnimationFrame(animate)
-
       t += 0.05
 
-      // 摆锤和纸带运动
-      const waveValue = params.isQuaking ? params.earthquakeLevel * Math.sin(t * params.waveSpeed) * 0.1 : 0
+      const params = guiParams.current
+
+      // ✅ 使用最终确认的值
+      const waveValue = params.isQuaking
+        ? params.earthquakeLevel * Math.sin(t * params.waveSpeed) * 0.1
+        : 0
+
       ball.position.z = waveValue
       pen.position.z = waveValue
       pen.position.y = ball.position.y - ballRadius - penLength / 2
 
-      // 弹簧更新：保持 X 方向曲线 + 摇晃 Z 偏移
+      // 更新弹簧
       spring.geometry = new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(
           Array.from({ length: 20 }, (_, i) => {
@@ -186,11 +223,12 @@ const Seismograph: React.FC = () => {
         false
       )
 
-      // 纸带滚动
+      // 更新纸带波形
       if (params.isQuaking) {
         penX += penSpeed
         waveHistory.push({ x: penX, z: waveValue })
         while (waveHistory.length > 0 && waveHistory[0].x - penX < -baseLength / 2) waveHistory.shift()
+
         const arr = wave.geometry.attributes.position.array as Float32Array
         for (let i = 0; i < waveHistory.length; i++) {
           arr[i * 3 + 0] = waveHistory[i].x - penX
@@ -206,9 +244,6 @@ const Seismograph: React.FC = () => {
     }
 
     animate()
-
-    // ---------- 窗口自适应 ----------
-    window.addEventListener('resize', handleResize)
 
     return () => {
       window.removeEventListener('resize', handleResize)
