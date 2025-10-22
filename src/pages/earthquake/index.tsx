@@ -1,13 +1,15 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef } from "react";
-import { Modal } from 'antd'
+import { Modal, notification } from 'antd'
 import * as gui from 'lil-gui'
-
+import CommonMap, { type CommonMapInstanceType } from "@/components/common-map";
+import Radiant from "./radiant";
+import { tangshanEarthquake, wenchuangEarthquake } from "./constance";
 const Earthquake = () => {
+  const mapIntance = useRef<CommonMapInstanceType>(null);
 
   const [modal, modalContext] = Modal.useModal();
-
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [notificationApi, notificationContextHolder] = notification.useNotification()
 
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
@@ -49,6 +51,64 @@ const Earthquake = () => {
 
   const globalMainlandNameRef = useRef<Cesium.Entity[]>([]);
 
+  const earthquakeCircleWaveRef = useRef<Cesium.Entity[]>([]);
+
+
+
+  const drawGeometry = (show: boolean, ref: React.RefObject<Cesium.Entity[]>, url: string, texts: { position: Cesium.Cartesian3, text: string, fontSize?: number }[], options: Cesium.GeoJsonDataSource.LoadOptions & {
+    color?: Cesium.Color,
+    loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
+  }) => {
+    if (show) {
+
+      if (ref.current?.length) {
+
+        ref.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+        fetch(url).then(res => res.json()).then(data => {
+          Cesium.GeoJsonDataSource.load(data, {
+            markerSymbol: "circle",
+            ...options
+          }).then(function (dataSource) {
+
+            if (!viewerRef.current) return
+            viewerRef.current?.dataSources.add(dataSource)
+            ref.current.push(...dataSource.entities.values)
+
+            texts.forEach(item => {
+              ref.current.push(viewerRef.current!.entities.add({
+                position: item.position,
+                label: {
+                  text: item.text,
+                  font: `${item.fontSize || 16}px sans-serif`,
+                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                  outlineWidth: 2,
+                  outlineColor: options.color || options.fill?.withAlpha(1),
+                  fillColor: Cesium.Color.WHITE,
+                  disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+                }
+              }))
+            })
+
+            if (typeof options.loadedDataCallback === 'function') {
+              options.loadedDataCallback(data, dataSource)
+            }
+          });
+        });
+
+
+      }
+
+    } else {
+      ref.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
+
   const guiControls = {
     drawMainlandOutline: false,
     drawChinaEarthquakeArea: false,
@@ -60,6 +120,8 @@ const Earthquake = () => {
     drawGlobalVolcanoPoint: false,
     drawGlobalLandArc: false,
     drawGlobalRiftValley: false,
+    wenchuangEarthquake: false,
+    tangshanEarthquake: false,
 
     showVideo: () => {
       modal.info({
@@ -73,6 +135,29 @@ const Earthquake = () => {
         onOk() {
         },
         onCancel() {
+        }
+      })
+    },
+
+    playSeismograph: () => {
+      modal.info({
+        icon: null,
+        title: '模拟地震仪',
+        content: <iframe src={window.location.href.replace('earthquake', 'seismograph')} frameBorder={0} style={{ width: '100%', height: 'calc(100vh - 118px)' }} />,
+        okText: '关闭',
+        cancelText: '取消',
+        width: "100%",
+        style: {
+          maxWidth: '100vw',
+          height: '100vh',
+          top: 0,
+          overflow: 'hidden',
+        },
+        styles: { wrapper: { overflow: 'hidden', } },
+        closable: true,
+        centered: true,
+        zIndex: 2551,
+        onOk() {
         }
       })
     }
@@ -89,11 +174,16 @@ const Earthquake = () => {
 
     guiRef.current.title('地震相关')
 
-    /*     const videoControls = guiRef.current.addFolder('科普视频') */
+    const videoControls = guiRef.current.addFolder('地震科普')
 
     const mainControls = guiRef.current.addFolder('国内相关')
 
     const globalControls = guiRef.current.addFolder('全球相关')
+
+    videoControls.add(guiControls, 'playSeismograph').name('模拟地震仪')
+
+
+    const eventsControls = guiRef.current.addFolder('重大地震')
 
     /*     videoControls.add(guiControls, 'showVideo').name('什么是地震？') */
 
@@ -140,309 +230,184 @@ const Earthquake = () => {
       drawGlobalRiftValley(value)
     })
 
+    eventsControls.add(guiControls, 'wenchuangEarthquake').name('汶川大地震').onChange((value: boolean) => {
 
-  }
+      if (value) {
+        cameraFlyTo(103.48591676223856,
+          31.061249796531172, 5000, {
+          orientation: {
+            heading: 6.283185307179586,
+            pitch: -1.5707960496172761,
+            roll: 0
+          }
+        })
+      }
 
-  const drawChinaBoundary = () => {
-    fetch(window.$$prefix + "/data/china/china-boundary.geojson").then(res => res.json()).then(data => {
-      Cesium.GeoJsonDataSource.load(data, {
-        stroke: Cesium.Color.YELLOW,
-        fill: Cesium.Color.YELLOW.withAlpha(0.2),
-        strokeWidth: 2,
-        markerSymbol: "circle"
-      }).then(function (dataSource) {
-        viewerRef.current!.dataSources.add(dataSource)
-      })
+      earthquakeCircleWaveRef.current[0].show = value
+
+      notificationApi.destroy()
+
+      if (value) {
+        notificationApi.info({
+          message: `5.12 汶川大地震`,
+          style: {
+            width: 400
+          },
+          description: (
+            <div style={{ maxHeight: 500, textIndent: '2em' }}>
+              {wenchuangEarthquake}
+            </div>
+          ),
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      } else {
+        notificationApi.destroy()
+      }
+
+    })
+
+    eventsControls.add(guiControls, 'tangshanEarthquake').name('唐山大地震').onChange((value: boolean) => {
+
+      if (value) {
+        cameraFlyTo(118.07407423045544,
+          39.575412540709294, 5000, {
+          orientation: {
+            heading: 6.283185307179586,
+            pitch: -1.5707960496172761,
+            roll: 0
+          }
+        })
+      }
+      earthquakeCircleWaveRef.current[1].show = value
+
+      notificationApi.destroy()
+
+      if (value) {
+        notificationApi.info({
+          message: `7.28 唐山大地震`,
+          style: {
+            width: 400
+          },
+          description: (
+            <div style={{ maxHeight: 500, textIndent: '2em' }}>
+              {tangshanEarthquake}
+            </div>
+          ),
+          placement: 'bottomLeft',
+          duration: null,
+        })
+      } else {
+        notificationApi.destroy()
+      }
+
     })
   }
 
+  const drawChinaBoundary = () => {
+    drawGeometry(true, { current: [] }, window.$$prefix + "/data/china/china-boundary.geojson", [], {
+      stroke: Cesium.Color.YELLOW,
+      fill: Cesium.Color.YELLOW.withAlpha(0.2),
+      strokeWidth: 2,
+    })
+  }
 
   const drawChinaEarthquakeArea = (checked: boolean) => {
-
-    if (checked) {
-
-      if (chinaEarthquakeRef.current?.length) {
-
-        chinaEarthquakeRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/china-earthquake-area.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.BROWN,
-            fill: Cesium.Color.BROWN.withAlpha(0.5),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            chinaEarthquakeRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      chinaEarthquakeRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
+    drawGeometry(checked, chinaEarthquakeRef, window.$$prefix + "/data/earthquake/china-earthquake-area.geojson", [], {
+      stroke: Cesium.Color.BROWN,
+      fill: Cesium.Color.BROWN.withAlpha(0.5),
+      strokeWidth: 2,
+    })
   };
 
   const drawANZNCMainlandOutline = (checked: boolean) => {
-    if (checked) {
 
-      if (ANZNCMainlandOutlineRef.current?.length) {
-
-        ANZNCMainlandOutlineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/ANZNC-mainland-outline.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGERED,
-            fill: Cesium.Color.ORANGERED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            ANZNCMainlandOutlineRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      ANZNCMainlandOutlineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, ANZNCMainlandOutlineRef, window.$$prefix + "/data/earthquake/ANZNC-mainland-outline.geojson", [], {
+      stroke: Cesium.Color.ORANGERED,
+      fill: Cesium.Color.ORANGERED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawNORTHAMEMainlandOutline = (checked: boolean) => {
-    if (checked) {
-
-      if (NORTHAMEMainlandOutlineRef.current?.length) {
-
-        NORTHAMEMainlandOutlineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/NORTH-AME-mainland-outline.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGERED,
-            fill: Cesium.Color.ORANGERED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            NORTHAMEMainlandOutlineRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      NORTHAMEMainlandOutlineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, NORTHAMEMainlandOutlineRef, window.$$prefix + "/data/earthquake/NORTH-AME-mainland-outline.geojson", [], {
+      stroke: Cesium.Color.ORANGERED,
+      fill: Cesium.Color.ORANGERED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawAFRICAMainlandOutline = (checked: boolean) => {
-    if (checked) {
-
-      if (AFRICAMainlandOutlineRef.current?.length) {
-
-        AFRICAMainlandOutlineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/AFRICA-mainland-outline.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGERED,
-            fill: Cesium.Color.ORANGERED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            AFRICAMainlandOutlineRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      AFRICAMainlandOutlineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, AFRICAMainlandOutlineRef, window.$$prefix + "/data/earthquake/AFRICA-mainland-outline.geojson", [], {
+      stroke: Cesium.Color.ORANGERED,
+      fill: Cesium.Color.ORANGERED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawTHESOUTHPOLEMainlandOutline = (checked: boolean) => {
-    if (checked) {
-
-      if (THESOUTHPOLEMainlandOutlineRef.current?.length) {
-
-        THESOUTHPOLEMainlandOutlineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/THESOUTHPOLE-mainland-outline.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGERED,
-            fill: Cesium.Color.ORANGERED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            THESOUTHPOLEMainlandOutlineRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      THESOUTHPOLEMainlandOutlineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, THESOUTHPOLEMainlandOutlineRef, window.$$prefix + "/data/earthquake/THESOUTHPOLE-mainland-outline.geojson", [], {
+      stroke: Cesium.Color.ORANGERED,
+      fill: Cesium.Color.ORANGERED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawSOUTHAMEMainlandOutline = (checked: boolean) => {
-    if (checked) {
 
-      if (SOUTHAMEMainlandOutlineRef.current?.length) {
-
-        SOUTHAMEMainlandOutlineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/SOUTH-AME-mainland-outline.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGERED,
-            fill: Cesium.Color.ORANGERED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            SOUTHAMEMainlandOutlineRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      SOUTHAMEMainlandOutlineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, SOUTHAMEMainlandOutlineRef, window.$$prefix + "/data/earthquake/SOUTH-AME-mainland-outline.geojson", [], {
+      stroke: Cesium.Color.ORANGERED,
+      fill: Cesium.Color.ORANGERED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawEURASIAMainlandOutline = (checked: boolean) => {
-    if (checked) {
-
-      if (EURASIAMainlandOutlineRef.current?.length) {
-
-        EURASIAMainlandOutlineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/EURASIA-mainland-outline.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGERED,
-            fill: Cesium.Color.ORANGERED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            EURASIAMainlandOutlineRef.current = dataSource.entities.values;
-          });
-
-        });
-      }
-
-    } else {
-      EURASIAMainlandOutlineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, EURASIAMainlandOutlineRef, window.$$prefix + "/data/earthquake/EURASIA-mainland-outline.geojson", [], {
+      stroke: Cesium.Color.ORANGERED,
+      fill: Cesium.Color.ORANGERED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawGlobalMainlandName = (checked: boolean) => {
+    drawGeometry(checked, globalMainlandNameRef, window.$$prefix + "/data/earthquake/global-mainland-name.geojson", [], {
+      stroke: Cesium.Color.RED,
+      fill: Cesium.Color.RED.withAlpha(0.2),
+      strokeWidth: 2,
+      loadedDataCallback(data, dataSource) {
 
-    if (checked) {
+        dataSource.entities.values.forEach(entity => {
+          const props = entity.properties!.getValue();
+          if (!props) return;
 
-      if (globalMainlandNameRef.current?.length) {
+          const labelConfig = {
+            text: props.name || "",
+            textColor: "#fff", // 原始文字颜色配置
+            outlineColor: "#000000",
+            outlineWidth: 4, // 原100过大，修正为1
+            farDistance: 30000000,
+            nearDistance: 2000000
+          };
 
-        globalMainlandNameRef.current.forEach(item => {
-          item.show = true
-        })
+          // 移除默认点/图标，避免重叠
+          entity.billboard = undefined;
+          entity.point = undefined;
 
-      } else {
-
-
-        fetch(window.$$prefix + "/data/earthquake/global-mainland-name.geojson")
-          .then(res => res.json())
-          .then(data => {
-            Cesium.GeoJsonDataSource.load(data, {
-              stroke: Cesium.Color.RED,
-              fill: Cesium.Color.RED.withAlpha(0.2),
-              strokeWidth: 2,
-              markerSymbol: "circle"
-            }).then(function (dataSource) {
-              const viewer = viewerRef.current!;
-
-              viewer.dataSources.add(dataSource);
-
-              dataSource.entities.values.forEach(entity => {
-                const props = entity.properties!.getValue();
-                if (!props) return;
-
-                const labelConfig = {
-                  text: props.name || "",
-                  textColor: "#fff", // 原始文字颜色配置
-                  outlineColor: "#000000",
-                  outlineWidth: 4, // 原100过大，修正为1
-                  farDistance: 30000000,
-                  nearDistance: 2000000
-                };
-
-                // 移除默认点/图标，避免重叠
-                entity.billboard = undefined;
-                entity.point = undefined;
-
-                // 关键修正：将 color → fontColor
-                entity.label = new Cesium.LabelGraphics({
-                  text: labelConfig.text,
-                  font: '30px sans-serif',
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
-                  outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
-                  outlineWidth: labelConfig.outlineWidth,
-                  fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
-                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                });
-              });
-
-              globalMainlandNameRef.current = dataSource.entities.values;
-            });
+          // 关键修正：将 color → fontColor
+          entity.label = new Cesium.LabelGraphics({
+            text: labelConfig.text,
+            font: '30px sans-serif',
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
+            outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
+            outlineWidth: labelConfig.outlineWidth,
+            fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
           });
-
-      }
-
-    } else {
-      globalMainlandNameRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+        });
+      },
+    })
   }
 
   const drawMainlandOutline = (checked: boolean) => {
@@ -455,416 +420,243 @@ const Earthquake = () => {
     drawGlobalMainlandName(checked)
   }
 
-
   const drawStepDividingLine = (checked: boolean) => {
-
-    if (checked) {
-
-      if (stepDividingLineRef.current?.length) {
-
-        stepDividingLineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/step-dividing-line.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            const colors = [
-              Cesium.Color.RED,
-              Cesium.Color.GREEN,
-              Cesium.Color.BLUE,
-              Cesium.Color.CYAN,
-              Cesium.Color.MAGENTA,
-              Cesium.Color.GRAY,
-              Cesium.Color.WHITE,
-              Cesium.Color.YELLOW,
-            ];
+    drawGeometry(checked, stepDividingLineRef, window.$$prefix + "/data/earthquake/step-dividing-line.geojson", [], {
+      loadedDataCallback(data, dataSource) {
+        const colors = [
+          Cesium.Color.RED,
+          Cesium.Color.GREEN,
+          Cesium.Color.BLUE,
+          Cesium.Color.CYAN,
+          Cesium.Color.MAGENTA,
+          Cesium.Color.GRAY,
+          Cesium.Color.WHITE,
+          Cesium.Color.YELLOW,
+        ];
 
 
-            const stepDividingLineInstance = dataSource.entities.values.map((entity, index) => {
+        const stepDividingLineInstance = dataSource.entities.values.map((entity, index) => {
 
-              entity.polyline!.width = new Cesium.ConstantProperty(8);
+          entity.polyline!.width = new Cesium.ConstantProperty(8);
 
-              entity.polyline!.material = new Cesium.PolylineGlowMaterialProperty({
-                color: colors[index],
+          entity.polyline!.material = new Cesium.PolylineGlowMaterialProperty({
+            color: colors[index],
 
-              });
-
-              return entity;
-            });
-
-            stepDividingLineRef.current = stepDividingLineInstance;
           });
 
+          return entity;
         });
-      }
 
-    } else {
-      stepDividingLineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
-
+        stepDividingLineRef.current = stepDividingLineInstance;
+      },
+    })
   }
 
   const drawGlobalPlateBoundary = (checked: boolean) => {
 
-    if (checked) {
-
-      if (globalPlateBoundaryRef.current?.length) {
-
-        globalPlateBoundaryRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/global-plate-boundary.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.RED,
-            fill: Cesium.Color.RED.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            globalPlateBoundaryRef.current = dataSource.entities.values
-          });
-
-        });
-      }
-
-    } else {
-      globalPlateBoundaryRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+    drawGeometry(checked, globalPlateBoundaryRef, window.$$prefix + "/data/earthquake/global-plate-boundary.geojson", [], {
+      stroke: Cesium.Color.RED,
+      fill: Cesium.Color.RED.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawGlobalPlateBoundaryName = (checked: boolean) => {
+    drawGeometry(checked, globalPlateBoundaryNameRef, window.$$prefix + "/data/earthquake/step-dividing-line.geojson", [], {
+      loadedDataCallback(data, dataSource) {
+        dataSource.entities.values.forEach(entity => {
+          const props = entity.properties!.getValue();
+          if (!props) return;
 
-    if (checked) {
+          const labelConfig = {
+            text: props.name || "未命名板块",
+            textColor: "#FFFFFF", // 原始文字颜色配置
+            outlineColor: "#000000",
+            outlineWidth: 5, // 原100过大，修正为1
+            farDistance: 30000000,
+            nearDistance: 2000000
+          };
 
-      if (globalPlateBoundaryNameRef.current?.length) {
+          // 移除默认点/图标，避免重叠
+          entity.billboard = undefined;
+          entity.point = undefined;
 
-        globalPlateBoundaryNameRef.current.forEach(item => {
-          item.show = true
-        })
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/global-plate-boundary-name.geojson")
-          .then(res => res.json())
-          .then(data => {
-            Cesium.GeoJsonDataSource.load(data, {
-              stroke: Cesium.Color.RED,
-              fill: Cesium.Color.RED.withAlpha(0.2),
-              strokeWidth: 2,
-              markerSymbol: "circle"
-            }).then(function (dataSource) {
-              const viewer = viewerRef.current!;
-
-              viewer.dataSources.add(dataSource);
-
-              dataSource.entities.values.forEach(entity => {
-                const props = entity.properties!.getValue();
-                if (!props) return;
-
-                const labelConfig = {
-                  text: props.name || "未命名板块",
-                  textColor: "#FFFFFF", // 原始文字颜色配置
-                  outlineColor: "#000000",
-                  outlineWidth: 5, // 原100过大，修正为1
-                  farDistance: 30000000,
-                  nearDistance: 2000000
-                };
-
-                // 移除默认点/图标，避免重叠
-                entity.billboard = undefined;
-                entity.point = undefined;
-
-                // 关键修正：将 color → fontColor
-                entity.label = new Cesium.LabelGraphics({
-                  text: labelConfig.text,
-                  font: '30px sans-serif',
-                  outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
-                  outlineWidth: labelConfig.outlineWidth,
-                  fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
-                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                });
-              });
-
-              globalPlateBoundaryNameRef.current = dataSource.entities.values;
-            });
+          // 关键修正：将 color → fontColor
+          entity.label = new Cesium.LabelGraphics({
+            text: labelConfig.text,
+            font: '30px sans-serif',
+            outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
+            outlineWidth: labelConfig.outlineWidth,
+            fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
           });
+        });
 
-      }
-
-    } else {
-      globalPlateBoundaryNameRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+        globalPlateBoundaryNameRef.current = dataSource.entities.values;
+      },
+    })
   }
 
   const drawGlobalTrenchName = (checked: boolean) => {
 
-    if (checked) {
+    drawGeometry(checked, globalTrenchRef, window.$$prefix + "/data/earthquake/global-trench-name.geojson", [], {
+      stroke: Cesium.Color.RED,
+      fill: Cesium.Color.RED.withAlpha(0.2),
+      strokeWidth: 2,
 
-      if (globalTrenchRef.current?.length) {
+      loadedDataCallback(data, dataSource) {
+        dataSource.entities.values.forEach(entity => {
+          const props = entity.properties!.getValue();
+          if (!props) return;
 
-        globalTrenchRef.current.forEach(item => {
-          item.show = true
-        })
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/global-trench-name.geojson")
-          .then(res => res.json())
-          .then(data => {
-            Cesium.GeoJsonDataSource.load(data, {
-              stroke: Cesium.Color.RED,
-              fill: Cesium.Color.RED.withAlpha(0.2),
-              strokeWidth: 2,
-              markerSymbol: "circle"
-            }).then(function (dataSource) {
-              const viewer = viewerRef.current!;
+          const labelConfig = {
+            text: props.name || "海沟",
+            textColor: "#0307eeff", // 原始文字颜色配置
+            outlineColor: "#000000",
+            outlineWidth: 4, // 原100过大，修正为1
+            farDistance: 30000000,
+            nearDistance: 2000000
+          };
 
-              viewer.dataSources.add(dataSource);
+          // 移除默认点/图标，避免重叠
+          entity.billboard = undefined;
+          entity.point = undefined;
 
-              dataSource.entities.values.forEach(entity => {
-                const props = entity.properties!.getValue();
-                if (!props) return;
-
-                const labelConfig = {
-                  text: props.name || "海沟",
-                  textColor: "#0307eeff", // 原始文字颜色配置
-                  outlineColor: "#000000",
-                  outlineWidth: 4, // 原100过大，修正为1
-                  farDistance: 30000000,
-                  nearDistance: 2000000
-                };
-
-                // 移除默认点/图标，避免重叠
-                entity.billboard = undefined;
-                entity.point = undefined;
-
-                // 关键修正：将 color → fontColor
-                entity.label = new Cesium.LabelGraphics({
-                  text: labelConfig.text,
-                  font: '30px sans-serif',
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
-                  outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
-                  outlineWidth: labelConfig.outlineWidth,
-                  fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
-                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                });
-              });
-
-              globalTrenchRef.current = dataSource.entities.values;
-            });
+          // 关键修正：将 color → fontColor
+          entity.label = new Cesium.LabelGraphics({
+            text: labelConfig.text,
+            font: '30px sans-serif',
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
+            outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
+            outlineWidth: labelConfig.outlineWidth,
+            fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
           });
+        });
 
-      }
-
-    } else {
-      globalTrenchRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+        globalTrenchRef.current = dataSource.entities.values;
+      },
+    })
   }
 
   const drawGlobalEarthquakePoint = (checked: boolean) => {
 
-    if (checked) {
+    drawGeometry(checked, globalEarthquakePointRef, window.$$prefix + "/data/earthquake/global-earthquake-point.geojson", [], {
+      stroke: Cesium.Color.RED,
+      fill: Cesium.Color.RED.withAlpha(0.2),
+      strokeWidth: 2,
+      loadedDataCallback(data, dataSource) {
+        const featrures = data.features || [];
 
-      if (globalEarthquakePointRef.current?.length) {
+        globalEarthquakePointRef.current = featrures.map((item: any) => {
 
-        globalEarthquakePointRef.current.forEach(item => {
-          item.show = true
-        })
+          const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
 
-      } else {
+          const props = item.properties || {}
 
-
-        fetch(window.$$prefix + "/data/earthquake/global-earthquake-point.geojson")
-          .then(res => res.json())
-          .then(data => {
-            const featrures = data.features || [];
-
-            globalEarthquakePointRef.current = featrures.map((item: any) => {
-
-              const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
-
-              const props = item.properties || {}
-
-              return viewerRef.current!.entities.add({
-                position: position,
-                point: {
-                  color: Cesium.Color.WHITE,
-                  pixelSize: (Number(props.size)) || 5,
-                  outlineColor: Cesium.Color.GREEN,
-                  outlineWidth: 2
-                }
-              })
-            });
-          });
-
-      }
-
-    } else {
-      globalEarthquakePointRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+          return viewerRef.current!.entities.add({
+            position: position,
+            point: {
+              color: Cesium.Color.WHITE,
+              pixelSize: (Number(props.size)) || 5,
+              outlineColor: Cesium.Color.GREEN,
+              outlineWidth: 2
+            }
+          })
+        });
+      },
+    })
   }
 
   const drawGlobalVolcanoPoint = (checked: boolean) => {
+    drawGeometry(checked, globalVolcanoPointRef, window.$$prefix + "/data/earthquake/global-volcano-point.geojson", [], {
+      stroke: Cesium.Color.RED,
+      fill: Cesium.Color.RED.withAlpha(0.2),
+      strokeWidth: 2,
+      loadedDataCallback(data, dataSource) {
+        const featrures = data.features || [];
 
-    if (checked) {
+        globalVolcanoPointRef.current = featrures.map((item: any) => {
 
-      if (globalVolcanoPointRef.current?.length) {
+          const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
 
-        globalVolcanoPointRef.current.forEach(item => {
-          item.show = true
-        })
+          const props = item.properties || {}
 
-      } else {
+          return viewerRef.current!.entities.add({
+            position: position,
+            point: {
+              color: Cesium.Color.RED,
+              pixelSize: (Number(props.size)) || 5,
+              outlineColor: Cesium.Color.BLACK,
+              outlineWidth: 2
 
-
-        fetch(window.$$prefix + "/data/earthquake/global-volcano-point.geojson")
-          .then(res => res.json())
-          .then(data => {
-            const featrures = data.features || [];
-
-            globalVolcanoPointRef.current = featrures.map((item: any) => {
-
-              const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
-
-              const props = item.properties || {}
-
-              return viewerRef.current!.entities.add({
-                position: position,
-                point: {
-                  color: Cesium.Color.RED,
-                  pixelSize: (Number(props.size)) || 5,
-                  outlineColor: Cesium.Color.BLACK,
-                  outlineWidth: 2
-
-                }
-              })
-            });
-          });
-
-      }
-
-    } else {
-      globalVolcanoPointRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+            }
+          })
+        });
+      },
+    })
   }
 
-
   const drawGlobalLandArcLine = (checked: boolean) => {
-    if (checked) {
 
-      if (globalLandArcLineRef.current?.length) {
-
-        globalLandArcLineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-
-        fetch(window.$$prefix + "/data/earthquake/global-land-arc-line.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.BROWN,
-            fill: Cesium.Color.BROWN.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            globalLandArcLineRef.current = dataSource.entities.values;
-          })
-        })
-      }
-
-    } else {
-      globalLandArcLineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
+    drawGeometry(checked, globalLandArcLineRef, window.$$prefix + "/data/earthquake/global-land-arc-line.geojson", [], {
+      stroke: Cesium.Color.BROWN,
+      fill: Cesium.Color.BROWN.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawGlobalLandArcName = (checked: boolean) => {
 
-    if (checked) {
-
-      if (globalLandArcNameRef.current?.length) {
-
-        globalLandArcNameRef.current.forEach(item => {
-          item.show = true
+    drawGeometry(checked, globalLandArcLineRef, window.$$prefix + "/data/earthquake/global-land-arc-name.geojson", [], {
+      stroke: Cesium.Color.BROWN,
+      fill: Cesium.Color.BROWN.withAlpha(0.2),
+      strokeWidth: 2,
+      loadedDataCallback(data, dataSource) {
+        cameraFlyTo(116.46830530, 14.69396339, 6909486.37, {
+          orientation: {
+            heading: 1.7763568394002505e-15,
+            pitch: -1.5664983737834062,
+            roll: 0
+          }
         })
 
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/global-land-arc-name.geojson")
-          .then(res => res.json())
-          .then(data => {
-            Cesium.GeoJsonDataSource.load(data, {
-              stroke: Cesium.Color.RED,
-              fill: Cesium.Color.RED.withAlpha(0.2),
-              strokeWidth: 2,
-              markerSymbol: "circle"
-            }).then(function (dataSource) {
-              const viewer = viewerRef.current!;
+        dataSource.entities.values.forEach(entity => {
+          const props = entity.properties!.getValue();
+          if (!props) return;
 
-              viewer.dataSources.add(dataSource);
+          const labelConfig = {
+            text: props.name || "岛",
+            textColor: "#fff", // 原始文字颜色配置
+            outlineColor: "#000000",
+            outlineWidth: 4, // 原100过大，修正为1
+            farDistance: 30000000,
+            nearDistance: 2000000
+          };
 
-              dataSource.entities.values.forEach(entity => {
-                const props = entity.properties!.getValue();
-                if (!props) return;
+          // 移除默认点/图标，避免重叠
+          entity.billboard = undefined;
+          entity.point = undefined;
 
-                const labelConfig = {
-                  text: props.name || "岛",
-                  textColor: "#fff", // 原始文字颜色配置
-                  outlineColor: "#000000",
-                  outlineWidth: 4, // 原100过大，修正为1
-                  farDistance: 30000000,
-                  nearDistance: 2000000
-                };
-
-                // 移除默认点/图标，避免重叠
-                entity.billboard = undefined;
-                entity.point = undefined;
-
-                // 关键修正：将 color → fontColor
-                entity.label = new Cesium.LabelGraphics({
-                  text: labelConfig.text,
-                  font: '20px sans-serif',
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
-                  outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
-                  outlineWidth: labelConfig.outlineWidth,
-                  fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
-                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                });
-              });
-
-              globalLandArcNameRef.current = dataSource.entities.values;
-            });
+          // 关键修正：将 color → fontColor
+          entity.label = new Cesium.LabelGraphics({
+            text: labelConfig.text,
+            font: '20px sans-serif',
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
+            outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
+            outlineWidth: labelConfig.outlineWidth,
+            fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
           });
+        });
 
-      }
-
-    } else {
-      globalLandArcNameRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+        globalLandArcNameRef.current = dataSource.entities.values;
+      },
+    })
   }
 
   const drawGlobalLandArc = (checked: boolean) => {
@@ -877,192 +669,99 @@ const Earthquake = () => {
     drawGlobalRiftValleyName(checked)
   }
   const drawGlobalRiftValleyLine = (checked: boolean) => {
-    if (checked) {
 
-      if (globalRiftValleyLineRef.current?.length) {
-
-        globalRiftValleyLineRef.current.forEach(item => {
-          item.show = true
-        })
-
-      } else {
-
-        fetch(window.$$prefix + "/data/earthquake/global-rift-valley-line.geojson").then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.GOLD,
-            fill: Cesium.Color.GOLD.withAlpha(0.2),
-            strokeWidth: 2,
-            markerSymbol: "circle"
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            globalRiftValleyLineRef.current = dataSource.entities.values;
-          })
-        })
-      }
-
-    } else {
-      globalRiftValleyLineRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
-
+    drawGeometry(checked, globalRiftValleyLineRef, window.$$prefix + "/data/earthquake/global-rift-valley-line.geojson", [], {
+      stroke: Cesium.Color.GOLD,
+      fill: Cesium.Color.GOLD.withAlpha(0.2),
+      strokeWidth: 2,
+    })
   }
 
   const drawGlobalRiftValleyName = (checked: boolean) => {
 
-    if (checked) {
-
-      if (globalRiftValleyNameRef.current?.length) {
-
-        globalRiftValleyNameRef.current.forEach(item => {
-          item.show = true
+    drawGeometry(checked, globalRiftValleyNameRef, window.$$prefix + "/data/earthquake/global-rift-valley-name.geojson", [], {
+      stroke: Cesium.Color.GOLD,
+      fill: Cesium.Color.GOLD.withAlpha(0.2),
+      strokeWidth: 2,
+      loadedDataCallback(data, dataSource) {
+        cameraFlyTo(30.52863705, 2.17257194, 6657107.10, {
+          orientation: {
+            heading: 1.7763568394002505e-15,
+            pitch: -1.5678701498057945,
+            roll: 0
+          }
         })
-      } else {
-        fetch(window.$$prefix + "/data/earthquake/global-rift-valley-name.geojson")
-          .then(res => res.json())
-          .then(data => {
-            Cesium.GeoJsonDataSource.load(data, {
-              stroke: Cesium.Color.RED,
-              fill: Cesium.Color.RED.withAlpha(0.2),
-              strokeWidth: 2,
-              markerSymbol: "circle"
-            }).then(function (dataSource) {
-              const viewer = viewerRef.current!;
 
-              viewer.dataSources.add(dataSource);
+        dataSource.entities.values.forEach(entity => {
+          const props = entity.properties!.getValue();
+          if (!props) return;
 
-              dataSource.entities.values.forEach(entity => {
-                const props = entity.properties!.getValue();
-                if (!props) return;
+          const labelConfig = {
+            text: props.name || "",
+            textColor: "#fff", // 原始文字颜色配置
+            outlineColor: "#000000",
+            outlineWidth: 4, // 原100过大，修正为1
+            farDistance: 30000000,
+            nearDistance: 2000000
+          };
 
-                const labelConfig = {
-                  text: props.name || "",
-                  textColor: "#fff", // 原始文字颜色配置
-                  outlineColor: "#000000",
-                  outlineWidth: 4, // 原100过大，修正为1
-                  farDistance: 30000000,
-                  nearDistance: 2000000
-                };
+          // 移除默认点/图标，避免重叠
+          entity.billboard = undefined;
+          entity.point = undefined;
 
-                // 移除默认点/图标，避免重叠
-                entity.billboard = undefined;
-                entity.point = undefined;
-
-                // 关键修正：将 color → fontColor
-                entity.label = new Cesium.LabelGraphics({
-                  text: labelConfig.text,
-                  font: '20px sans-serif',
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
-                  outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
-                  outlineWidth: labelConfig.outlineWidth,
-                  fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
-                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                });
-              });
-
-              globalRiftValleyNameRef.current = dataSource.entities.values;
-            });
+          // 关键修正：将 color → fontColor
+          entity.label = new Cesium.LabelGraphics({
+            text: labelConfig.text,
+            font: '20px sans-serif',
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE, // 关键：同时显示描边和填充
+            outlineColor: Cesium.Color.fromCssColorString(labelConfig.outlineColor),
+            outlineWidth: labelConfig.outlineWidth,
+            fillColor: Cesium.Color.fromCssColorString(labelConfig.textColor),
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
           });
+        });
 
-      }
-
-    } else {
-      globalRiftValleyNameRef.current!.forEach(item => {
-        item.show = false
-      })
-    }
+        globalRiftValleyNameRef.current = dataSource.entities.values;
+      },
+    })
   }
 
-  const initClickHandler = (viewer: Cesium.Viewer) => {
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-
-    handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
-      // 拾取椭球面上的点
-      const cartesian = viewer.camera.pickEllipsoid(
-        movement.position,
-        viewer.scene.globe.ellipsoid
-      );
-      if (!cartesian) return;
-
-      // 转换为经纬度
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-      const lon = Cesium.Math.toDegrees(cartographic.longitude);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude);
-
-      // 获取当前相机大致层级
-      const zoom = Math.round(
-        Math.log2(
-          (2 * Math.PI * 6378137) /
-          viewer.camera.getMagnitude()
-        )
-      );
-
-      // 经纬度 → XYZ 瓦片坐标
-      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
-      const y = Math.floor(
-        ((1 -
-          Math.log(
-            Math.tan((lat * Math.PI) / 180) +
-            1 / Math.cos((lat * Math.PI) / 180)
-          ) /
-          Math.PI) /
-          2) *
-        Math.pow(2, zoom)
-      );
-
-      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}) => {
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+      ...options,
+    })
   }
 
   useEffect(() => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN;
-
-    const viewer = new Cesium.Viewer(containerRef.current!, {
-      infoBox: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      baseLayerPicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-
-      // 天地图
-      /*       baseLayer: new Cesium.ImageryLayer(new Cesium.WebMapTileServiceImageryProvider({
-              url: "http://t{s}.tianditu.gov.cn/img_w/wmts?tk=03e1637ffbffc98d74b6ead0631a29d4",
-              layer: 'img',
-              style: 'default',
-              tileMatrixSetID: 'w',
-              maximumLevel: 18,
-              subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-            })), */
-    });
-    viewer.scene.globe.showGroundAtmosphere = false;
-    viewerRef.current = viewer;
-
-    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(
-      async (terrain) => {
-        viewer.terrainProvider = terrain;
-
-        viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(111.54, 34.85, 12000000),
-        });
-      }
-    );
-
-    (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = "none";
-
+    viewerRef.current = mapIntance.current?.getViewer()!
 
     drawChinaBoundary()
 
-    initClickHandler(viewer);
-
     initGui()
 
+    const earthquakeEvents = [
+      {
+        name: 'wenchuangCircleWave',
+        params: [[103.48591676223856, 31.061249796531172, 10], "red", 1000, 3000]
+      },
+      {
+        name: 'tangshanCircleWave',
+        params: [[118.07407423045544, 39.575412540709294, 10], "red", 1000, 3000]
+      },
+    ]
+
+    earthquakeEvents.forEach(item => {
+      const circleWave = new Radiant(viewerRef.current, item.name);
+      const circleWaveEntity = circleWave.add(...item.params as [Cesium.Cartesian3, string, number, number]);
+      circleWaveEntity.show = false
+      earthquakeCircleWaveRef.current.push(circleWaveEntity)
+    })
+
+
+
     return () => {
-      viewer.destroy();
       guiRef.current?.destroy()
     }
   }, []);
@@ -1071,18 +770,10 @@ const Earthquake = () => {
   return (
     <>
       {modalContext}
-      <div className="canvas-container">
-        <div className="canvas-container-body" ref={containerRef} />
-
-        {/*           <Button type="primary" size="small" style={{ marginBottom: 4 }}
-            onClick={() => {
-              const src = window.$$prefix + '/data/earthquake/earthquake.mp4'
-
-              playVideo(src)
-
-            }}
-          >地震视频</Button> */}
-      </div>
+      {notificationContextHolder}
+      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+        cameraFlyTo(105.63717584, 35.63459892, 6664311.55)
+      }}></CommonMap>
     </>
 
   );

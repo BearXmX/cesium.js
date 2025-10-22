@@ -17,7 +17,7 @@ import './index.css'
 type SuzhouRiverPropsType = {}
 
 const defaultMinYear = 1986
-const defaultMaxYear = 2020
+const defaultMaxYear = 2021
 const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   const mapIntance = useRef<CommonMapInstanceType>(null);
 
@@ -210,6 +210,12 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     if (year < 1989) {
       suzhouRiverBoxRef.current.filter(item => {
         return item.properties!.year < 1989;
+      }).forEach(item => {
+        item.show = true
+      })
+    } else if (year >= 1989 && year < 2021) {
+      suzhouRiverBoxRef.current.filter(item => {
+        return item.properties!.year >= 1989 && item.properties!.year < 2021;
       }).forEach(item => {
         item.show = true
       })
@@ -543,6 +549,35 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         dataSource.entities.values.forEach((entity) => {
           entity.show = false
           entity.properties!.year = 1958
+          // 获取自定义属性
+          const use = entity.properties!.use.getValue();
+
+          if (use === 1) {
+            // @ts-ignore
+            entity.polygon.material = Cesium.Color.fromCssColorString('#9dcf88').withAlpha(0.7)
+          }
+
+          if (use === 2) {
+            // @ts-ignore
+            entity.polygon.material = Cesium.Color.fromCssColorString('#ed6f8a').withAlpha(0.7)
+          }
+
+          if (use === 3) {
+            // @ts-ignore
+            entity.polygon.material = Cesium.Color.fromCssColorString('#05a552').withAlpha(0.7)
+          }
+        })
+      },
+    })
+
+    drawGeometry(true, suzhouRiverBoxRef, window.$$prefix + '/data/suzhou-river/land-use-1989.geojson', [], {
+      stroke: Cesium.Color.TRANSPARENT,
+      fill: Cesium.Color.BROWN,
+      strokeWidth: 4,
+      loadedDataCallback(data, dataSource) {
+        dataSource.entities.values.forEach((entity) => {
+          entity.show = false
+          entity.properties!.year = 1989
           // 获取自定义属性
           const use = entity.properties!.use.getValue();
 

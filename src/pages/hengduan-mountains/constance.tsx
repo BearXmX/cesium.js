@@ -1732,27 +1732,7 @@ export const initCanyonPoint = (viewerRef: React.RefObject<Cesium.Viewer | null>
       containerBackgroundUrlType: 'position',
       defaultVisible: false,
       clickCallback: () => {
-        if (item.key === 'hutiaoxia') {
-          viewerRef.current!.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(100.07703196, 27.14042416, 3002.85),
-            orientation: {
-              heading: 5.919684370219261,
-              pitch: -0.28394899801853324,
-              roll: 6.2831255385928255,
-            },
-          })
-        }
 
-        if (item.key === 'birangxiagu') {
-          viewerRef.current!.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(99.51016045, 28.26774769, 5180.68),
-            orientation: {
-              heading: 4.899541959295267,
-              pitch: -0.5643747357231286,
-              roll: 0.00001208640318672849,
-            },
-          })
-        }
       },
     })
 
