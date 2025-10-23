@@ -219,6 +219,12 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       }).forEach(item => {
         item.show = true
       })
+    } else if (year >= 2021) {
+      suzhouRiverBoxRef.current.filter(item => {
+        return item.properties!.year >= 2021;
+      }).forEach(item => {
+        item.show = true
+      })
     }
   }
 
@@ -541,62 +547,32 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     drawRiver(window.$$prefix + '/data/suzhou-river/wenzaobang.geojson', wenzaobangWaterPrimitivesRef)
     drawRiver(window.$$prefix + '/data/suzhou-river/wusongjiang-river.geojson', wusongjiangWaterPrimitivesRef)
 
-    drawGeometry(true, suzhouRiverBoxRef, window.$$prefix + '/data/suzhou-river/land-use-1958.geojson', [], {
-      stroke: Cesium.Color.TRANSPARENT,
-      fill: Cesium.Color.BROWN,
-      strokeWidth: 4,
-      loadedDataCallback(data, dataSource) {
-        dataSource.entities.values.forEach((entity) => {
-          entity.show = false
-          entity.properties!.year = 1958
-          // 获取自定义属性
-          const use = entity.properties!.use.getValue();
+    const landUseYear = [1958, 1989, 2021]
 
-          if (use === 1) {
+    landUseYear.forEach((year) => {
+      drawGeometry(true, suzhouRiverBoxRef, window.$$prefix + `/data/suzhou-river/land-use-${year}.geojson`, [], {
+        stroke: Cesium.Color.TRANSPARENT,
+        fill: Cesium.Color.BROWN,
+        strokeWidth: 4,
+        loadedDataCallback(data, dataSource) {
+          dataSource.entities.values.forEach((entity) => {
+            entity.show = false
+            entity.properties!.year = year
+            // 获取自定义属性
+            const use = entity.properties!.use.getValue();
+
+            const useColor = {
+              "1": '#9dcf88',
+              "2": '#ed6f8a',
+              "3": '#05a552'
+
+            }
             // @ts-ignore
-            entity.polygon.material = Cesium.Color.fromCssColorString('#9dcf88').withAlpha(0.7)
-          }
+            entity.polygon.material = Cesium.Color.fromCssColorString(useColor[use + '']).withAlpha(0.7)
 
-          if (use === 2) {
-            // @ts-ignore
-            entity.polygon.material = Cesium.Color.fromCssColorString('#ed6f8a').withAlpha(0.7)
-          }
-
-          if (use === 3) {
-            // @ts-ignore
-            entity.polygon.material = Cesium.Color.fromCssColorString('#05a552').withAlpha(0.7)
-          }
-        })
-      },
-    })
-
-    drawGeometry(true, suzhouRiverBoxRef, window.$$prefix + '/data/suzhou-river/land-use-1989.geojson', [], {
-      stroke: Cesium.Color.TRANSPARENT,
-      fill: Cesium.Color.BROWN,
-      strokeWidth: 4,
-      loadedDataCallback(data, dataSource) {
-        dataSource.entities.values.forEach((entity) => {
-          entity.show = false
-          entity.properties!.year = 1989
-          // 获取自定义属性
-          const use = entity.properties!.use.getValue();
-
-          if (use === 1) {
-            // @ts-ignore
-            entity.polygon.material = Cesium.Color.fromCssColorString('#9dcf88').withAlpha(0.7)
-          }
-
-          if (use === 2) {
-            // @ts-ignore
-            entity.polygon.material = Cesium.Color.fromCssColorString('#ed6f8a').withAlpha(0.7)
-          }
-
-          if (use === 3) {
-            // @ts-ignore
-            entity.polygon.material = Cesium.Color.fromCssColorString('#05a552').withAlpha(0.7)
-          }
-        })
-      },
+          })
+        },
+      })
     })
 
     const texts = [
@@ -718,6 +694,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
               2010: '2010',
               2015: '2015',
               2020: '2020',
+              2021: '2021',
             }} step={1} value={year} min={defaultMinYear} max={defaultMaxYear} onChange={(value) => {
               setYear(value)
             }} />
