@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as gui from 'lil-gui'
 
-const Seismograph: React.FC = () => {
+const simpleSeismograph: React.FC = () => {
   const canvas = useRef<HTMLCanvasElement>(null)
   const guiRef = useRef<gui.GUI | null>(null)
 
@@ -259,4 +259,4 @@ const Seismograph: React.FC = () => {
   )
 }
 
-export default Seismograph
+export default simpleSeismograph

@@ -9,7 +9,8 @@ import SuzhouRiver from './pages/suzhou-river/index.tsx'
 import './index.css'
 import HengduanMountains from './pages/hengduan-mountains/index.tsx'
 import SolarSystem from './pages/solar-system/index.tsx'
-import Seismograph from './pages/seismograph/index.tsx'
+import SimpleSeismograph from './pages/simple-seismograph/index.tsx'
+import EarthConstruction from './pages/earth-construction/index.tsx'
 
 export const links = [
   {
@@ -83,15 +84,25 @@ export const links = [
     ),
   },
   {
-    name: '地震仪',
-    path: '/seismograph',
+    name: '简易地震仪',
+    path: '/simple-seismograph',
     content: '',
     element: (
       <Enhance>
-        <Seismograph></Seismograph>
+        <SimpleSeismograph></SimpleSeismograph>
       </Enhance>
     ),
   },
+  {
+    name: '地球的构造',
+    path: '/earth-construction',
+    content: '',
+    element: (
+      <Enhance>
+        <EarthConstruction></EarthConstruction>
+      </Enhance>
+    ),
+  }
 ]
 
 window.$$prefix = import.meta.env.PROD ? import.meta.env.VITE_APP_GITHUB_PROJECT_PATH : ''

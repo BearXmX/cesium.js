@@ -139,11 +139,11 @@ const Earthquake = () => {
       })
     },
 
-    playSeismograph: () => {
+    playSimpleSeismograph: () => {
       modal.info({
         icon: null,
-        title: '模拟地震仪',
-        content: <iframe src={window.location.href.replace('earthquake', 'seismograph')} frameBorder={0} style={{ width: '100%', height: 'calc(100vh - 118px)' }} />,
+        title: '简易地震仪',
+        content: <iframe src={window.location.href.replace('earthquake', 'simple-seismograph')} frameBorder={0} style={{ width: '100%', height: 'calc(100vh - 118px)' }} />,
         okText: '关闭',
         cancelText: '取消',
         width: "100%",
@@ -180,7 +180,7 @@ const Earthquake = () => {
 
     const globalControls = guiRef.current.addFolder('全球相关')
 
-    videoControls.add(guiControls, 'playSeismograph').name('模拟地震仪')
+    videoControls.add(guiControls, 'playSimpleSeismograph').name('简易地震仪')
 
 
     const eventsControls = guiRef.current.addFolder('重大地震')
