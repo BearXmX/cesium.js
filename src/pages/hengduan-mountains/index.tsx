@@ -39,8 +39,11 @@ import {
   showVerticalNatureAreaDetails,
 } from './constance'
 import DrawCountour from '@/utils/countour'
+import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 
 const HengduanMountains = () => {
+  const mapIntance = useRef<CommonMapInstanceType>(null);
+
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<Cesium.Viewer | null>(null)
 
@@ -73,6 +76,8 @@ const HengduanMountains = () => {
   const qionglaishanRef = useRef<Cesium.Entity[]>([])
   const minshanRef = useRef<Cesium.Entity[]>([])
 
+
+
   const higherMountainPointInstanceList = useRef<sampleLabelType[]>([])
 
   const pandaPointInstanceList = useRef<sampleLabelType[]>([])
@@ -82,6 +87,77 @@ const HengduanMountains = () => {
 
   // 垂直自然带
   const verticalNatureAreaRef = useRef<Cesium.Entity[]>([])
+
+  const researchLine1Ref = useRef<Cesium.Entity[]>([])
+
+
+  const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}) => {
+    viewerRef.current!.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+      ...options,
+    })
+  }
+
+
+  const drawGeometry = (show: boolean, ref: React.RefObject<Cesium.Entity[]>, url: string, texts: { position: Cesium.Cartesian3, text: string, fontSize?: number }[], options: Cesium.GeoJsonDataSource.LoadOptions & {
+    color?: Cesium.Color,
+    loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
+    useFetchOnlyCallback?: (data: any,) => void
+  }) => {
+    if (show) {
+
+      if (ref.current?.length) {
+
+        ref.current.forEach(item => {
+          item.show = true
+        })
+
+      } else {
+        fetch(url).then(res => res.json()).then(data => {
+
+          texts.forEach(item => {
+            ref.current.push(viewerRef.current!.entities.add({
+              position: item.position,
+              label: {
+                text: item.text,
+                font: `${item.fontSize || 16}px sans-serif`,
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                outlineWidth: 2,
+                outlineColor: options.color || options.fill?.withAlpha(1),
+                fillColor: Cesium.Color.WHITE,
+                disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              }
+            }))
+          })
+
+          if (typeof options.useFetchOnlyCallback === 'function') {
+            options.useFetchOnlyCallback(data)
+            return
+          }
+
+          Cesium.GeoJsonDataSource.load(data, {
+            markerSymbol: "circle",
+            ...options
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
+            ref.current.push(...dataSource.entities.values)
+
+            if (typeof options.loadedDataCallback === 'function') {
+              options.loadedDataCallback(data, dataSource)
+            }
+          });
+        });
+
+
+      }
+
+    } else {
+      ref.current!.forEach(item => {
+        item.show = false
+      })
+    }
+  }
 
   const guiControls = {
     drawProvince: false,
@@ -111,6 +187,9 @@ const HengduanMountains = () => {
     drawMinshan: false,
     drawHutiaoxia: false,
     drawBirangxiagu: false,
+
+    drawResearchLine1: false,
+
 
     getCameraParams: () => {
       getCameraParams(viewerRef)
@@ -172,6 +251,9 @@ const HengduanMountains = () => {
     const plantControls = guiRef.current.addFolder('植被')
 
     const animalsControls = guiRef.current.addFolder('动物')
+
+    const researchLineControls = guiRef.current.addFolder('研修路线')
+
 
     /* 主要区域 */
     mainAreaControls
@@ -414,33 +496,43 @@ const HengduanMountains = () => {
         showDianlengshanDetails(value, notificationApi)
         /*         showDianlengshanDetails(value, notificationApi) */
       })
+
+    researchLineControls.add(guiControls, 'drawResearchLine1').name('丽江-香格里拉').onChange((value: boolean) => {
+      drawGeometry(value, researchLine1Ref, window.$$prefix + '/data/hengduan-mountains/researchLine1.geojson', [
+        {
+          text: '丽江',
+          position: Cesium.Cartesian3.fromDegrees(100.21145191081905,
+            26.90612625295651),
+          fontSize: 20
+        },
+        {
+          text: '香格里拉',
+          position: Cesium.Cartesian3.fromDegrees(99.69290317807497,
+            27.893319234335323),
+          fontSize: 20
+        }
+      ], {
+        stroke: Cesium.Color.fromCssColorString('#FF0000'),
+        fill: Cesium.Color.fromCssColorString('#FF0000').withAlpha(0.8),
+        strokeWidth: 2,
+        clampToGround: true,
+      })
+
+      cameraFlyTo(0, 0, 0, {
+        destination: Cesium.Cartesian3.fromDegrees(100.26481423, 26.47924395, 34771.12),
+        orientation: {
+          heading: 6.010600549860722,
+          pitch: -0.3759492281203336,
+          roll: 0.000034991829664932084
+        }
+      })
+
+    })
   }
 
   useEffect(() => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN
 
-    const viewer = new Cesium.Viewer(containerRef.current!, {
-      infoBox: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      baseLayerPicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-    })
-    viewer.scene.globe.showGroundAtmosphere = false;
-    viewerRef.current = viewer
-
-    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(async terrain => {
-      viewer.terrainProvider = terrain
-
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.8076862, 5000000),
-      })
-    })
-      ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
+    viewerRef.current = mapIntance.current?.getViewer()!
 
     drawChinaBoundary(true, viewerRef)
     initClickHandler(viewerRef)
@@ -450,8 +542,8 @@ const HengduanMountains = () => {
     initPandaPoint(viewerRef, pandaPointInstanceList)
     initDianlengshanPoint(viewerRef, dianlengshanPointInstanceList)
     initCanyonPoint(viewerRef, canyonPointInstanceList)
+
     return () => {
-      viewer.destroy()
       guiRef.current?.destroy()
     }
   }, [])
@@ -459,6 +551,11 @@ const HengduanMountains = () => {
   return (
     <div className="canvas-container">
       {notificationContextHolder}
+      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+        viewerRef.current!.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.8076862, 5000000),
+        })
+      }}></CommonMap>
       <div className="canvas-container-body" ref={containerRef} />
     </div>
   )

@@ -256,7 +256,7 @@
         {
           "position": [121.48076106643566, 31.24639661395119, 20],
           "type": "ImageText",
-          "image": "https://flight-feed.qunarzz.com/as3/180/image/poi_vishnu/e8118fc4-9d91-4dc5-9325-32e011bddd15.jpg",
+          "image": "/image/industrialHeritage-1.jpg",
           "content": "<div><div><label for=''>地址：</label><span>虹口区北苏州路276号</span></div><div><label for=''>名称：</label><span>上海邮政大楼</span></div><div><label for=''>建成年代：</label><span>1924</span></div><div><label for=''>原建筑类型：</label><span>办公</span></div><div><label for=''>曾用途：</label><span>上海邮政总局</span></div><div><label for=''>现用途：</label><span>上海邮政博物馆</span></div></div>",
           "defaultVisible": false,
           "key": "shanghaiyouzhengdalou",
@@ -265,7 +265,7 @@
         {
           "position": [121.47713148258339, 31.245028653547394, 20],
           "type": "ImageText",
-          "image": "https://inews.gtimg.com/newsapp_bt/0/15004917374/1000",
+          "image": "/image/industrialHeritage-2.jpg",
           "content": "<div><div><label for=''>地址：</label><span>北苏州路470号</span></div><div><label for=''>名称：</label><span>上海总商会</span></div><div><label for=''>建成年代：</label><span>1916</span></div><div><label for=''>原建筑类型：</label><span>办公</span></div><div><label for=''>曾用途：</label><span>上海电子管厂、联合灯泡厂、上海市电子元件研究所</span></div><div><label for=''>现用途：</label><span>上海宝格丽酒店宴会厅</span></div></div>",
           "defaultVisible": false,
           "key": "shanghaizongshanghui",
@@ -274,7 +274,7 @@
         {
           "position": [121.46784494419632, 31.243182612378405, 20],
           "type": "ImageText",
-          "image": "https://ts1.tc.mm.bing.net/th/id/R-C.350a52bd547fd8bcf8d2a2b028fe048f?rik=3vbWUmtfiVVcuQ&riu=http%3a%2f%2fwww.lifestylecreating.com%2fuploadfile%2fimage%2f20200820%2f2020082016460909909.jpg&ehk=rtzDLCmy6j%2fawJ30HyC7P5nyZvTGQWYyC8hbXyQ%2fwY8%3d&risl=&pid=ImgRaw&r=0",
+          "image": "/image/industrialHeritage-3.jpg",
           "content": "<div><div><label for=''>地址：</label><span>西藏北路18号</span></div><div><label for=''>名称：</label><span>四行天地</span></div><div><label for=''>建成年代：</label><span>1935</span></div><div><label for=''>原建筑类型：</label><span>仓库</span></div><div><label for=''>曾用途：</label><span>批发市场</span></div><div><label for=''>现用途：</label><span>创意办公园区</span></div></div>",
           "defaultVisible": false,
           "key": "sihangtiandi",
@@ -283,7 +283,7 @@
         {
           "position": [121.4665601704836, 31.24224334876861, 20],
           "type": "ImageText",
-          "image": "https://youimg1.c-ctrip.com/target/100e16000000z2mykF2B7.jpg",
+          "image": "/image/industrialHeritage-4.jpg",
           "content": "<div><div><label for=''>地址：</label><span>光复路21号</span></div><div><label for=''>名称：</label><span>四行仓库</span></div><div><label for=''>建成年代：</label><span>1931</span></div><div><label for=''>原建筑类型：</label><span>仓库</span></div><div><label for=''>曾用途：</label><span>家具城、文化用品市场</span></div><div><label for=''>现用途：</label><span>上海四行仓库抗战纪念馆</span></div></div>",
           "defaultVisible": false,
           "key": "sihangcangkujinianguan",
@@ -292,7 +292,7 @@
         {
           "position": [121.42626091794551, 31.24856986765306, 20],
           "type": "ImageText",
-          "image": "https://ts1.tc.mm.bing.net/th/id/R-C.e0bdbfab908684669aceeec45f9fb589?rik=0flv6Bki3YpE6g&riu=http%3a%2f%2fe0.ifengimg.com%2f10%2f2019%2f0417%2fB6478D3384CFFD493692D27C3BFDD07258710960_size155_w1080_h722.jpeg&ehk=FH7kUHNw%2fKfpj9fxBFKcty5i%2fIFh8FIIvp7SqIkQRKM%3d&risl=&pid=ImgRaw&r=0",
+          "image": "/image/industrialHeritage-5.jpg",
           "content": "<div><div><label for=''>地址：</label><span>光复西路145号</span></div><div><label for=''>名称：</label><span>福新第三面粉厂</span></div><div><label for=''>建成年代：</label><span>1916</span></div><div><label for=''>原建筑类型：</label><span>仓库</span></div><div><label for=''>曾用途：</label><span>福新第三面粉厂、上粮一站的仓库</span></div><div><label for=''>现用途：</label><span>教育机构办公</span></div></div>",
           "defaultVisible": false,
           "key": "fuxindisanmianfenchang",
@@ -301,7 +301,7 @@
         {
           "position": [121.43215601860254, 31.25099874969594, 20],
           "type": "ImageText",
-          "image": "https://ts1.tc.mm.bing.net/th/id/R-C.b8a66b567870014adb3a73cd2b93a2e9?rik=abQYYcIqPpaSVA&riu=http%3a%2f%2fwenhui.whb.cn%2fu%2fcms%2fwww%2f201912%2f191711459nv4.jpg&ehk=a034O2LLDGpr0bH2KQFtuHvyVOXr1aO4%2fiAlpJplkIw%3d&risl=&pid=ImgRaw&r=0",
+          "image": "/image/industrialHeritage-6.jpg",
           "content": "<div><div><label for=''>地址：</label><span>光复西路17号</span></div><div><label for=''>名称：</label><span>上海造币厂主楼</span></div><div><label for=''>建成年代：</label><span>1930</span></div><div><label for=''>原建筑类型：</label><span>铸币厂房</span></div><div><label for=''>曾用途：</label><span>中央造币厂、上海人民印刷厂铁工分长、国营六一四厂、中国造币公司上海造币厂</span></div><div><label for=''>现用途：</label><span>上海造币博物馆</span></div></div>",
           "defaultVisible": false,
           "key": "shanghaizaobichangzhulou",
@@ -310,7 +310,7 @@
         {
           "position": [121.39372894544977, 31.221484115337148, 20],
           "type": "ImageText",
-          "image": "https://ts1.tc.mm.bing.net/th/id/R-C.31b7e2c2a8ba1beea0b9f4dffc6e5b62?rik=pr0HsvL2I8D67A&riu=http%3a%2f%2fpic0.xinmin.cn%2f2023%2f07%2f02%2f13401555110907025293.jpg&ehk=eguISfcc3t7xXqVAMALLdnx42Jf3cb8jztds8s6s3rg%3d&risl=&pid=ImgRaw&r=0",
+          "image": "/image/industrialHeritage-7.jpg",
           "content": "<div><div><label for=''>地址：</label><span>大渡河路251号</span></div><div><label for=''>名称：</label><span>上海商标火花收藏馆</span></div><div><label for=''>建成年代：</label><span>1931</span></div><div><label for=''>原建筑类型：</label><span>厂房</span></div><div><label for=''>曾用途：</label><span>日商燧生火柴厂1923;明光火柴厂1931;美光火柴厂1932;上海荧昌火柴厂1958;上海火柴厂1966</span></div><div><label for=''>现用途：</label><span>收藏馆</span></div></div>",
           "defaultVisible": false,
           "key": "shanghaishangbiaohuohuashoucangguan",
@@ -319,7 +319,7 @@
         {
           "position": [121.44503931140565, 31.24996889036683, 20],
           "type": "ImageText",
-          "image": "http://p2.itc.cn/q_70/images03/20201023/ace55dee7b754259811ee5c6ab8124ae.jpeg",
+          "image": "/image/industrialHeritage-8.jpg",
           "content": "<div><div><label for=''>地址：</label><span>莫干山路50号</span></div><div><label for=''>名称：</label><span>M50创意园</span></div><div><label for=''>建成年代：</label><span>20世纪30-90年代</span></div><div><label for=''>原建筑类型：</label><span>厂房、办公、仓库</span></div><div><label for=''>曾用途：</label><span>信和纱厂1937;上海春明毛纺织厂1994</span></div><div><label for=''>现用途：</label><span>艺术家工作室、画廊等文化创意机构</span></div></div>",
           "defaultVisible": false,
           "key": "M50chuangyiyuan",
@@ -328,7 +328,7 @@
         {
           "position": [121.44151302710787, 31.248695534393846, 20],
           "type": "ImageText",
-          "image": "https://ts3.tc.mm.bing.net/th/id/OIP-C.A0iQceevhTbUGyKF20qOcAHaFK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+          "image": "/image/industrialHeritage-9.jpg",
           "content": "<div><div><label for=''>地址：</label><span>澳门路128-150号</span></div><div><label for=''>名称：</label><span>上海纺织博物馆大厦</span></div><div><label for=''>建成年代：</label><span>1931</span></div><div><label for=''>原建筑类型：</label><span>办公楼</span></div><div><label for=''>曾用途：</label><span>申新纺织第九厂</span></div><div><label for=''>现用途：</label><span>博物馆</span></div></div>",
           "defaultVisible": false,
           "key": "shanghaifangzhibowuguandasha",

@@ -6,12 +6,13 @@ import classNames from 'classnames'
 
 type waterQualityChartsPropsType = {
   year: number
+  chartsContainerStyle?: React.CSSProperties
 }
 
 const waterQualityCharts: React.FC<waterQualityChartsPropsType> = (props) => {
   const [modal, modalContext] = Modal.useModal();
 
-  const { year } = props
+  const { year, chartsContainerStyle } = props
 
   const instance = useRef<HTMLDivElement>(null)
 
@@ -162,9 +163,9 @@ const waterQualityCharts: React.FC<waterQualityChartsPropsType> = (props) => {
 
   return <>
     {modalContext}
-    <div className={classNames('water-quality-charts', {
-      'water-quality-charts-hide': folder
-    })}>
+    <div className={classNames('project-item-charts', {
+      'project-item-charts-hide': folder
+    })} style={chartsContainerStyle}>
       {
         <div style={{ width: '100%', height: '100%', display: !folder ? 'block' : 'none' }}>
           <div style={{ height: 35, display: 'flex', alignItems: 'center' }}>
@@ -183,13 +184,14 @@ const waterQualityCharts: React.FC<waterQualityChartsPropsType> = (props) => {
               showDescription()
             }}>指标说明</Button>
           </div>
-          <div style={{ width: '100%', height: 'calc(100% - 40px)' }} ref={instance}></div>
+          <div style={{ width: '100%', height: 'calc(100% - 50px)' }} ref={instance}></div>
+          <div style={{ fontSize: 10, color: '#a0a0a0' }}>相关数据来自doi: 10.3969/j.issn.1674-6732.2023.04.012</div>
         </div>
       }
       {
-        folder && <div className='water-quality-charts-hide-title'>水质变化历年图表</div>
+        folder && <div className='project-item-charts-hide-title'>水质变化历年图表</div>
       }
-      <div className='water-quality-charts-folder' onClick={() => {
+      <div className='project-item-charts-folder' onClick={() => {
         setFolder(!folder)
       }}></div>
     </div >

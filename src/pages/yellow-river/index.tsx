@@ -254,7 +254,7 @@ const YellowRiver = () => {
 
     guiRef.current.title('黄河')
 
-    const videoControls = guiRef.current.addFolder('黄河科普')
+    /*     const videoControls = guiRef.current.addFolder('黄河科普') */
 
     const regionControls = guiRef.current.addFolder('主要区域')
 
@@ -266,7 +266,7 @@ const YellowRiver = () => {
     const comprehensiveManagementContols = guiRef.current.addFolder('综合治理')
 
     /* 科普视频 */
-    videoControls.add(guiControls, 'showVideo').name('我们的母亲河')
+    /*     videoControls.add(guiControls, 'showVideo').name('我们的母亲河') */
 
     /* 主要区域 */
     regionControls.add(guiControls, 'drawAdministrativeRegion').name('行政区域').onChange((value: boolean) => {

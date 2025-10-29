@@ -1,10 +1,11 @@
 import * as Cesium from "cesium";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, notification } from 'antd'
 import * as gui from 'lil-gui'
 import CommonMap, { type CommonMapInstanceType } from "@/components/common-map";
 import Radiant from "./radiant";
 import { tangshanEarthquake, wenchuangEarthquake } from "./constance";
+import WavesCharts from "./wenchuan-earthquake-waves-charts";
 const Earthquake = () => {
   const mapIntance = useRef<CommonMapInstanceType>(null);
 
@@ -52,6 +53,8 @@ const Earthquake = () => {
   const globalMainlandNameRef = useRef<Cesium.Entity[]>([]);
 
   const earthquakeCircleWaveRef = useRef<Cesium.Entity[]>([]);
+
+  const [showWenchuanEarthquakeWavesCharts, setShowWenchuanEarthquakeWavesCharts] = useState(false);
 
 
 
@@ -123,6 +126,8 @@ const Earthquake = () => {
     wenchuangEarthquake: false,
     tangshanEarthquake: false,
 
+    wenchuanEarthquakeWavesCharts: false,
+
     showVideo: () => {
       modal.info({
         icon: null,
@@ -160,7 +165,30 @@ const Earthquake = () => {
         onOk() {
         }
       })
+    },
+    playEarthConstruction: () => {
+      modal.info({
+        icon: null,
+        title: '地球的构造',
+        content: <iframe src={window.location.href.replace('earthquake', 'earth-construction')} frameBorder={0} style={{ width: '100%', height: 'calc(100vh - 118px)' }} />,
+        okText: '关闭',
+        cancelText: '取消',
+        width: "100%",
+        style: {
+          maxWidth: '100vw',
+          height: '100vh',
+          top: 0,
+          overflow: 'hidden',
+        },
+        styles: { wrapper: { overflow: 'hidden', } },
+        closable: true,
+        centered: true,
+        zIndex: 2551,
+        onOk() {
+        }
+      })
     }
+
   };
 
   const initGui = () => {
@@ -172,7 +200,7 @@ const Earthquake = () => {
 
     guiRef.current = new gui.GUI({})
 
-    guiRef.current.title('地震相关')
+    guiRef.current.title('地震')
 
     const videoControls = guiRef.current.addFolder('地震科普')
 
@@ -180,8 +208,8 @@ const Earthquake = () => {
 
     const globalControls = guiRef.current.addFolder('全球相关')
 
+    videoControls.add(guiControls, 'playEarthConstruction').name('地球的构造')
     videoControls.add(guiControls, 'playSimpleSeismograph').name('简易地震仪')
-
 
     const eventsControls = guiRef.current.addFolder('重大地震')
 
@@ -265,6 +293,10 @@ const Earthquake = () => {
         notificationApi.destroy()
       }
 
+    })
+
+    eventsControls.add(guiControls, 'wenchuanEarthquakeWavesCharts').name('汶川大地震地震波').onChange((value: boolean) => {
+      setShowWenchuanEarthquakeWavesCharts(value)
     })
 
     eventsControls.add(guiControls, 'tangshanEarthquake').name('唐山大地震').onChange((value: boolean) => {
@@ -462,7 +494,7 @@ const Earthquake = () => {
   }
 
   const drawGlobalPlateBoundaryName = (checked: boolean) => {
-    drawGeometry(checked, globalPlateBoundaryNameRef, window.$$prefix + "/data/earthquake/step-dividing-line.geojson", [], {
+    drawGeometry(checked, globalPlateBoundaryNameRef, window.$$prefix + "/data/earthquake/global-plate-boundary-name.geojson", [], {
       loadedDataCallback(data, dataSource) {
         dataSource.entities.values.forEach(entity => {
           const props = entity.properties!.getValue();
@@ -544,60 +576,85 @@ const Earthquake = () => {
 
   const drawGlobalEarthquakePoint = (checked: boolean) => {
 
-    drawGeometry(checked, globalEarthquakePointRef, window.$$prefix + "/data/earthquake/global-earthquake-point.geojson", [], {
-      stroke: Cesium.Color.RED,
-      fill: Cesium.Color.RED.withAlpha(0.2),
-      strokeWidth: 2,
-      loadedDataCallback(data, dataSource) {
-        const featrures = data.features || [];
+    if (checked) {
 
-        globalEarthquakePointRef.current = featrures.map((item: any) => {
+      if (globalEarthquakePointRef.current?.length) {
 
-          const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
+        globalEarthquakePointRef.current.forEach(item => {
+          item.show = true
+        })
 
-          const props = item.properties || {}
+      } else {
+        fetch(window.$$prefix + "/data/earthquake/global-earthquake-point.geojson").then(res => res.json()).then(data => {
+          const featrures = data.features || [];
 
-          return viewerRef.current!.entities.add({
-            position: position,
-            point: {
-              color: Cesium.Color.WHITE,
-              pixelSize: (Number(props.size)) || 5,
-              outlineColor: Cesium.Color.GREEN,
-              outlineWidth: 2
-            }
-          })
+          globalEarthquakePointRef.current = featrures.map((item: any) => {
+
+            const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
+
+            const props = item.properties || {}
+
+            return viewerRef.current!.entities.add({
+              position: position,
+              point: {
+                color: Cesium.Color.WHITE,
+                pixelSize: (Number(props.size)) || 5,
+                outlineColor: Cesium.Color.GREEN,
+                outlineWidth: 2
+              }
+            })
+          });
         });
-      },
-    })
+
+
+      }
+
+    } else {
+      globalEarthquakePointRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
   }
 
   const drawGlobalVolcanoPoint = (checked: boolean) => {
-    drawGeometry(checked, globalVolcanoPointRef, window.$$prefix + "/data/earthquake/global-volcano-point.geojson", [], {
-      stroke: Cesium.Color.RED,
-      fill: Cesium.Color.RED.withAlpha(0.2),
-      strokeWidth: 2,
-      loadedDataCallback(data, dataSource) {
-        const featrures = data.features || [];
+    if (checked) {
 
-        globalVolcanoPointRef.current = featrures.map((item: any) => {
+      if (globalVolcanoPointRef.current?.length) {
 
-          const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
+        globalVolcanoPointRef.current.forEach(item => {
+          item.show = true
+        })
 
-          const props = item.properties || {}
+      } else {
+        fetch(window.$$prefix + "/data/earthquake/global-volcano-point.geojson").then(res => res.json()).then(data => {
+          const featrures = data.features || [];
 
-          return viewerRef.current!.entities.add({
-            position: position,
-            point: {
-              color: Cesium.Color.RED,
-              pixelSize: (Number(props.size)) || 5,
-              outlineColor: Cesium.Color.BLACK,
-              outlineWidth: 2
+          globalVolcanoPointRef.current = featrures.map((item: any) => {
 
-            }
-          })
+            const position = Cesium.Cartesian3.fromDegrees(parseFloat(item.geometry.coordinates[0]), parseFloat(item.geometry.coordinates[1]));
+
+            const props = item.properties || {}
+
+            return viewerRef.current!.entities.add({
+              position: position,
+              point: {
+                color: Cesium.Color.DARKGRAY,
+                pixelSize: (Number(props.size)) || 5,
+                outlineColor: Cesium.Color.BLACK,
+                outlineWidth: 2
+              }
+            })
+          });
         });
-      },
-    })
+
+
+      }
+
+    } else {
+      globalVolcanoPointRef.current!.forEach(item => {
+        item.show = false
+      })
+    }
   }
 
   const drawGlobalLandArcLine = (checked: boolean) => {
@@ -774,6 +831,14 @@ const Earthquake = () => {
       <CommonMap ref={mapIntance} terrainInitCallback={() => {
         cameraFlyTo(105.63717584, 35.63459892, 6664311.55)
       }}></CommonMap>
+
+      {
+        [showWenchuanEarthquakeWavesCharts].includes(true) && <div className="project-charts-container" style={{ height: '400px' }}>
+          {showWenchuanEarthquakeWavesCharts && <WavesCharts chartsContainerStyle={{
+            width: '100%',
+          }}></WavesCharts>}
+        </div>
+      }
     </>
 
   );

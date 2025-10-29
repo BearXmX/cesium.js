@@ -55,7 +55,7 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     const near = 0.1;
     const far = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.set(6, 2, 12);
+    camera.position.set(7, 4, 7);
 
     // 3. 场景与光源
     const scene = new THREE.Scene();
@@ -69,19 +69,37 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     scene.add(ambientLight);
 
     const axesHelper = new THREE.AxesHelper(5);
-    scene.add(axesHelper);
+    /*     scene.add(axesHelper); */
 
-    // 4. 裁剪平面设置
-    const clipPlanes = [
-      new THREE.Plane(new THREE.Vector3(-3, 0, 0), 0),
-      new THREE.Plane(new THREE.Vector3(0, -3, 0), 0),
-      new THREE.Plane(new THREE.Vector3(0, 0, -3), 0)
-    ];
+
 
     // 5. 地球外层（地壳）
     const earthGroup = new THREE.Group();
     const earthRadius = 3;
     const earthGeometry = new THREE.SphereGeometry(earthRadius, 64, 32);
+
+    // 4. 裁剪平面设置
+    const clipPlanes = [
+      // 1. 保留 x ≤ -3 的部分（裁掉 x > -3）
+      // 法线(-1,0,0)：指向x轴负方向，平面方程：-x - 3 = 0 → x = -3
+      // 作用：平面左侧（x < -3）保留，右侧（x > -3）被裁掉
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0).normalize(), -earthRadius * 2),
+
+      // 2. 裁掉 y > 0 的上半部分（保留 y ≤ 0）
+      new THREE.Plane(new THREE.Vector3(0, -1, 0).normalize(), 0),
+
+      // 3. 裁掉 z > 0 的部分（保留 z ≤ 0）
+      new THREE.Plane(new THREE.Vector3(0, 0, -1).normalize(), 0),
+    ];
+
+    // 为每个裁剪平面添加辅助线（大小10，颜色区分轴）
+    const helpers = [
+      new THREE.PlaneHelper(clipPlanes[0], 6, 0xff0000), // x=-3：红色
+      new THREE.PlaneHelper(clipPlanes[1], 6, 0xff00ff), // z=0：紫色
+      new THREE.PlaneHelper(clipPlanes[2], 6, 0x00ff00), // y=0：绿色
+    ];
+    /*     helpers.forEach(helper => scene.add(helper)); */
+
     const earthMaterial = new THREE.MeshStandardMaterial({
       map: new THREE.TextureLoader().load(window.$$prefix + '/models/earth/textures/Material.002_diffuse.jpg'),
       side: THREE.DoubleSide,
@@ -92,7 +110,11 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     });
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     earth.renderOrder = 0;
+
     earthGroup.add(earth);
+
+    earthGroup.position.set(-3, 0, 0);
+
     scene.add(earthGroup);
 
     // ======================================
@@ -154,7 +176,7 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
       line.renderOrder = 0.5;
       labelGroup.add(line);
 
-      scene.add(labelGroup);
+      earthGroup.add(labelGroup);
       return labelGroup;
     };
 
@@ -198,12 +220,12 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
       mantleYZ.name = `${name}-YZ`;
       mantleGroup.add(mantleYZ);
 
-      const mantleXZ = new THREE.Mesh(circleGeometry, mantleMaterial);
-      mantleXZ.rotation.y = Math.PI / 2;
-      mantleXZ.name = `${name}-XZ`;
-      mantleGroup.add(mantleXZ);
+      /*       const mantleXZ = new THREE.Mesh(circleGeometry, mantleMaterial);
+            mantleXZ.rotation.y = Math.PI / 2;
+            mantleXZ.name = `${name}-XZ`;
+            mantleGroup.add(mantleXZ); */
 
-      scene.add(mantleGroup);
+      earthGroup.add(mantleGroup);
 
       // 3. 为地幔创建标签+引线（传递拆分后的偏移参数）
       createLabelWithLine({
@@ -232,7 +254,7 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
       roughness: 0.7,
       name: '地壳',
       labelOffset: { x: -1, y: 0.25, z: 0 }, // 标签自身偏移
-      targetOffset: { x: 0, y: -0.025, z: 0.1 }    // 目标点偏移（默认）
+      targetOffset: { x: 0, y: -0.025, z: 0 }    // 目标点偏移（默认）
     });
 
     createCircle({
@@ -243,29 +265,29 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
       roughness: 0.65,
       name: '软流层',
       labelOffset: { x: -1, y: 0, z: 0 },
-      targetOffset: { x: 0, y: -0.2, z: 0.1 }    // 目标点偏移（默认）
+      targetOffset: { x: 0, y: -0.2, z: 0 }    // 目标点偏移（默认）
     });
 
     createCircle({
-      radius: 2.55,
+      radius: 2.70,
       color: 'rgba(252, 221, 59, 1)',
       position: { x: 0.002, y: 0.002, z: 0.002 },
       metalness: 0.25,
       roughness: 0.6,
       name: '地幔',
       labelOffset: { x: -0.1, y: 0, z: 0 },
-      targetOffset: { x: 0, y: -0.2, z: 0.1 }    // 目标点偏移（默认）
+      targetOffset: { x: 0, y: -0.2, z: 0 }    // 目标点偏移（默认）
     });
 
     createCircle({
-      radius: 2.15,
+      radius: 1.75,
       color: 'rgba(202, 52, 15, 1)',
       position: { x: 0.003, y: 0.003, z: 0.003 },
       metalness: 0.3,
       roughness: 0.55,
       name: '外核',
       labelOffset: { x: 0.1, y: 0, z: 0 },
-      targetOffset: { x: 0, y: -0.5, z: 0.1 }    // 目标点偏移（默认）
+      targetOffset: { x: 0, y: -0.5, z: 0 }    // 目标点偏移（默认）
     });
 
     // ======================================
@@ -311,7 +333,7 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     const earthCore = new THREE.Mesh(earthCoreGeometry, earthCoreMaterial);
     earthCore.name = 'earth-core';
     earthCore.renderOrder = 2;
-    scene.add(earthCore);
+    earthGroup.add(earthCore);
 
     // 2. 新增：炙热气体大气层（只包裹内核，动态效果）
     // 2.1 大气层材质（Shader实现气体渐变+波动）
@@ -398,7 +420,7 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     );
     hotGasAtmosphere.name = 'hot-gas-atmosphere';
     hotGasAtmosphere.renderOrder = 1.8; // 渲染顺序：在地幔（1）和内核（2）之间，确保在核外、幔内
-    /*   scene.add(hotGasAtmosphere); */
+    /*   earthGroup.add(hotGasAtmosphere); */
 
     // 地核标签（拆分偏移参数）
     createLabelWithLine({
@@ -418,6 +440,8 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     controls.dampingFactor = 0.05;
     controls.enableZoom = true;
     controls.maxDistance = 30;
+    // @ts-ignore
+    controls.enableClipping = true; // 同步平面状态，必加
 
     // 新增：Perlin噪声函数（生成自然起伏的高度数据）
     const perlinNoise = (x: number, y: number): number => {
@@ -459,29 +483,44 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
     const createBox = () => {
       const group = new THREE.Group();
 
+      const oceanHeight = 0.4;
+      const crustHeight = 0.5; // 基础高度
+      const topDomeHeight = 0.4;
+      const softLayerHeight = 0.6;
+      const bottomDomeHeight = 0.4;
+      const downDomeHeight = 0.8;
+      const outerCoreHeight = 1;
+
+      const innerCoreHeight = 1;
+
       const boxWidth = 3;
-      const boxHeight = 1.8;
+      const boxHeight = oceanHeight + crustHeight + topDomeHeight + softLayerHeight + bottomDomeHeight + downDomeHeight + outerCoreHeight + innerCoreHeight;
+
       const boxDepth = 3;
+
+      let positionYStart = boxHeight / 2
 
       // 立方体线框（不变）
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth),
-        new THREE.MeshBasicMaterial({ color: '#fff', wireframe: false, transparent: true, opacity: 0 })
+        new THREE.MeshBasicMaterial({ color: '#fff', wireframe: true, transparent: true, opacity: 0 })
       );
-      group.add(box);
-      box.position.set(-earthRadius * 1.5, 0, 4);
 
-      const oceanAndLandHeight = 0.4;
+      group.add(box);
+
+      group.position.set(3, 0, 0);
+
+
 
       /* 创建海洋 */
+      let ocean: THREE.Mesh;
       {
         const oceanWidth = boxWidth / 2;
-        const oceanHeight = oceanAndLandHeight;
         const oceanDepth = boxDepth;
 
         const sun = new THREE.Vector3(2, 4, 1).add(box.position);
 
-        const ocean = new Water(new THREE.BoxGeometry(oceanWidth, oceanHeight, oceanDepth), {
+        ocean = new Water(new THREE.BoxGeometry(oceanWidth, oceanHeight, oceanDepth), {
           waterNormals: new THREE.TextureLoader().load(window.$$prefix + '/water.jpg', function (texture) {
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
           }),
@@ -491,15 +530,23 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
           side: THREE.DoubleSide,
         });
 
-        ocean.position.set(-boxWidth / 4, boxHeight / 2 - oceanHeight / 2, 0);
+        positionYStart = positionYStart - oceanHeight;
+
+        ocean.position.set(-boxWidth / 4, positionYStart + oceanHeight / 2, 0);
+
+        const spriteText = new SpriteText('海洋', 0.25, '#ffffff');
+        spriteText.position.set(0, 1, 0);
+        ocean.add(spriteText)
+
         oceanRef.current = ocean;
         box.add(ocean);
       }
 
       /* 创建带地形隆起的大陆（边缘不隆起） */
+      let land: THREE.Mesh;
       {
         const landWidth = boxWidth / 2;
-        const landHeight = oceanAndLandHeight; // 基础高度
+        const landHeight = oceanHeight; // 基础高度
         const landDepth = boxDepth;
         const maxElevation = 1.2; // 最大隆起高度
         const noiseScale = 6; // 噪声缩放（控制起伏密度）
@@ -553,28 +600,29 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
 
         // 5. 大陆材质（保持不变）
         const landMaterial = new THREE.MeshStandardMaterial({
-          color: '#b89b61',
+          color: '#b98d34',
           roughness: 0.8,
           metalness: 0.1,
         });
 
         // 6. 创建大陆网格并设置位置
-        const land = new THREE.Mesh(landGeometry, landMaterial);
-        land.position.set(boxWidth / 4, boxHeight / 2 - landHeight / 2, 0);
+        land = new THREE.Mesh(landGeometry, landMaterial);
+        land.position.set(boxWidth / 4, ocean.position.y, 0);
+
+        const spriteText = new SpriteText('大陆', 0.25, '#ffffff');
+        spriteText.position.set(0, 1.5, 0);
+        land.add(spriteText)
+
         box.add(land);
       }
 
-
-
-
-
       /* 地壳 */
+      let crust: THREE.Mesh;
       {
         /* 地壳（边缘部分顶点隆起） */
         const crustWidth = boxWidth;
-        const crustHeight = 0.4; // 基础高度
         const crustDepth = boxDepth;
-        const maxElevation = 0.7; // 边缘最大隆起高度（适中，避免过高）
+        const maxElevation = 0.6; // 边缘最大隆起高度（适中，避免过高）
         const noiseScale = 4; // 噪声缩放（控制边缘起伏的密集度）
         const edgeRatio = 0.15; // 边缘隆起区占比（15%宽度/深度为边缘隆起区）
 
@@ -632,10 +680,147 @@ const EarthConstruction: React.FC<EarthConstructPropsType> = (props) => {
         });
 
         // 6. 创建地壳网格并设置位置
-        const crust = new THREE.Mesh(crustGeometry, crustMaterial);
-        crust.position.set(0, boxHeight / 2 - oceanAndLandHeight - crustHeight / 2, 0);
-        crust.scale.set(1.01, 1.01, 1.01);
+        crust = new THREE.Mesh(crustGeometry, crustMaterial);
+
+        positionYStart = positionYStart - crustHeight
+        crust.position.set(0, positionYStart + crustHeight / 2, 0);
+
+        const spriteText = new SpriteText('地壳', 0.25, '#ffffff');
+        spriteText.position.set(crust.position.x + crustWidth / 2, 0, crust.position.z + crustDepth / 2 + 0.25);
+        crust.add(spriteText);
+
+        const spriteText1 = new SpriteText('岩石圈', 0.2, '#fff');
+        spriteText1.position.set(crust.position.x, -0.2, crust.position.z + crustDepth / 2 + 0.25);
+        spriteText1.padding = 0.05;
+        spriteText1.backgroundColor = 'rgba(174, 129, 78, 1)';
+        crust.add(spriteText1);
+
+        crust.scale.set(1.01, 1, 1.01);
         box.add(crust);
+      }
+
+      /* 上地幔顶层 */
+      let topDome: THREE.Mesh;
+      {
+        const topDomeWidth = boxWidth;
+        const topDomeDepth = boxDepth;
+        const topDomeMaterial = new THREE.MeshStandardMaterial({
+          color: '#b2673e',
+          roughness: 0.8,
+          metalness: 0.1,
+        });
+
+        positionYStart = positionYStart - topDomeHeight
+
+        topDome = new THREE.Mesh(new THREE.BoxGeometry(topDomeWidth, topDomeHeight, topDomeDepth, 32), topDomeMaterial);
+        topDome.position.set(0, positionYStart + topDomeHeight / 2, 0);
+
+        const spriteText = new SpriteText('上地幔顶层（固态）', 0.2, '#fff');
+        spriteText.position.set(topDome.position.x + topDomeWidth / 2, 0, topDome.position.z + topDomeDepth / 2 + 0.15);
+        topDome.add(spriteText);
+
+        box.add(topDome);
+      }
+
+      /* 上地幔软流层 */
+      let softLayer: THREE.Mesh;
+      {
+        const softLayerWidth = boxWidth;
+        const softLayerDepth = boxDepth;
+        const softLayerMaterial = new THREE.MeshStandardMaterial({
+          color: '#e28384',
+          roughness: 0.8,
+          metalness: 0.1,
+        });
+        softLayer = new THREE.Mesh(new THREE.BoxGeometry(softLayerWidth, softLayerHeight, softLayerDepth), softLayerMaterial)
+
+        positionYStart = positionYStart - softLayerHeight
+
+        softLayer.position.set(0, positionYStart + softLayerHeight / 2, 0);
+
+        const spriteText = new SpriteText('上地幔软流层（部分熔融）', 0.2, '#fff');
+        spriteText.position.set(softLayer.position.x + softLayerWidth / 2, 0, softLayer.position.z + softLayerDepth / 2 + 0.15);
+        softLayer.add(spriteText);
+        box.add(softLayer);
+      }
+
+      /*上地幔下层 */
+      let bottomDome: THREE.Mesh;
+      {
+        const bottomDomeWidth = boxWidth;
+        const bottomDomeDepth = boxDepth;
+        const bottomDomeMaterial = new THREE.MeshStandardMaterial({
+          color: '#d0224b',
+          roughness: 0.8,
+          metalness: 0.1,
+        });
+        bottomDome = new THREE.Mesh(new THREE.BoxGeometry(bottomDomeWidth, bottomDomeHeight, bottomDomeDepth), bottomDomeMaterial)
+
+        positionYStart = positionYStart - bottomDomeHeight
+        bottomDome.position.set(0, positionYStart + bottomDomeHeight / 2, 0);
+
+        const spriteText = new SpriteText('上地幔下层（固态）', 0.2, '#fff');
+        spriteText.position.set(bottomDome.position.x + bottomDomeWidth / 2, 0, bottomDome.position.z + bottomDomeDepth / 2 + 0.15);
+        bottomDome.add(spriteText);
+        box.add(bottomDome);
+      }
+
+      /* 下地幔 */
+      let downDome: THREE.Mesh;
+      {
+        const downDomeWidth = boxWidth;
+        const downDomeDepth = boxDepth;
+        const downDomeMaterial = new THREE.MeshStandardMaterial({
+          color: '#f51310',
+          roughness: 0.8,
+          metalness: 0.1,
+        });
+        downDome = new THREE.Mesh(new THREE.BoxGeometry(downDomeWidth, downDomeHeight, downDomeDepth), downDomeMaterial)
+        positionYStart = positionYStart - downDomeHeight
+        downDome.position.set(0, positionYStart + downDomeHeight / 2, 0);
+        const spriteText = new SpriteText('下地幔（固态）', 0.2, '#fff');
+        spriteText.position.set(downDome.position.x + downDomeWidth / 2, 0, downDome.position.z + downDomeDepth / 2 + 0.15);
+        downDome.add(spriteText);
+        box.add(downDome);
+      }
+
+      /* 外地核 */
+      let outerCore: THREE.Mesh;
+      {
+        const outerCoreWidth = boxWidth;
+        const outerCoreDepth = boxDepth;
+        const outerCoreMaterial = new THREE.MeshStandardMaterial({
+          color: '#e7820e',
+          roughness: 0.8,
+          metalness: 0.1,
+        });
+        outerCore = new THREE.Mesh(new THREE.BoxGeometry(outerCoreWidth, outerCoreHeight, outerCoreDepth), outerCoreMaterial)
+        positionYStart = positionYStart - outerCoreHeight
+        outerCore.position.set(0, positionYStart + outerCoreHeight / 2, 0);
+        const spriteText = new SpriteText('外地核（液态）', 0.2, '#fff');
+        spriteText.position.set(outerCore.position.x + outerCoreWidth / 2, 0, outerCore.position.z + outerCoreDepth / 2 + 0.15);
+        outerCore.add(spriteText);
+        box.add(outerCore);
+      }
+
+      /* 内地核 */
+      let innerCore: THREE.Mesh;
+      {
+        const innerCoreWidth = boxWidth;
+
+        const innerCoreDepth = boxDepth;
+        const innerCoreMaterial = new THREE.MeshStandardMaterial({
+          color: 'rgba(255, 81, 1, 1)',
+          roughness: 0.8,
+          metalness: 0.1,
+        });
+        innerCore = new THREE.Mesh(new THREE.BoxGeometry(innerCoreWidth, innerCoreHeight, innerCoreDepth), innerCoreMaterial)
+        positionYStart = positionYStart - innerCoreHeight
+        innerCore.position.set(0, positionYStart + innerCoreHeight / 2, 0);
+        const spriteText = new SpriteText('内地核（固态）', 0.2, '#fff');
+        spriteText.position.set(innerCore.position.x + innerCoreWidth / 2, 0, innerCore.position.z + innerCoreDepth / 2 + 0.15);
+        innerCore.add(spriteText);
+        box.add(innerCore);
       }
 
       scene.add(group);

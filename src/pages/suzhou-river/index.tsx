@@ -11,8 +11,10 @@ import type { CommonMapInstanceType } from '@/components/common-map'
 import CommonMap from '@/components/common-map'
 import { addWaterRegion, coordinatesToPositions } from './constance'
 import WaterQualityCharts from './water-quality-charts'
-import CesiumDrawHexagonalGrid from '@/utils/plugins/polygon'
+import { debounce } from 'lodash'
 import './index.css'
+import FishCharts from './fish-charts'
+import Images from './images'
 
 type SuzhouRiverPropsType = {}
 
@@ -40,6 +42,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   const wusongjiangWaterPrimitivesRef = useRef<any[]>([])
 
   const [showSuzhouRiverWaterQualityCharts, setShowSuzhouRiverWaterQualityCharts] = useState<boolean>(false)
+
+  const [showSuzhouRiverFishCharts, setShowSuzhouRiverFishCharts] = useState<boolean>(false)
 
   const pointInstanceList = useRef<
     {
@@ -241,6 +245,8 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     drawSuzhouRiverDistrictArea: false,
     drawWaterQualitycheckCharts: false,
     drawSuzhouRiverLandUseTypeTimeline: false,
+
+    drawFishChangeCharts: false,
 
 
     history: () => {
@@ -498,6 +504,23 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         }
       })
 
+    organismControls
+      .add(guiControls, 'drawFishChangeCharts')
+      .name('鱼类种类变化历年图表')
+      .onChange((value: boolean) => {
+        setYear(2001)
+        setShowSuzhouRiverFishCharts(value)
+        if (value) {
+          setShowTimeLine((prev) => {
+            return [...prev, 'fish']
+          })
+        } else {
+          setShowTimeLine((prev) => {
+            return [...prev].filter(item => item !== 'fish')
+          })
+        }
+      })
+
     industrialHeritageControls
       .add(guiControls, 'drawSuzhouRiverIndustrialHeritage')
       .name('工业遗产')
@@ -640,7 +663,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
                     },
                   })
                   : v.type === 'ImageText'
-                    ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.image, v.content, {
+                    ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), window.$$prefix + v.image, v.content, {
                       defaultVisible: v.defaultVisible,
                     })
                     : null
@@ -695,9 +718,11 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
               2015: '2015',
               2020: '2020',
               2021: '2021',
-            }} step={1} value={year} min={defaultMinYear} max={defaultMaxYear} onChange={(value) => {
-              setYear(value)
-            }} />
+            }} step={1} value={year} min={defaultMinYear} max={defaultMaxYear} onChange={debounce((value) => {
+              setYear(() => {
+                return value
+              })
+            }, 300)} />
           </div>
         </div>
       }
@@ -706,7 +731,18 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       }}></CommonMap>
       <div id="slider" style={{ display: 'none' }}></div>
       {
-        showSuzhouRiverWaterQualityCharts && <WaterQualityCharts year={year}></WaterQualityCharts>
+
+        [showSuzhouRiverWaterQualityCharts, showSuzhouRiverFishCharts].includes(true) && <div className="project-charts-container" style={{ width: '100%', maxWidth: '90%' }}>
+          {showSuzhouRiverWaterQualityCharts && <WaterQualityCharts year={year} chartsContainerStyle={{
+            width: '33.3%',
+          }}></WaterQualityCharts>}
+          {showSuzhouRiverWaterQualityCharts && <Images year={year} chartsContainerStyle={{
+            width: '33.3%',
+          }}></Images>}
+          {showSuzhouRiverFishCharts && <FishCharts year={year} chartsContainerStyle={{
+            width: '33.3%',
+          }}></FishCharts>}
+        </div>
       }
     </>
 
