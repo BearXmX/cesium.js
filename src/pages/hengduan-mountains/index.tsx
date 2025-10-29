@@ -42,7 +42,7 @@ import DrawCountour from '@/utils/countour'
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 
 const HengduanMountains = () => {
-  const mapIntance = useRef<CommonMapInstanceType>(null);
+  const mapIntance = useRef<CommonMapInstanceType>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<Cesium.Viewer | null>(null)
@@ -76,8 +76,6 @@ const HengduanMountains = () => {
   const qionglaishanRef = useRef<Cesium.Entity[]>([])
   const minshanRef = useRef<Cesium.Entity[]>([])
 
-
-
   const higherMountainPointInstanceList = useRef<sampleLabelType[]>([])
 
   const pandaPointInstanceList = useRef<sampleLabelType[]>([])
@@ -90,7 +88,6 @@ const HengduanMountains = () => {
 
   const researchLine1Ref = useRef<Cesium.Entity[]>([])
 
-
   const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}) => {
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
@@ -98,60 +95,69 @@ const HengduanMountains = () => {
     })
   }
 
-
-  const drawGeometry = (show: boolean, ref: React.RefObject<Cesium.Entity[]>, url: string, texts: { position: Cesium.Cartesian3, text: string, fontSize?: number }[], options: Cesium.GeoJsonDataSource.LoadOptions & {
-    color?: Cesium.Color,
-    loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
-    useFetchOnlyCallback?: (data: any,) => void
-  }) => {
+  const drawGeometry = (
+    show: boolean,
+    ref: React.RefObject<Cesium.Entity[]>,
+    url: string,
+    texts: { position: Cesium.Cartesian3; text: string; fontSize?: number; labelOptions?: any }[],
+    options: Cesium.GeoJsonDataSource.LoadOptions & {
+      color?: Cesium.Color
+      loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
+      useFetchOnlyCallback?: (data: any) => void
+    }
+  ) => {
     if (show) {
-
       if (ref.current?.length) {
-
         ref.current.forEach(item => {
           item.show = true
         })
-
       } else {
-        fetch(url).then(res => res.json()).then(data => {
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            texts.forEach(item => {
+              const textEntity = viewerRef.current!.entities.add({
+                properties: {
+                  ...item,
+                  name: 'researchLinePosition-' + item.text,
+                },
+                position: item.position,
+                label: {
+                  text: item.text,
+                  font: `${item.fontSize || 16}px sans-serif`,
+                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                  outlineWidth: 2,
+                  outlineColor: options.color || options.fill?.withAlpha(1),
+                  fillColor: Cesium.Color.WHITE,
+                  disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                  verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                  heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                  ...item.labelOptions,
+                },
+              })
 
-          texts.forEach(item => {
-            ref.current.push(viewerRef.current!.entities.add({
-              position: item.position,
-              label: {
-                text: item.text,
-                font: `${item.fontSize || 16}px sans-serif`,
-                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                outlineWidth: 2,
-                outlineColor: options.color || options.fill?.withAlpha(1),
-                fillColor: Cesium.Color.WHITE,
-                disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-              }
-            }))
-          })
+              ref.current.push(textEntity)
+            })
 
-          if (typeof options.useFetchOnlyCallback === 'function') {
-            options.useFetchOnlyCallback(data)
-            return
-          }
-
-          Cesium.GeoJsonDataSource.load(data, {
-            markerSymbol: "circle",
-            ...options
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            ref.current.push(...dataSource.entities.values)
-
-            if (typeof options.loadedDataCallback === 'function') {
-              options.loadedDataCallback(data, dataSource)
+            if (typeof options.useFetchOnlyCallback === 'function') {
+              options.useFetchOnlyCallback(data)
+              return
             }
-          });
-        });
 
+            Cesium.GeoJsonDataSource.load(data, {
+              markerSymbol: 'circle',
+              ...options,
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource)
+              ref.current.push(...dataSource.entities.values)
 
+              if (typeof options.loadedDataCallback === 'function') {
+                options.loadedDataCallback(data, dataSource)
+              }
+            })
+          })
       }
-
     } else {
       ref.current!.forEach(item => {
         item.show = false
@@ -189,7 +195,6 @@ const HengduanMountains = () => {
     drawBirangxiagu: false,
 
     drawResearchLine1: false,
-
 
     getCameraParams: () => {
       getCameraParams(viewerRef)
@@ -252,8 +257,7 @@ const HengduanMountains = () => {
 
     const animalsControls = guiRef.current.addFolder('动物')
 
-    const researchLineControls = guiRef.current.addFolder('研修路线')
-
+    const researchLineControls = guiRef.current.addFolder('研学路线')
 
     /* 主要区域 */
     mainAreaControls
@@ -345,7 +349,6 @@ const HengduanMountains = () => {
             },
           })
         }
-
       })
 
     mainCanyon
@@ -353,7 +356,6 @@ const HengduanMountains = () => {
       .name('碧壤峡谷')
       .onChange((value: boolean) => {
         canyonPointInstanceList.current.find(item => item.key === 'birangxiagu' && item.instance?.toggleVisible(value))
-
 
         if (value) {
           viewerRef.current!.camera.flyTo({
@@ -435,11 +437,14 @@ const HengduanMountains = () => {
     guiControlsInstanceList.current.push(daduheControl)
     guiControlsInstanceList.current.push(minjiangControl)
 
-    verticalNatureAreaControls.add(guiControls, 'drawVerticalNatureArea').name('贡嘎山垂直自然带').onChange((value: boolean) => {
-      drawVerticalNatureArea(value, viewerRef, verticalNatureAreaRef, higherMountainPointInstanceList)
+    verticalNatureAreaControls
+      .add(guiControls, 'drawVerticalNatureArea')
+      .name('贡嘎山垂直自然带')
+      .onChange((value: boolean) => {
+        drawVerticalNatureArea(value, viewerRef, verticalNatureAreaRef, higherMountainPointInstanceList)
 
-      showVerticalNatureAreaDetails(value, notificationApi)
-    })
+        showVerticalNatureAreaDetails(value, notificationApi)
+      })
 
     /* 气候 */
     climateControls
@@ -497,45 +502,70 @@ const HengduanMountains = () => {
         /*         showDianlengshanDetails(value, notificationApi) */
       })
 
-    researchLineControls.add(guiControls, 'drawResearchLine1').name('丽江-香格里拉').onChange((value: boolean) => {
-      drawGeometry(value, researchLine1Ref, window.$$prefix + '/data/hengduan-mountains/researchLine1.geojson', [
-        {
-          text: '丽江',
-          position: Cesium.Cartesian3.fromDegrees(100.21145191081905,
-            26.90612625295651),
-          fontSize: 20
-        },
-        {
-          text: '香格里拉',
-          position: Cesium.Cartesian3.fromDegrees(99.69290317807497,
-            27.893319234335323),
-          fontSize: 20
-        }
-      ], {
-        stroke: Cesium.Color.fromCssColorString('#FF0000'),
-        fill: Cesium.Color.fromCssColorString('#FF0000').withAlpha(0.8),
-        strokeWidth: 2,
-        clampToGround: true,
-      })
+    researchLineControls
+      .add(guiControls, 'drawResearchLine1')
+      .name('丽江-塔城-梅里雪山-香格里拉')
+      .onChange((value: boolean) => {
+        drawGeometry(
+          value,
+          researchLine1Ref,
+          window.$$prefix + '/data/hengduan-mountains/researchLine1.geojson',
+          [
+            {
+              text: '丽江',
+              position: Cesium.Cartesian3.fromDegrees(100.21145191081905, 26.90612625295651),
+              fontSize: 20,
+            },
+            {
+              text: '香格里拉',
+              position: Cesium.Cartesian3.fromDegrees(99.69290317807497, 27.893319234335323),
+              fontSize: 20,
+            },
 
-      cameraFlyTo(0, 0, 0, {
-        destination: Cesium.Cartesian3.fromDegrees(100.26481423, 26.47924395, 34771.12),
-        orientation: {
-          heading: 6.010600549860722,
-          pitch: -0.3759492281203336,
-          roll: 0.000034991829664932084
-        }
-      })
+            {
+              text: '塔城',
+              position: Cesium.Cartesian3.fromDegrees(99.56055050339569, 27.485840446748455),
+              fontSize: 20,
+            },
+            {
+              text: '梅里雪山',
+              position: Cesium.Cartesian3.fromDegrees(98.85705861015202, 28.44434966312899),
+              fontSize: 20,
+            },
+          ].map(item => {
+            return {
+              ...item,
+              text: '' + item.text,
+              labelOptions: {
+                showBackground: true,
+                backgroundColor: Cesium.Color.WHITE.withAlpha(1),
+                backgroundPadding: new Cesium.Cartesian2(4, 4),
+              },
+            }
+          }),
+          {
+            stroke: Cesium.Color.fromCssColorString('#FF0000'),
+            fill: Cesium.Color.fromCssColorString('#FF0000').withAlpha(0.8),
+            strokeWidth: 2,
+            clampToGround: true,
+          }
+        )
 
-    })
+        cameraFlyTo(0, 0, 0, {
+          destination: Cesium.Cartesian3.fromDegrees(100.26481423, 26.47924395, 34771.12),
+          orientation: {
+            heading: 6.010600549860722,
+            pitch: -0.3759492281203336,
+            roll: 0.000034991829664932084,
+          },
+        })
+      })
   }
 
   useEffect(() => {
-
     viewerRef.current = mapIntance.current?.getViewer()!
 
     drawChinaBoundary(true, viewerRef)
-    initClickHandler(viewerRef)
     initGui()
     drawHengduanMountainsDiagram(true, viewerRef, HengduanMountainsDiagramRef)
     initHigherMountainPoint(viewerRef, higherMountainPointInstanceList)
@@ -543,21 +573,40 @@ const HengduanMountains = () => {
     initDianlengshanPoint(viewerRef, dianlengshanPointInstanceList)
     initCanyonPoint(viewerRef, canyonPointInstanceList)
 
+    const handler = new Cesium.ScreenSpaceEventHandler(viewerRef.current!.scene.canvas)
+
+    handler.setInputAction(function (event: Cesium.ScreenSpaceEventHandler.PositionedEvent) {
+      const picked = viewerRef.current!.scene.pick(event.position)
+
+      if (Cesium.defined(picked)) {
+        if (picked.id instanceof Cesium.Entity) {
+          const entity = picked.id as Cesium.Entity
+
+          if (!!entity.properties!.name && entity.properties!.name.getValue().includes('researchLinePosition-')) {
+            console.log(entity.properties)
+          }
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
     return () => {
       guiRef.current?.destroy()
     }
   }, [])
 
   return (
-    <div className="canvas-container">
+    <>
+      {' '}
       {notificationContextHolder}
-      <CommonMap ref={mapIntance} terrainInitCallback={() => {
-        viewerRef.current!.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.8076862, 5000000),
-        })
-      }}></CommonMap>
-      <div className="canvas-container-body" ref={containerRef} />
-    </div>
+      <CommonMap
+        ref={mapIntance}
+        terrainInitCallback={() => {
+          viewerRef.current!.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(106.49566264, 33.8076862, 5000000),
+          })
+        }}
+      ></CommonMap>
+    </>
   )
 }
 
