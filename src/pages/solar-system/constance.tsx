@@ -189,7 +189,7 @@ export const getEarthCenterPos = (angle: number, radius?: number): [number, numb
 /** 创建星空 */
 export const makeStars = () => {
   const textureLoader = new THREE.TextureLoader()
-  const texture = textureLoader.load(window.$$prefix + '/textures/star_07.png')
+  const texture = textureLoader.load(window.$$prefix + '/textures/star.png')
   const count = 1000
   const geometry = new THREE.BufferGeometry()
   const positions = new Float32Array(count * 3)

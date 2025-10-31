@@ -6,6 +6,7 @@ import { useRef } from "react";
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
   terrainInitCallback?: () => void
+  containerStyle?: React.CSSProperties
 }
 
 export type CommonMapInstanceType = {
@@ -172,7 +173,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
           </Spin>
         </div>
       }
-      <div className="canvas-container">
+      <div className="canvas-container" style={props.containerStyle}>
         <div className="canvas-container-body" ref={containerRef} />
       </div>
     </>

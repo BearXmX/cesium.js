@@ -151,7 +151,7 @@ const Sundial: React.FC<SundialPropsType> = props => {
 
     // ---------------------- 组件1：创建底座 ----------------------
     const createBox = () => {
-      const texture = new THREE.TextureLoader().load(`${window.$$prefix}/textures/concrete_floor_worn_001_diff_1k.jpg`)
+      const texture = new THREE.TextureLoader().load(`${window.$$prefix}/textures/concrete-floor.jpg`)
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(8, boxHeight, 8),
         new THREE.MeshStandardMaterial({

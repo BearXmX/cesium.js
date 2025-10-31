@@ -339,3 +339,7 @@ body,
   font-size: 12px;
   line-height: 30px;
 }
+
+.project-carousel .slick-list {
+  height: 100%;
+}

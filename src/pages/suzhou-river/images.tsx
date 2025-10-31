@@ -67,8 +67,8 @@ const Images: React.FC<ImagesPropsType> = (props) => {
               }}
             />
           </div>
-          <div style={{ width: '100%', height: 'calc(100% - 40px)', position: 'relative', overflow: 'auto' }}>
-            <Carousel key={value} style={{ height: '100%', width: '100%' }} autoplay autoplaySpeed={2000}>
+          <div style={{ width: '100%', height: 'calc(100% - 40px)', position: 'relative' }}>
+            <Carousel className='project-carousel' key={value} style={{ height: '100%', width: '100%' }} autoplay autoplaySpeed={2000}>
               {
                 [
                   {
@@ -97,8 +97,8 @@ const Images: React.FC<ImagesPropsType> = (props) => {
                   },
                 ].filter(item => item.value === value).map((item, index) => {
 
-                  return <div style={{ width: '100%', height: '100%' }}>
-                    <img src={item.src} style={{ margin: '0 auto' }} alt="" />
+                  return <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                    <img src={item.src} style={{ margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }} alt="" />
                   </div>
                 })
               }

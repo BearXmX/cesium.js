@@ -4,7 +4,7 @@ import WaterPrimitive from '@/utils/plugins/water-primitive'
 export const addWaterRegion = (positions: any, instance: any[], viewerRef: React.RefObject<Cesium.Viewer | null>) => {
   let waterPrimitive = new WaterPrimitive(positions, {
     baseWaterColor: Cesium.Color.AQUA.withAlpha(0.8),
-    normalMap: window.$$prefix + '/waterNormalsSmall.jpg',
+    normalMap: window.$$prefix + '/water-normals-small.jpg',
     frequency: 1000.0,
     animationSpeed: 0.01,
     amplitude: 100,
