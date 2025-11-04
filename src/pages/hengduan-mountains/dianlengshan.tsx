@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 type dianlengshanPropsType = {}
 
 const Dianlengshan: React.FC<dianlengshanPropsType> = props => {
-  const {} = props
+  const { } = props
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -24,10 +24,10 @@ const Dianlengshan: React.FC<dianlengshanPropsType> = props => {
     /* 场景 */
     const scene = new THREE.Scene()
 
-    scene.background = new THREE.Color('#fff')
+    scene.background = new THREE.Color('#192511')
 
     /* 环境光 */
-    const ambientLight = new THREE.AmbientLight('#ffffffff', 10)
+    const ambientLight = new THREE.AmbientLight('#fff', 10)
     scene.add(ambientLight)
 
     /* 相机 */

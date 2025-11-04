@@ -5,6 +5,8 @@ import Panda from './panda'
 import Dianlengshan from './dianlengshan'
 import VerticalNatureArea from '@/assets/nature-area.png'
 import { Carousel } from 'antd'
+import { useEffect, useRef } from 'react'
+import * as echarts from 'echarts'
 
 export type sampleLabelType = {
   position: Cesium.Cartesian3
@@ -29,68 +31,153 @@ export const labelConfig = {
   disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
 }
 
-/** @description 绘制国界 */
-export const drawChinaBoundary = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>) => {
-  if (checked) {
-    fetch(window.$$prefix + '/data/china/china-boundary.geojson')
-      .then(res => res.json())
-      .then(data => {
-        Cesium.GeoJsonDataSource.load(data, {
-          stroke: Cesium.Color.BROWN,
-          fill: Cesium.Color.BROWN.withAlpha(0.2),
-          strokeWidth: 2,
-          markerSymbol: 'circle',
-        }).then(function (dataSource) {
-          viewerRef.current!.dataSources.add(dataSource)
-        })
-      })
-  }
-}
-
-/** @description 横断山区 */
-export const drawHengduanMountainsDiagram = (
-  checked: boolean,
-  viewerRef: React.RefObject<Cesium.Viewer | null>,
-  HengduanMountainsDiagramRef: React.RefObject<Cesium.Entity[]>
-) => {
-  if (checked) {
-    if (HengduanMountainsDiagramRef.current?.length) {
-      HengduanMountainsDiagramRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-
-      fetch(window.$$prefix + '/data/hengduan-mountains/hengduan-mountains-area.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.ORANGE,
-            fill: Cesium.Color.ORANGE.withAlpha(0.5),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            HengduanMountainsDiagramRef.current = dataSource.entities.values
-
-            HengduanMountainsDiagramRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.9156783576662, 28.506240020807176),
-                label: {
-                  text: '横断山区',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.ORANGE,
-                },
-              })
-            )
-          })
-        })
+export const otherPositionData: any[] = [
+  {
+    image: '/position-icon-scenicSpot.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(101.88123898839554, 29.5935768399523, 500),
+    properties: {
+      type: 'other-position',
+      name: '贡嘎山',
+      groupType: 'scenicSpot',
+      groupName: '自然景观'
     }
-  } else {
-    HengduanMountainsDiagramRef.current!.forEach(item => {
-      item.show = false
-    })
+  },
+  {
+
+    image: '/position-icon-scenicSpot.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(100.06127733028683, 27.170770691542253,),
+    properties: {
+      type: 'other-position',
+      name: '虎跳峡',
+      groupType: 'scenicSpot',
+      groupName: '自然景观',
+    },
+  },
+  {
+
+    image: '/position-icon-scenicSpot.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(99.48111671593866, 28.27192539810618,),
+    properties: {
+      type: 'other-position',
+      name: '碧壤峡谷',
+      groupType: 'scenicSpot',
+      groupName: '自然景观',
+      callback: (viewerRef: React.RefObject<Cesium.Viewer | null>,) => {
+        cameraFlyTo(99.50432404, 28.26702254, 5180.46, {
+          orientation: {
+            heading: 4.899541930068292,
+            pitch: -0.564374744465872,
+            roll: 0.000012141044522628874
+          }
+        }, viewerRef)
+      },
+    },
+  },
+  {
+
+    image: '/position-icon-panda.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(103.12073346936057, 31.043327963060108,),
+    properties: {
+      type: 'other-position',
+      name: '鞍子河大熊猫自然保护区',
+      groupType: 'biology',
+      groupName: '生物',
+    },
+  },
+  {
+
+    image: '/position-icon-tree.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(99.9101808782321, 27.409176945433586),
+    properties: {
+      type: 'other-position',
+      name: '滇冷杉',
+      groupType: 'scenicSpot',
+      groupName: '自然景观',
+    },
   }
+]
+
+export const researchLineBillboards = [
+  {
+    image: '/position-icon-landmark.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(100.21145191081905, 26.90612625295651),
+    properties: {
+      type: 'researchLine-position',
+      name: '丽江',
+      groupType: 'city',
+      groupName: '城市',
+    },
+  },
+  {
+    image: '/position-icon-landmark.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(99.56055050339569, 27.485840446748455),
+    properties: {
+      type: 'researchLine-position',
+      name: '塔城',
+      groupType: 'city',
+      groupName: '城市'
+    },
+  },
+  {
+    image: '/position-icon-scenicSpot.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(98.97064059974441, 28.52937522819254),
+    properties: {
+      type: 'researchLine-position',
+      name: '梅里雪山',
+      groupType: 'scenicSpot',
+      groupName: '自然景观'
+    }
+  },
+  {
+    image: '/position-icon-landmark.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(99.70038240115997, 27.843065988387632),
+    properties: {
+      type: 'researchLine-position',
+      name: '香格里拉',
+      groupType: 'city',
+      groupName: '城市'
+    },
+  },
+  {
+
+    image: '/position-icon-scenicSpot.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(99.96685951670271, 26.86968315120531),
+    properties: {
+      type: 'researchLine-position',
+      name: '长江第一湾观景台',
+      groupType: 'scenicSpot',
+      groupName: '自然景观',
+      callback: (viewerRef: React.RefObject<Cesium.Viewer | null>,) => {
+        cameraFlyTo(99.97269454, 26.87308829, 10018.17, {
+          orientation: {
+            heading: 3.8357474868348254,
+            pitch: -1.527977031824344,
+            roll: 0
+          }
+        }, viewerRef)
+      },
+    },
+  },
+  {
+
+    image: '/position-icon-scenicSpot.svg',
+    imagePosition: Cesium.Cartesian3.fromDegrees(100.06127733028683, 27.170770691542253,),
+    properties: {
+      type: 'researchLine-position',
+      name: '虎跳峡',
+      groupType: 'scenicSpot',
+      groupName: '自然景观',
+    },
+  }
+]
+
+
+
+export const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}, viewerRef: React.RefObject<Cesium.Viewer | null>) => {
+  (viewerRef!).current!.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+    ...options,
+  })
 }
 
 /** @description 长江 */
@@ -1020,111 +1107,6 @@ export const drawChinaPlantDistribution = (
   }
 }
 
-/** @description  滇冷杉介绍*/
-export const showDianlengshanDetails = (value: boolean, notificationApi: NotificationInstance) => {
-  notificationApi.destroy()
-  if (value) {
-    notificationApi.info({
-      message: `滇冷杉`,
-      description: (
-        <div>
-          <div style={{ textIndent: '2em' }}>
-            <p>滇冷杉是分布于中国西南横断山脉及青藏高原东南缘的特有树种，多生长于海拔2500-4000米的高山针叶林带。 </p>
-            <p>其树冠呈尖塔形，叶片条形具芳香气味，球果成熟时呈黑褐色。</p>
-            <p>作为水源涵养林的主要组成树种，该物种在维持区域生态平衡中发挥重要作用。</p>
-            <p> 研究表明，第四纪冰期时滇冷杉曾以云南鹤庆盆地为避难所，现代分布区的稳定性与温度季节性和降雨季节性变化密切相关。</p>
-          </div>
-
-          <br />
-          <div style={{ height: 300, width: '100%' }}>
-            <Dianlengshan></Dianlengshan>
-          </div>
-        </div>
-      ),
-      placement: 'bottomLeft',
-      duration: null,
-    })
-  } else {
-    notificationApi.destroy()
-  }
-}
-
-/** @description 大熊猫介绍 */
-export const showPandaDetails = (value: boolean, notificationApi: NotificationInstance) => {
-  notificationApi.destroy()
-  if (value) {
-    notificationApi.info({
-      message: `大熊猫`,
-      description: (
-        <div>
-          <div style={{ textIndent: '2em' }}>
-            <p>大熊猫是中国特有的哺乳动物，属于熊科、大熊猫属，被誉为“活化石”和“中国国宝”。</p>
-            <p>它们栖息在海拔2600-3500米的茂密竹林中，以竹子为主要食物。</p>
-            <p>外表肥硕、黑白相间，善于爬树。野外寿命约18-20岁，数量有所增长，截至2021年1月，中国大熊猫野生种群达1864只。</p>
-          </div>
-
-          <br />
-          <div style={{ height: 300, width: '100%' }}>
-            <Panda></Panda>
-          </div>
-        </div>
-      ),
-      placement: 'bottomLeft',
-      duration: null,
-    })
-  } else {
-    notificationApi.destroy()
-  }
-}
-
-/** @description 贡嘎山介绍 */
-export const showGonggashanDetails = (
-  value: boolean,
-  notificationApi: NotificationInstance,
-  viewerRef: React.RefObject<Cesium.Viewer | null>,
-  higherMountainPointInstanceList: React.RefObject<sampleLabelType[]>
-) => {
-  higherMountainPointInstanceList.current.forEach(item => {
-    item.instance.toggleVisible(value)
-  })
-
-  notificationApi.destroy()
-
-  if (value) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(101.81087885, 29.52080401, 7599.75),
-      orientation: {
-        heading: 0.6762693278851586,
-        pitch: -0.042912143092978194,
-        roll: 0.0001878768739276282,
-      },
-    })
-
-    notificationApi.info({
-      message: `贡嘎山`,
-      description: (
-        <div style={{ textIndent: '2em' }}>
-          <p>贡嘎山（岷雅贡嘎，英语：Minya Konka），为横断山系大雪山主峰，被当地人称为木雅贡嘎。</p>
-          <p>位于四川省甘孜藏族自治州康定市、泸定县、九龙县和雅安市石棉县之间。藏语的“贡”是冰雪之意，“嘎”为白色，意为白色冰山。</p>
-          <p>
-            贡嘎山主峰海拔7508.9米（2023年公布 [18]），是四川省最高的山峰，被称为“蜀山之王”，为世界上高差最大的山之一，周围有海拔6000米上的高峰45座。
-          </p>
-          <p>贡嘎山北起康定折多山口，南抵泸定田湾河东到大渡河西至雅砻江。以贡嘎雪山为中心的贡嘎山风景名胜区是中国面积最大、环境容量最大的风景区。</p>
-          <p>在长期冰川作用下，山峰发育为锥状大角峰，周围绕着60°～70°的峭壁，攀登困难。</p>
-          <p>
-            贡嘎山有海螺沟、巴旺、燕子沟、磨子沟等冰川和木格措、五须海、巴旺海等高原湖泊以及康定二道桥等温泉，也是全球25个生物多样性热点地区之一。
-          </p>
-          <p>周围有小贡嘎山、嘉子峰、日乌且峰、勒多曼因峰等雪山环绕。以日照金山奇观出名。 </p>
-        </div>
-      ),
-      placement: 'bottomLeft',
-      duration: null,
-    })
-  } else {
-    notificationApi.destroy()
-  }
-}
-
 /** @description  三江并流 */
 export const showSanjiangbingliuDetails = (
   value: boolean,
@@ -1166,31 +1148,6 @@ export const showSanjiangbingliuDetails = (
       duration: null,
     })
   }
-}
-
-/** @description  最高峰点位*/
-export const initHigherMountainPoint = (
-  viewerRef: React.RefObject<Cesium.Viewer | null>,
-  higherMountainPointInstanceList: React.RefObject<sampleLabelType[]>
-) => {
-  higherMountainPointInstanceList.current = [
-    {
-      position: Cesium.Cartesian3.fromDegrees(101.88123898839554, 29.5935768399523, 7100.9),
-      text: '贡嘎山',
-      instance: null,
-      key: 'gonggashan',
-    },
-  ].map(item => {
-    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-      containerBackgroundUrlType: 'position',
-      defaultVisible: false,
-    })
-
-    return {
-      ...item,
-      instance,
-    }
-  })
 }
 
 /** @description 伯舒拉岭-高黎贡山 */
@@ -1607,90 +1564,10 @@ export const drawMinshan = (checked: boolean, viewerRef: React.RefObject<Cesium.
   }
 }
 
-/** @description  大熊猫点位*/
-export const initPandaPoint = (viewerRef: React.RefObject<Cesium.Viewer | null>, pandaPointInstanceList: React.RefObject<sampleLabelType[]>) => {
-  pandaPointInstanceList.current = [
-    {
-      position: Cesium.Cartesian3.fromDegrees(103.12073346936057, 31.043327963060108, 7100.9),
-      text: '鞍子河大熊猫自然保护区',
-      instance: null,
-      key: 'anzihedaxiongmao',
-    },
-  ].map(item => {
-    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-      containerBackgroundUrlType: 'panda',
-      defaultVisible: false,
-    })
-
-    return {
-      ...item,
-      instance,
-    }
-  })
-}
-
-/** @description  滇冷杉点位*/
-export const initDianlengshanPoint = (
-  viewerRef: React.RefObject<Cesium.Viewer | null>,
-  dianlengshanPointInstanceList: React.RefObject<sampleLabelType[]>
-) => {
-  dianlengshanPointInstanceList.current = [
-    {
-      position: Cesium.Cartesian3.fromDegrees(99.9101808782321, 27.409176945433586, 7100.9),
-      text: '滇冷杉',
-      instance: null,
-      key: 'dianlengshan',
-    },
-  ].map(item => {
-    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-      containerBackgroundUrlType: 'tree',
-      defaultVisible: false,
-    })
-
-    return {
-      ...item,
-      instance,
-    }
-  })
-}
-
-/** @description  虎跳峡点位*/
-export const initCanyonPoint = (viewerRef: React.RefObject<Cesium.Viewer | null>, canyonPointInstanceList: React.RefObject<sampleLabelType[]>) => {
-  /*   28°27'20"N 99°49'51"E */
-  canyonPointInstanceList.current = [
-    {
-      position: Cesium.Cartesian3.fromDegrees(100.06127733028683, 27.170770691542253, 2044.04),
-      text: '虎跳峡',
-      instance: null,
-      key: 'hutiaoxia',
-    },
-    {
-      position: Cesium.Cartesian3.fromDegrees(99.48111671593866, 28.27192539810618, 3513.55),
-      text: '碧壤峡谷',
-      instance: null,
-      key: 'birangxiagu',
-    },
-  ].map(item => {
-    const instance = new SampleLabel(viewerRef.current!, item.position, item.text, {
-      containerBackgroundUrlType: 'position',
-      defaultVisible: false,
-      clickCallback: () => {
-
-      },
-    })
-
-    return {
-      ...item,
-      instance,
-    }
-  })
-}
-
 /** @description  垂直自然区 */
-export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, verticalNatureAreaRef: React.RefObject<Cesium.Entity[]>, higherMountainPointInstanceList: React.RefObject<sampleLabelType[]>) => {
+export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, verticalNatureAreaRef: React.RefObject<Cesium.Entity[]>) => {
 
   if (checked) {
-    higherMountainPointInstanceList.current.forEach(item => item.instance.toggleVisible(true))
 
     viewerRef.current!.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(101.66628020, 29.47521623, 23637.14),
@@ -1773,6 +1650,9 @@ export const showVerticalNatureAreaDetails = (value: boolean, notificationApi: N
   }
 }
 
+
+
+
 const researchLinePositionTextStyle = {
   container: {
     maxWidth: '1200px',
@@ -1812,6 +1692,7 @@ const researchLinePositionTextStyle = {
     color: '#7f8c8d'
   }
 };
+
 export const ResearchLinePositionLijiang = () => {
 
   const styles = researchLinePositionTextStyle
@@ -1880,7 +1761,6 @@ export const ResearchLinePositionLijiang = () => {
     </div>
   </div>
 }
-
 
 export const ResearchLinePositionTacheng = () => {
   const styles = researchLinePositionTextStyle
@@ -2137,4 +2017,603 @@ export const ResearchLinePositionShangriLa = () => {
       </p>
     </div >
   </>
+}
+
+export const ResearchLinePositionFirstBend = () => {
+  const styles = researchLinePositionTextStyle
+
+  return <>
+    <div className="first-bend-intro" style={styles.container}>
+
+      <h1 style={styles.title}>长江第一湾：江河巨变的史诗级转折</h1>
+
+      <p style={styles.paragraph}>
+        长江第一湾位于云南省丽江市石鼓镇，是金沙江在横断山脉间的一个超过100度的"Ω"形急转弯。
+        这个壮丽的地理奇观不仅是视觉的震撼，更是地质演化史上的重要见证，被誉为"万里长江第一湾"。
+      </p>
+
+      <h2 style={styles.subtitle}>一、地质奇观——板块运动的生动教材</h2>
+
+      <p style={styles.paragraph}>
+        长江第一湾的形成是数百万年来地质作用的结果，展现了自然力量的伟大博弈。
+      </p>
+
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>板块构造证据</strong>：印度板块与欧亚板块的强烈碰撞，导致横断山脉急剧抬升，迫使古金沙江河道沿着相对脆弱的断裂带发生转向。
+        </li>
+        <li style={styles.listItem}>
+          <strong>河流袭夺经典</strong>：古长江通过强烈的溯源侵蚀，"袭夺"了原本南流的古金沙江上游河水，使其改道东流，形成统一的长江水系。
+        </li>
+        <li style={styles.listItem}>
+          <strong>水文动力展示</strong>：江水在此流速骤变，形成独特的流水地貌，是研究河流侵蚀、搬运和堆积作用的天然实验室。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>二、地理意义——中华文明的地理基石</h2>
+      <p style={styles.paragraph}>
+        这一地理转折不仅改变了河流走向，更深刻影响了中华文明的发展格局。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>水系重组关键</strong>：正是这一转身，金沙江得以汇入东海，成为孕育中华文明的长江母亲河的重要组成部分。
+        </li>
+        <li style={styles.listItem}>
+          <strong>气候影响深远</strong>：拐弯后江水东流，为长江中下游地区带来了丰沛的水汽和适宜的气候条件。
+        </li>
+        <li style={styles.listItem}>
+          <strong>生态廊道枢纽</strong>：作为重要的生态过渡带，连接了青藏高原与云贵高原的生物多样性。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>三、研学价值——地理教学的天然课堂</h2>
+      <p style={styles.paragraph}>
+        长江第一湾是理解多个重要地理概念的理想场所。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>构造运动实例</strong>：直观展示板块碰撞如何塑造地表形态，是学习构造地质学的生动教材。
+        </li>
+        <li style={styles.listItem}>
+          <strong>河流地貌典型</strong>：完整的河流袭夺证据链，包括袭夺湾、风口、倒淌河等典型地貌特征。
+        </li>
+        <li style={styles.listItem}>
+          <strong>水文过程演示</strong>：可观测河流的侧蚀、下切作用，以及流速、流量与河道形态的关系。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>四、观测要点——科学考察的核心要素</h2>
+      <p style={styles.paragraph}>
+        在观景台进行实地考察时，应重点关注以下方面：
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>宏观格局观察</strong>：从高处俯瞰完整的"Ω"形河道，理解其规模与形态特征。
+        </li>
+        <li style={styles.listItem}>
+          <strong>地貌细节分析</strong>：观察两岸阶地分布、岩性差异，分析构造控制因素。
+        </li>
+        <li style={styles.listItem}>
+          <strong>动态过程推测</strong>：根据现有地貌特征，推断历史时期的水文变化与河道演化。
+        </li>
+      </ul>
+
+      <p style={styles.italicParagraph}>
+        站在长江第一湾观景台，我们见证的不仅是一条江河的转向，更是地质历史长河中自然力量塑造大地的壮丽诗篇。
+        这个转折点不仅改变了河流的命运，也深刻影响了中华文明的孕育与发展，是理解人地关系的重要窗口。
+      </p>
+    </div>
+  </>
+}
+
+export const TigerLeapingGorge = () => {
+  const styles = researchLinePositionTextStyle
+
+  return <>
+    <div className="tiger-leaping-gorge-intro" style={styles.container}>
+
+      <h1 style={styles.title}>虎跳峡：金沙江的怒吼与地球的伤痕</h1>
+
+      <p style={styles.paragraph}>
+        虎跳峡位于云南省迪庆藏族自治州，金沙江在玉龙雪山与哈巴雪山之间奔腾而过，形成世界上最深、最险的峡谷之一。
+        峡谷全长约16公里，江面与雪山峰顶高差达3900米，以"险"闻名天下，是板块运动造就的地质奇观。
+      </p>
+
+      <h2 style={styles.subtitle}>一、地质奇观——板块碰撞的壮丽诗篇</h2>
+
+      <p style={styles.paragraph}>
+        虎跳峡的形成是印度板块与欧亚板块持续碰撞的生动见证，记录了数百万年来地质演化的壮丽历程。
+      </p>
+
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>深切峡谷典范</strong>：峡谷最窄处仅30余米，江心屹立着传说中的"虎跳石"，江水在此被压缩成汹涌激流，声震山谷。
+        </li>
+        <li style={styles.listItem}>
+          <strong>垂直高差之最</strong>：从海拔5596米的玉龙雪山到1800米左右的江面，近4000米的垂直高差创造了世界峡谷深度的奇迹。
+        </li>
+        <li style={styles.listItem}>
+          <strong>构造运动窗口</strong>：两岸陡峭的岩壁完整展示了断层构造、岩层褶皱等地质现象，是研究构造地质学的天然博物馆。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>二、水文动力——江河侵蚀的极致展现</h2>
+      <p style={styles.paragraph}>
+        金沙江在虎跳峡段展现出惊人的侵蚀能力，是研究河流动力学的理想场所。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>下切侵蚀典型</strong>：江水以每年数厘米的速度下切河谷，是地球上最活跃的下切河流之一。
+        </li>
+        <li style={styles.listItem}>
+          <strong>水力作用强烈</strong>：汛期流量可达平常的数十倍，巨大的水流能量塑造着峡谷形态，搬运着大量泥沙石块。
+        </li>
+        <li style={styles.listItem}>
+          <strong>阶地发育完整</strong>：峡谷两侧分布着多级河流阶地，记录了地质历史时期河流下切和构造抬升的过程。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>三、徒步圣地——探险者的地理课堂</h2>
+      <p style={styles.paragraph}>
+        虎跳峡徒步路线被誉为世界十大经典徒步线路之一，沿途展现丰富的地理现象。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>二十八道拐</strong>：徒步起点的高难度爬升段，可俯瞰峡谷全景，观察峡谷的宏观构造特征。
+        </li>
+        <li style={styles.listItem}>
+          <strong>中虎跳</strong>：峡谷最险峻段，可近距离观察江水侵蚀作用，体验"满天星"礁石区的湍急水流。
+        </li>
+        <li style={styles.listItem}>
+          <strong>一线天</strong>：峡谷收窄段，两岸岩壁近乎垂直，展示了断裂控制的峡谷发育模式。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>四、生态廊道——垂直带谱的完整展示</h2>
+      <p style={styles.paragraph}>
+        峡谷巨大的高差造就了完整的垂直生态带谱，是生物多样性研究的重要区域。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>干热河谷植被</strong>：谷底分布的稀树灌木丛，适应了干热的小气候环境。
+        </li>
+        <li style={styles.listItem}>
+          <strong>中山湿性森林</strong>：海拔2000-3000米分布的原始森林，是滇金丝猴等重要物种的栖息地。
+        </li>
+        <li style={styles.listItem}>
+          <strong>高山流石滩</strong>：海拔4000米以上分布的稀疏植被，展现了极限环境下的生命适应。
+        </li>
+      </ul>
+
+      <p style={styles.italicParagraph}>
+        虎跳峡不仅是一条地理界线，更是自然力量的象征。在这里，我们可以亲身感受地球内部力量与地表侵蚀作用的激烈碰撞，
+        见证河流如何用千万年的时间在大地上刻下深深的痕迹。这座活的地质实验室，永远向勇于探索的人们敞开着大门。
+      </p>
+    </div>
+  </>
+}
+
+
+export const GonggaMountain = () => {
+  const styles = researchLinePositionTextStyle
+
+  return <>
+    <div className="gongga-mountain-intro" style={styles.container}>
+
+      <h1 style={styles.title}>贡嘎山：蜀山之王与横断之巅</h1>
+
+      <p style={styles.paragraph}>
+        贡嘎山位于四川省康定以南，主峰海拔7556米，是横断山脉的最高峰，也是四川省的第一高峰，被誉为"蜀山之王"。
+        这座金字塔状的极高山以其巨大的垂直高差、壮观的现代冰川和完整的垂直生态带谱，成为地理学研究的经典区域。
+      </p>
+
+      <h2 style={styles.subtitle}>一、极高山地貌——构造运动的巅峰之作</h2>
+
+      <p style={styles.paragraph}>
+        贡嘎山是印度板块与欧亚板块强烈碰撞挤压的产物，展现了新生代以来最剧烈的地壳抬升运动。
+      </p>
+
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>巨大的相对高差</strong>：从大渡河谷地到主峰顶，水平距离仅29公里，高差却达6400余米，为世界之最。
+        </li>
+        <li style={styles.listItem}>
+          <strong>典型的金字塔状峰体</strong>：主峰呈完美的金字塔造型，四壁陡峭，角峰尖锐，是冰川侵蚀作用的典型产物。
+        </li>
+        <li style={styles.listItem}>
+          <strong>活跃的构造运动</strong>：作为青藏高原东缘的构造结，现今仍以每年3-5毫米的速度快速抬升，是研究现代地壳运动的天然实验室。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>二、冰川王国——东亚山地冰川的缩影</h2>
+      <p style={styles.paragraph}>
+        贡嘎山是全球中低纬度地区冰川最为发育的山地之一，现代冰川地貌类型齐全、特征典型。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>现代冰川发育</strong>：分布有74条现代冰川，总面积达256平方公里，其中海螺沟冰川最为著名。
+        </li>
+        <li style={styles.listItem}>
+          <strong>完整的冰川序列</strong>：从粒雪盆、冰瀑布、冰川舌到冰碛垄，展示了完整的冰川系统。
+        </li>
+        <li style={styles.listItem}>
+          <strong>冰川退缩见证</strong>：清晰的冰碛物序列记录了第四纪冰期以来冰川的进退历史，是研究全球变化的敏感指示器。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>三、垂直生态——山地垂直带谱的教科书</h2>
+      <p style={styles.paragraph}>
+        贡嘎山拥有我国乃至全球最完整的山地垂直自然带谱，从亚热带到永冻带依次分布。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>垂直带谱完整</strong>：7个明显的垂直自然带，从河谷的干旱灌丛到高山冰雪带，跨越了相当于从广东到北极的生态梯度。
+        </li>
+        <li style={styles.listItem}>
+          <strong>森林线研究重点</strong>：海拔3600-4200米的暗针叶林带是研究高山林线形成机制的理想场所。
+        </li>
+        <li style={styles.listItem}>
+          <strong>特有物种丰富</strong>：贡嘎山区域是许多珍稀特有物种的栖息地，如贡嘎杜鹃、雪豹、四川金丝猴等。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>四、地理界线——自然地理的重要分界</h2>
+      <p style={styles.paragraph}>
+        贡嘎山作为横断山脉的核心，是中国自然地理的重要分界线。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>气候分水岭</strong>：阻挡东南季风，形成东坡湿润、西坡干热的气候差异，是四川盆地与青藏高原的气候过渡带。
+        </li>
+        <li style={styles.listItem}>
+          <strong>水系分界点</strong>：大渡河与雅砻江的分水岭，影响着长江上游的水系格局。
+        </li>
+        <li style={styles.listItem}>
+          <strong>生物区系界线</strong>：东亚季风区与青藏高原区的生物地理分界，东西坡物种组成差异显著。
+        </li>
+      </ul>
+
+      <p style={styles.italicParagraph}>
+        贡嘎山不仅是一座地理意义上的高峰，更是一座科学研究的宝库。它见证了青藏高原的隆升历史，
+        记录了气候变化的痕迹，展示了生物演化的奇迹。作为"蜀山之王"，它以其雄伟的身姿和丰富的内涵，
+        永远吸引着地理学家、生态学家和登山探险者的目光，是理解横断山区乃至整个青藏高原东缘环境演化的关键所在。
+      </p>
+    </div>
+  </>
+}
+
+export const BiranGorge = () => {
+  const styles = researchLinePositionTextStyle
+
+  return <>
+    <div className="biran-gorge-intro" style={styles.container}>
+
+      <h1 style={styles.title}>碧壤峡谷：隐秘的喀斯特地质画廊</h1>
+
+      <p style={styles.paragraph}>
+        碧壤峡谷位于云南省香格里拉县西北部，是香格里拉大峡谷的重要组成部分，以典型的喀斯特地貌、
+        深邃的峡谷景观和丰富的生态多样性著称。峡谷全长约10公里，两岸峭壁如削，谷底溪流潺潺，
+        是横断山区喀斯特地貌发育的典型代表。
+      </p>
+
+      <h2 style={styles.subtitle}>一、喀斯特奇观——石灰岩的天然雕塑</h2>
+
+      <p style={styles.paragraph}>
+        碧壤峡谷发育于三叠纪石灰岩地层中，经过千万年的溶蚀作用，形成了丰富多样的喀斯特地貌景观。
+      </p>
+
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>峡谷溶蚀地貌</strong>：峡谷两侧发育有典型的溶沟、石芽、溶蚀洼地等喀斯特微地貌，记录了水对可溶性岩石的长期塑造过程。
+        </li>
+        <li style={styles.listItem}>
+          <strong>垂直峭壁特征</strong>：峡谷深切，两岸峭壁近乎垂直，高度达1000-2000米，展示了强烈的构造抬升与河流下切的耦合作用。
+        </li>
+        <li style={styles.listItem}>
+          <strong>溶洞系统发育</strong>：峡谷崖壁上分布着大小不一的溶洞，部分洞内可见石钟乳、石笋等次生化学沉积物。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>二、水文地质——地下与地表的水循环</h2>
+      <p style={styles.paragraph}>
+        碧壤峡谷是研究喀斯特地区水文地质过程的理想场所，展现了独特的水文地貌特征。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>地下河系统</strong>：典型的喀斯特水文系统，地表水通过落水洞转入地下，形成复杂的地下河网络。
+        </li>
+        <li style={styles.listItem}>
+          <strong>泉水出露点</strong>：峡谷中多处可见喀斯特泉水从岩层中涌出，水质清澈，是研究地下水补排关系的良好地点。
+        </li>
+        <li style={styles.listItem}>
+          <strong>季节性水文变化</strong>：雨季峡谷内溪流水量充沛，旱季则多转为地下径流，体现了喀斯特水文的强烈季节变异。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>三、生态秘境——峡谷生物多样性热点</h2>
+      <p style={styles.paragraph}>
+        峡谷独特的地形和小气候环境，造就了丰富的生物多样性和特殊的生态系统。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>垂直生态分异</strong>：从谷底到山顶，植被类型从湿性常绿阔叶林逐渐过渡到寒温性针叶林，体现了明显的垂直分异。
+        </li>
+        <li style={styles.listItem}>
+          <strong>特有植物群落</strong>：峡谷内分布有多种珍稀植物，包括多种杜鹃、报春和龙胆等高山花卉，春季花开时节尤为壮观。
+        </li>
+        <li style={styles.listItem}>
+          <strong>动物栖息地</strong>：为滇金丝猴、小熊猫、血雉等珍稀动物提供了重要的栖息环境和生态廊道。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>四、研学价值——喀斯特研究的天然课堂</h2>
+      <p style={styles.paragraph}>
+        碧壤峡谷为地理研学提供了丰富的内容和独特的视角。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>喀斯特发育过程观测</strong>：可直观观察溶蚀作用的各种形态，理解喀斯特地貌的发育机制。
+        </li>
+        <li style={styles.listItem}>
+          <strong>岩石地层识别</strong>：清晰出露的石灰岩地层为地层划分和岩性识别提供了良好剖面。
+        </li>
+        <li style={styles.listItem}>
+          <strong>生态适应性研究</strong>：峡谷特殊环境下的生物适应性进化是研究生物与环境关系的典型案例。
+        </li>
+      </ul>
+
+      <p style={styles.italicParagraph}>
+        碧壤峡谷犹如一部打开的喀斯特地质教科书，每一处岩壁、每一道沟壑都在诉说着水与岩石千万年的对话。
+        这里不仅是地理学家研究喀斯特地貌的宝贵场所，也是自然爱好者探寻地质奇观和生态奥秘的理想之地。
+        在这幽深的峡谷中，我们能够亲身感受大自然塑造地表形态的缓慢而坚定的力量。
+      </p>
+    </div>
+  </>
+}
+
+export const AnzihePandaReserve = () => {
+  const styles = researchLinePositionTextStyle
+
+  return <>
+    <div style={{ height: 300, width: '100%' }}>
+      <Panda></Panda>
+    </div>
+    <div className="anzihe-panda-reserve-intro" style={styles.container}>
+
+      <h1 style={styles.title}>鞍子河自然保护区：大熊猫的邛崃山系家园</h1>
+
+      <p style={styles.paragraph}>
+        鞍子河自然保护区位于四川省崇州市西北部，地处邛崃山脉中段，总面积达10141公顷。
+        作为大熊猫岷山山系邛崃种群的重要栖息地，保护区以其完整的森林生态系统、丰富生物多样性和重要生态廊道功能，
+        成为大熊猫保护网络中的关键节点。
+      </p>
+
+      <h2 style={styles.subtitle}>一、生态宝库——大熊猫的理想家园</h2>
+
+      <p style={styles.paragraph}>
+        保护区独特的地理位置和生态环境为大熊猫等珍稀物种提供了优质的生存空间。
+      </p>
+
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>完整的垂直带谱</strong>：海拔从1200米至4582米，分布着从常绿阔叶林、针阔混交林到亚高山针叶林、高山灌丛草甸的完整植被带。
+        </li>
+        <li style={styles.listItem}>
+          <strong>优质的竹林资源</strong>：保护区内分布有大面积箭竹、方竹等大熊猫喜食竹种，为大熊猫提供了充足的食物来源。
+        </li>
+        <li style={styles.listItem}>
+          <strong>复杂地形地貌</strong>：深切峡谷、陡峭山坡和平缓台地相间分布，为大熊猫提供了多样的栖息环境和隐蔽场所。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>二、保护对象——珍稀物种的避难所</h2>
+      <p style={styles.paragraph}>
+        保护区不仅是大熊猫的重要栖息地，还是众多珍稀濒危物种的共同家园。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>大熊猫核心种群</strong>：保护区内分布有稳定的大熊猫种群，是大熊猫岷山种群基因交流的重要通道。
+        </li>
+        <li style={styles.listItem}>
+          <strong>同域珍稀动物</strong>：与金丝猴、扭角羚、小熊猫、林麝等国家一级保护动物共享同一片栖息地。
+        </li>
+        <li style={styles.listItem}>
+          <strong>特有植物资源</strong>：保护区内有珙桐、红豆杉等珍稀植物，构成了完整的生态系统基础。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>三、生态廊道——种群交流的生命通道</h2>
+      <p style={styles.paragraph}>
+        鞍子河保护区在大熊猫保护网络中发挥着不可替代的生态廊道功能。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>连接枢纽作用</strong>：连接着岷山山系的多个大熊猫保护区，促进不同种群间的基因交流。
+        </li>
+        <li style={styles.listItem}>
+          <strong>廊道生态学研究</strong>：是研究野生动物迁徙通道、栖息地破碎化等生态学问题的理想场所。
+        </li>
+        <li style={styles.listItem}>
+          <strong>保护生物学实践</strong>：开展栖息地恢复、生态监测等保护实践，为濒危物种保护提供示范。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>四、研学价值——保护生态学的户外课堂</h2>
+      <p style={styles.paragraph}>
+        保护区为地理学和生态学研学提供了丰富的研究内容和实践机会。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>栖息地评估研究</strong>：学习大熊猫栖息地质量评估方法，包括食物资源、地形适宜性、人为干扰等指标。
+        </li>
+        <li style={styles.listItem}>
+          <strong>生物多样性监测</strong>：通过红外相机、样线调查等方法，监测野生动物种群动态和分布规律。
+        </li>
+        <li style={styles.listItem}>
+          <strong>保护管理实践</strong>：了解自然保护区管理策略，包括巡护监测、社区共管、生态旅游等保护措施。
+        </li>
+      </ul>
+
+      <p style={styles.italicParagraph}>
+        鞍子河自然保护区不仅是大熊猫等珍稀物种的生存堡垒，更是人与自然和谐共生的实践基地。
+        在这里，我们能够亲身感受生物多样性的丰富与脆弱，理解生态系统保护的紧迫与重要。
+        这片绿色的家园提醒着我们，保护大熊猫不仅仅是保护一个物种，更是保护整个生态系统的完整与健康，
+        保护我们共同的地球家园。
+      </p>
+    </div>
+  </>
+}
+
+export const AbiesFaxoniana = () => {
+  const styles = researchLinePositionTextStyle
+
+  return <>
+    <div style={{ height: 300, width: '100%' }}>
+      <Dianlengshan></Dianlengshan>
+    </div>
+    <div className="abies-faxoniana-intro" style={styles.container}>
+
+      <h1 style={styles.title}>滇冷杉：横断山区的亚高山卫士</h1>
+
+      <p style={styles.paragraph}>
+        滇冷杉（Abies faxoniana）是松科冷杉属的常绿乔木，中国特有种，主要分布于横断山区海拔2800-4000米的亚高山地带。
+        作为暗针叶林的建群种，滇冷杉林在维持区域生态平衡、涵养水源和保护生物多样性方面发挥着不可替代的作用，
+        是横断山区垂直带谱中重要的生态指示物种。
+      </p>
+
+      <h2 style={styles.subtitle}>一、形态特征——适应高寒的生存智慧</h2>
+
+      <p style={styles.paragraph}>
+        滇冷杉在长期演化过程中形成了独特的形态特征，使其能够很好地适应亚高山寒冷湿润的环境。
+      </p>
+
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>树形与树皮</strong>：高大挺拔，可达40米，胸径达1米；树皮深灰色，不规则块状开裂，具有很好的抗寒隔热性能。
+        </li>
+        <li style={styles.listItem}>
+          <strong>叶片特征</strong>：线形叶片扁平，先端凹缺，叶背有两条白色气孔带，既减少水分蒸腾又提高光合效率。
+        </li>
+        <li style={styles.listItem}>
+          <strong>球果独特</strong>：圆柱形球果成熟时紫黑色，苞鳞短于种鳞，种子具翅，有利于风力传播。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>二、生态分布——垂直地带性的标志</h2>
+      <p style={styles.paragraph}>
+        滇冷杉的分布严格受海拔和气候条件控制，是研究山地垂直带谱的理想指示物种。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>海拔范围明确</strong>：集中分布在2800-4000米，上接高山灌丛草甸带，下连云杉、铁杉为主的针阔混交林带。
+        </li>
+        <li style={styles.listItem}>
+          <strong>生境偏好明显</strong>：喜冷湿气候，多生长在阴坡、半阴坡，要求年降水量800毫米以上，空气湿度大的环境。
+        </li>
+        <li style={styles.listItem}>
+          <strong>地理分布特征</strong>：主要分布于四川西部、云南西北部和西藏东南部，是横断山区的特有种和建群种。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>三、生态功能——森林生态系统的重要基石</h2>
+      <p style={styles.paragraph}>
+        滇冷杉林在维持区域生态平衡和提供生态服务方面具有多重重要功能。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>水源涵养作用</strong>：林冠截留降水，枯落物层蓄水，根系固土，是重要的"绿色水库"。
+        </li>
+        <li style={styles.listItem}>
+          <strong>土壤保持功能</strong>：发达的根系网络有效固定土壤，防止水土流失，维护山地生态安全。
+        </li>
+        <li style={styles.listItem}>
+          <strong>碳汇能力突出</strong>：生物量大，生长周期长，在固定大气二氧化碳、缓解气候变化方面作用显著。
+        </li>
+      </ul>
+
+      <h2 style={styles.subtitle}>四、群落特征——完整的生态系统结构</h2>
+      <p style={styles.paragraph}>
+        滇冷杉林形成了结构复杂、物种丰富的森林群落，为众多生物提供了栖息环境。
+      </p>
+      <ul style={styles.list}>
+        <li style={styles.listItem}>
+          <strong>群落结构完整</strong>：具有明显的乔木层、灌木层、草本层和苔藓层，形成多层次垂直结构。
+        </li>
+        <li style={styles.listItem}>
+          <strong>附生植物丰富</strong>：树干和树枝上常附生有多种松萝、苔藓和地衣，形成独特的"空中花园"。
+        </li>
+        <li style={styles.listItem}>
+          <strong>动物栖息天堂</strong>：为滇金丝猴、小熊猫、血雉等珍稀动物提供食物和隐蔽场所。
+        </li>
+      </ul>
+
+      <p style={styles.italicParagraph}>
+        滇冷杉作为横断山区亚高山暗针叶林的代表树种，不仅是地理环境的重要指示者，更是生态系统健康的关键维护者。
+        在这片冷杉林中，我们可以观察到植物对高寒环境的精妙适应，见证物种间复杂的相互关系，
+        理解森林生态系统在维持区域生态平衡中的核心作用。保护滇冷杉林，就是保护横断山区重要的生态屏障和水源命脉。
+      </p>
+    </div>
+  </>
+}
+
+export const VerticalNatureAreaChart = (props: any) => {
+
+  const { otherPosition } = props
+
+  const instance = useRef<HTMLDivElement>(null)
+
+  const chartInstance = useRef<echarts.ECharts>(null)
+
+  const initCharts = () => {
+    const chartDom = instance.current
+
+    if (!chartInstance.current) {
+      chartInstance.current = echarts.init(chartDom, 'dark');
+    }
+
+    chartInstance.current!.resize()
+
+    const option = {
+      color: ['#025402', '#007400', '#009c00', '#aaedaa', '#7b7b7b', '#dfdfdf'],
+      tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b} : 海拔约{c}米'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left',
+        data: ['针阔混交林带', '针叶林带', '灌丛木带', '高山草甸带', '高寒荒漠带', '积雪冰川带']
+      },
+      series: [
+        {
+          name: '贡嘎山垂直自然带',
+          type: 'funnel',
+          width: '50%',
+          height: '50%',
+          data: [
+            { value: 2500, name: '针阔混交林带' },
+            { value: 3000, name: '针叶林带', },
+            { value: 3500, name: '灌丛木带', },
+            { value: 4000, name: '高山草甸带', },
+            { value: 4500, name: '高寒荒漠带', },
+            { value: 5000, name: '积雪冰川带', },
+          ]
+        },
+
+      ]
+    };
+
+    chartInstance.current.setOption(option, true);
+
+    window.addEventListener('resize', () => {
+      chartInstance.current!.resize()
+    })
+  }
+
+  useEffect(() => {
+    initCharts()
+
+  }, [otherPosition])
+
+  return <div style={{ width: '400px', maxWidth: '100%', height: '500px' }} ref={instance} key={otherPosition}></div>
 }
