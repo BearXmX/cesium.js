@@ -17,7 +17,6 @@ import {
   drawMinjiangRiver,
   drawMinshan,
   drawNujiangRiver,
-  drawProvince,
   drawQionglaishan,
   drawShalulishan,
   drawTaniantawengshan,
@@ -25,7 +24,6 @@ import {
   showSanjiangbingliuDetails,
   type sampleLabelType,
   drawVerticalNatureArea,
-  showVerticalNatureAreaDetails,
   ResearchLinePositionLijiang,
   ResearchLinePositionTacheng,
   ResearchLinePositionMeiliSnowMountain,
@@ -40,7 +38,8 @@ import {
   BiranGorge,
   AnzihePandaReserve,
   AbiesFaxoniana,
-  VerticalNatureAreaChart
+  VerticalNatureAreaChart,
+  drawGeometry
 } from './constance'
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 
@@ -69,7 +68,6 @@ const HengduanMountains = () => {
       }
     })
   }
-
 
   const mapIntance = useRef<CommonMapInstanceType>(null)
 
@@ -104,8 +102,6 @@ const HengduanMountains = () => {
   const qionglaishanRef = useRef<Cesium.Entity[]>([])
   const minshanRef = useRef<Cesium.Entity[]>([])
 
-  const dianlengshanPointInstanceList = useRef<sampleLabelType[]>([])
-
   // 垂直自然带
   const verticalNatureAreaRef = useRef<Cesium.Entity[]>([])
 
@@ -120,113 +116,6 @@ const HengduanMountains = () => {
   const researchLinePositionRef = useRef<Cesium.Entity[]>([])
 
   const [researchLinePosition, setResearchLinePosition] = useState<string | null>(null)
-
-  const drawGeometry = (
-    show: boolean,
-    ref: React.RefObject<Cesium.Entity[]>,
-    url: string,
-    options: {
-      geoOptions?: Cesium.GeoJsonDataSource.LoadOptions & {
-        color?: Cesium.Color
-      }
-
-      callbacks?: {
-        loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
-        useFetchOnlyCallback?: (data: any) => void,
-      },
-      entities?: {
-        texts?: { position: Cesium.Cartesian3; text: string; fontSize?: number; labelOptions?: any }[],
-        billboards?: { image: string, imagePosition: Cesium.Cartesian3, billboardOptions?: any, properties?: any }[]
-      }
-    }
-  ) => {
-
-    const geoOptions = options.geoOptions || {}
-    const callbacks = options.callbacks || {}
-    const entities = options.entities || {}
-
-    if (show) {
-      if (ref.current?.length) {
-        ref.current.forEach(item => {
-          item.show = true
-        })
-      } else {
-        /* 文字 */
-        {
-          Array.isArray(entities?.texts) && entities.texts.forEach(item => {
-            const textEntity = viewerRef.current!.entities.add({
-              position: item.position,
-              label: {
-                text: item.text,
-                font: `${item.fontSize || 16}px sans-serif`,
-                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                outlineWidth: 2,
-                outlineColor: geoOptions.color || geoOptions.fill?.withAlpha(1),
-                fillColor: Cesium.Color.WHITE,
-                disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-                horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-                ...item.labelOptions,
-              },
-            })
-
-            ref.current.push(textEntity)
-          })
-        }
-
-        /* 图片 */
-        {
-          Array.isArray(entities?.billboards) && entities?.billboards.forEach(item => {
-            const billboardEntity = viewerRef.current!.entities.add({
-              properties: { position: item.imagePosition, ...item.properties },
-              position: item.imagePosition,
-              billboard: {
-                image: window.$$prefix + item.image,
-                disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-                horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-                verticalOrigin: Cesium.VerticalOrigin.CENTER,
-                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-                ...item.billboardOptions,
-              },
-            })
-
-            ref.current.push(billboardEntity)
-          })
-        }
-
-        if (url) {
-          fetch(window.$$prefix + url)
-            .then(res => res.json())
-            .then(data => {
-
-              if (typeof callbacks?.useFetchOnlyCallback === 'function') {
-                callbacks.useFetchOnlyCallback(data)
-                return
-              }
-
-              Cesium.GeoJsonDataSource.load(data, {
-                markerSymbol: 'circle',
-                ...geoOptions,
-              }).then(function (dataSource) {
-                viewerRef.current!.dataSources.add(dataSource)
-                ref.current.push(...dataSource.entities.values)
-
-                if (typeof callbacks?.loadedDataCallback === 'function') {
-                  callbacks?.loadedDataCallback(data, dataSource)
-                }
-              })
-            })
-        }
-
-
-      }
-    } else {
-      ref.current!.forEach(item => {
-        item.show = false
-      })
-    }
-  }
 
   const guiControls = {
     drawProvince: false,
@@ -324,7 +213,52 @@ const HengduanMountains = () => {
       .add(guiControls, 'drawProvince')
       .name('相关行政区域')
       .onChange((value: boolean) => {
-        drawProvince(value, viewerRef, provinceRef)
+
+        if (value) {
+          cameraFlyTo(98.81428905, 30.26172082, 4200000, {
+            orientation: {
+              heading: 6.283185307179586,
+              pitch: -1.5703325312410912,
+              roll: 0,
+            },
+          }, viewerRef)
+        }
+
+        const options = {
+          fontSize: 20,
+          labelOptions: {
+            outlineWidth: 2,
+            outlineColor: Cesium.Color.BLACK,
+            fillColor: Cesium.Color.WHITE,
+          }
+        }
+
+        drawGeometry(value, provinceRef, '/data/hengduan-mountains/province.geojson', {
+          geoOptions: {
+            stroke: Cesium.Color.PINK,
+            fill: Cesium.Color.PINK.withAlpha(0.5),
+            strokeWidth: 1,
+          },
+          entities: {
+            texts: [
+              {
+                text: '西藏',
+                position: Cesium.Cartesian3.fromDegrees(87.80433606069074, 31.28797794125832),
+                ...options
+              },
+              {
+                text: '四川',
+                position: Cesium.Cartesian3.fromDegrees(105.64506790860854, 31.491911447835545),
+                ...options
+              },
+              {
+                text: '云南',
+                position: Cesium.Cartesian3.fromDegrees(101.76608100350815, 24.12377274429042),
+                ...options
+              },
+            ]
+          }
+        }, viewerRef)
       })
 
     mainAreaControls
@@ -348,11 +282,10 @@ const HengduanMountains = () => {
                   ...labelConfig,
                   fillColor: Cesium.Color.ORANGE,
                 }
-
               }
             ]
           }
-        })
+        }, viewerRef)
 
       })
 
@@ -368,7 +301,7 @@ const HengduanMountains = () => {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '贡嘎山'),
             }
-          }
+          }, viewerRef
         )
 
         if (value) {
@@ -450,7 +383,7 @@ const HengduanMountains = () => {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '虎跳峡'),
             }
-          }
+          }, viewerRef
         )
 
         if (value) {
@@ -481,7 +414,7 @@ const HengduanMountains = () => {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '碧壤峡谷'),
             }
-          }
+          }, viewerRef
         )
 
         if (value) {
@@ -605,7 +538,7 @@ const HengduanMountains = () => {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '鞍子河大熊猫自然保护区'),
             }
-          }
+          }, viewerRef
         )
 
         if (value) {
@@ -642,7 +575,7 @@ const HengduanMountains = () => {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '滇冷杉'),
             }
-          }
+          }, viewerRef
         )
 
         if (value) {
@@ -673,7 +606,7 @@ const HengduanMountains = () => {
             entities: {
               billboards: researchLineBillboards
             }
-          }
+          }, viewerRef
         )
 
         if (value) {
@@ -739,7 +672,7 @@ const HengduanMountains = () => {
         fill: Cesium.Color.YELLOW.withAlpha(0.2),
         strokeWidth: 2,
       }
-    })
+    }, viewerRef)
 
     /* 横断山区 */
     drawGeometry(true, HengduanMountainsDiagramRef, '/data/hengduan-mountains/hengduan-mountains-area.geojson', {
@@ -762,7 +695,7 @@ const HengduanMountains = () => {
           }
         ]
       }
-    })
+    }, viewerRef)
 
     initGui()
 
@@ -926,10 +859,6 @@ const HengduanMountains = () => {
           }
         </Drawer>
       }
-
-
-
-
     </>
   )
 }

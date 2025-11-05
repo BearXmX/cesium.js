@@ -3,7 +3,6 @@ import type { NotificationInstance } from 'antd/es/notification/interface'
 import * as Cesium from 'cesium'
 import Panda from './panda'
 import Dianlengshan from './dianlengshan'
-import VerticalNatureArea from '@/assets/nature-area.png'
 import { Carousel } from 'antd'
 import { useEffect, useRef } from 'react'
 import * as echarts from 'echarts'
@@ -172,12 +171,127 @@ export const researchLineBillboards = [
 ]
 
 
+export const drawGeometry = (
+  show: boolean,
+  ref: React.RefObject<Cesium.Entity[]>,
+  url: string,
+  options: {
+    geoOptions?: Cesium.GeoJsonDataSource.LoadOptions & {
+      color?: Cesium.Color
+    }
+
+    callbacks?: {
+      loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
+      useFetchOnlyCallback?: (data: any) => void,
+    },
+    entities?: {
+      texts?: { position: Cesium.Cartesian3; text: string; fontSize?: number; labelOptions?: any }[],
+      billboards?: { image: string, imagePosition: Cesium.Cartesian3, billboardOptions?: any, properties?: any }[]
+    }
+  },
+  viewerRef: React.RefObject<Cesium.Viewer | null>
+) => {
+
+  const geoOptions = options.geoOptions || {}
+  const callbacks = options.callbacks || {}
+  const entities = options.entities || {}
+
+  if (show) {
+    if (ref.current?.length) {
+      ref.current.forEach(item => {
+        item.show = true
+      })
+    } else {
+      /* 文字 */
+      {
+        Array.isArray(entities?.texts) && entities.texts.forEach(item => {
+          const textEntity = viewerRef.current!.entities.add({
+            position: item.position,
+            label: {
+              text: item.text,
+              font: `${item.fontSize || 16}px sans-serif`,
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              outlineWidth: 2,
+              outlineColor: geoOptions.color || geoOptions.fill?.withAlpha(1),
+              fillColor: Cesium.Color.WHITE,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+              horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+              verticalOrigin: Cesium.VerticalOrigin.CENTER,
+              heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              ...item.labelOptions,
+            },
+          })
+
+          ref.current.push(textEntity)
+        })
+      }
+
+      /* 图片 */
+      {
+        Array.isArray(entities?.billboards) && entities?.billboards.forEach(item => {
+          const billboardEntity = viewerRef.current!.entities.add({
+            properties: { position: item.imagePosition, ...item.properties },
+            position: item.imagePosition,
+            billboard: {
+              image: window.$$prefix + item.image,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+              horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+              verticalOrigin: Cesium.VerticalOrigin.CENTER,
+              heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              ...item.billboardOptions,
+            },
+          })
+
+          ref.current.push(billboardEntity)
+        })
+      }
+
+      if (url) {
+        fetch(window.$$prefix + url)
+          .then(res => res.json())
+          .then(data => {
+
+            if (typeof callbacks?.useFetchOnlyCallback === 'function') {
+              callbacks.useFetchOnlyCallback(data)
+              return
+            }
+
+            Cesium.GeoJsonDataSource.load(data, {
+              markerSymbol: 'circle',
+              ...geoOptions,
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource)
+              ref.current.push(...dataSource.entities.values)
+
+              if (typeof callbacks?.loadedDataCallback === 'function') {
+                callbacks?.loadedDataCallback(data, dataSource)
+              }
+            })
+          })
+      }
+
+
+    }
+  } else {
+    ref.current!.forEach(item => {
+      item.show = false
+    })
+  }
+}
 
 export const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}, viewerRef: React.RefObject<Cesium.Viewer | null>) => {
   (viewerRef!).current!.camera.flyTo({
     destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
     ...options,
   })
+}
+
+const riverGeoConfig = {
+  stroke: Cesium.Color.AQUA,
+  fill: Cesium.Color.AQUA.withAlpha(1),
+  strokeWidth: 2,
+  markerSymbol: 'circle',
+  clampToGround: true, // 贴地
 }
 
 /** @description 长江 */
@@ -187,53 +301,32 @@ export const drawChangjiangRiver = (
   changjiangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(107.7708852, 31.14346632, 3527892.68),
+    cameraFlyTo(107.7708852, 31.14346632, 3527892.68, {
       orientation: {
         heading: 6.283185307179581,
         pitch: -1.5705328303764619,
         roll: 0,
       },
-    })
-
-    if (changjiangRiverRef.current?.length) {
-      changjiangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/changjiang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            changjiangRiverRef.current = dataSource.entities.values
-
-            changjiangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(109.84480653636214, 31.676271014964506),
-                label: {
-                  text: '长江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    changjiangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+  drawGeometry(checked, changjiangRiverRef, '/data/hengduan-mountains/changjiang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(107.7708852, 31.14346632),
+          text: '长江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        },
+      ],
+    },
+  }, viewerRef)
 }
 
 /** @description 澜沧江 */
@@ -242,54 +335,35 @@ export const drawLancangRiver = (
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   lancangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249, 3527892.68),
+    cameraFlyTo(102.90680454, 30.20169249, 3527892.68, {
       orientation: {
         heading: 6.2831853071795845,
         pitch: -1.5702702380948708,
         roll: 0,
       },
-    })
-
-    if (lancangRiverRef.current?.length) {
-      lancangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/lancang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            lancangRiverRef.current = dataSource.entities.values
-
-            lancangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(95.60080485634482, 33.66363160959343),
-                label: {
-                  text: '澜沧江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    lancangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, lancangRiverRef, '/data/hengduan-mountains/lancang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(95.60080485634482, 33.66363160959343),
+          text: '澜沧江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        },
+      ],
+    },
+  }, viewerRef)
 }
 
 /** @description 怒江 */
@@ -299,53 +373,33 @@ export const drawNujiangRiver = (
   nujiangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(96.03191605, 28.98714853, 3527892.68),
+    cameraFlyTo(96.03191605, 28.98714853, 3527892.68, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5705376995527884,
         roll: 0,
       },
-    })
-
-    if (nujiangRiverRef.current?.length) {
-      nujiangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/nujiang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            nujiangRiverRef.current = dataSource.entities.values
-
-            nujiangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(92.03880869555387, 32.2995521335205),
-                label: {
-                  text: '怒江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    nujiangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, nujiangRiverRef, '/data/hengduan-mountains/nujiang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(92.03880869555387, 32.2995521335205),
+          text: '怒江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 独龙江 */
@@ -355,52 +409,33 @@ export const drawDulongjiangRiver = (
   dulongjiangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.59137891, 28.33325205, 715131.0),
+    cameraFlyTo(98.59137891, 28.33325205, 715131.0, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5703325312386975,
         roll: 0,
       },
-    })
-
-    if (dulongjiangRiverRef.current?.length) {
-      dulongjiangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/dulongjiang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            dulongjiangRiverRef.current = dataSource.entities.values
-            dulongjiangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(97.84652837218303, 28.107092478607957),
-                label: {
-                  text: '独龙江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    dulongjiangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, dulongjiangRiverRef, '/data/hengduan-mountains/dulongjiang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(98.59137891, 28.33325205),
+          text: '独龙江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 金沙江 */
@@ -409,54 +444,35 @@ export const drawJinshajiangRiver = (
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   jinshajiangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249, 3527892.68),
+    cameraFlyTo(102.90680454, 30.20169249, 3527892.68, {
       orientation: {
         heading: 6.2831853071795845,
         pitch: -1.5702702380948708,
         roll: 0,
       },
-    })
-
-    if (jinshajiangRiverRef.current?.length) {
-      jinshajiangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/jinshajiang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            jinshajiangRiverRef.current = dataSource.entities.values
-
-            jinshajiangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(97.6058095014923, 33.02908771838989),
-                label: {
-                  text: '金沙江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    jinshajiangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, jinshajiangRiverRef, '/data/hengduan-mountains/jinshajiang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(102.90680454, 30.20169249),
+          text: '金沙江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 岷江 */
@@ -466,53 +482,32 @@ export const drawMinjiangRiver = (
   minjiangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(102.59084722, 29.99187433, 3527892.68),
+    cameraFlyTo(102.59084722, 29.99187433, 3527892.68, {
       orientation: {
-        heading: 8.881784197001252e-16,
-        pitch: -1.5705984938492015,
+        heading: 6.283185307179586,
+        pitch: -1.5705376995527884,
         roll: 0,
       },
-    })
-
-    if (minjiangRiverRef.current?.length) {
-      minjiangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/minjiang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            minjiangRiverRef.current = dataSource.entities.values
-
-            minjiangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(104.03353796391211, 31.029147766652784),
-                label: {
-                  text: '岷江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    minjiangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+  drawGeometry(checked, minjiangRiverRef, '/data/hengduan-mountains/minjiang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(102.59084722, 29.99187433),
+          text: '岷江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 雅砻江 */
@@ -522,52 +517,33 @@ export const drawYalongjiangRiver = (
   yalongjiangRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.49758224, 31.11454042, 3527892.68),
+    cameraFlyTo(98.49758224, 31.11454042, 3527892.68, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707504947616706,
         roll: 0,
       },
-    })
-
-    if (yalongjiangRiverRef.current?.length) {
-      yalongjiangRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/yalongjiang-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            yalongjiangRiverRef.current = dataSource.entities.values
-            yalongjiangRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(98.2699798471984, 33.62221082027084),
-                label: {
-                  text: '雅砻江',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    yalongjiangRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, yalongjiangRiverRef, '/data/hengduan-mountains/yalongjiang-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(98.49758224, 31.11454042),
+          text: '雅砻江',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 大渡河 */
@@ -577,125 +553,84 @@ export const drawDaduheRiver = (
   daduheRiverRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(101.60958657, 31.47050878, 3527892.68),
+    cameraFlyTo(101.60958657, 31.47050878, 3527892.68, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.570685025933066,
         roll: 0,
       },
-    })
-
-    if (daduheRiverRef.current?.length) {
-      daduheRiverRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/daduhe-river.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.AQUA,
-            fill: Cesium.Color.AQUA.withAlpha(1),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-            clampToGround: true, // 贴地
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            daduheRiverRef.current = dataSource.entities.values
-
-            daduheRiverRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(101.18501373694866, 33.02592772285958),
-                label: {
-                  text: '大渡河',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.AQUA,
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    daduheRiverRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, daduheRiverRef, '/data/hengduan-mountains/daduhe-river.geojson', {
+    geoOptions: {
+      ...riverGeoConfig,
+    },
+    entities: {
+      texts: [
+        {
+          position: Cesium.Cartesian3.fromDegrees(101.60958657, 31.47050878),
+          text: '大渡河',
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.AQUA,
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 相关省域 */
 export const drawProvince = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, provinceRef: React.RefObject<Cesium.Entity[]>) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.81428905, 30.26172082, 3156200.7),
+    cameraFlyTo(98.81428905, 30.26172082, 3156200.7, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5703325312410912,
         roll: 0,
       },
-    })
-
-    if (provinceRef.current?.length) {
-      provinceRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/province.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.PINK,
-            fill: Cesium.Color.PINK.withAlpha(0.5),
-            strokeWidth: 0.5,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            provinceRef.current = dataSource.entities.values
-
-            const provinceNames = [
-              {
-                text: '西藏',
-                position: Cesium.Cartesian3.fromDegrees(87.80433606069074, 31.28797794125832),
-              },
-              {
-                text: '四川',
-                position: Cesium.Cartesian3.fromDegrees(105.64506790860854, 31.491911447835545),
-              },
-              {
-                text: '云南',
-                position: Cesium.Cartesian3.fromDegrees(101.76608100350815, 24.12377274429042),
-              },
-            ]
-
-            const provinceNamesInstance = provinceNames.map(item => {
-              // 绘制文字
-              return viewerRef.current!.entities.add({
-                position: item.position,
-                label: {
-                  text: item.text,
-                  font: '20px sans-serif',
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                  outlineWidth: 2,
-                  outlineColor: Cesium.Color.BLACK,
-                  fillColor: Cesium.Color.WHITE,
-                  disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-                },
-              })
-            })
-
-            provinceRef.current.push(...provinceNamesInstance)
-          })
-        })
-    }
-  } else {
-    provinceRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  const label = {
+    fontSize: 20,
+    labelOptions: {
+      outlineWidth: 2,
+      outlineColor: Cesium.Color.BLACK,
+      fillColor: Cesium.Color.WHITE,
+    }
+  }
+
+  drawGeometry(checked, provinceRef, '/data/hengduan-mountains/province.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.PINK,
+      fill: Cesium.Color.PINK.withAlpha(0.5),
+      strokeWidth: 0.5,
+      markerSymbol: 'circle',
+    },
+    entities: {
+      texts: [
+        {
+          text: '西藏',
+          position: Cesium.Cartesian3.fromDegrees(87.80433606069074, 31.28797794125832),
+          ...label
+        },
+        {
+          text: '四川',
+          position: Cesium.Cartesian3.fromDegrees(105.64506790860854, 31.491911447835545),
+          ...label
+        },
+        {
+          text: '云南',
+          position: Cesium.Cartesian3.fromDegrees(101.76608100350815, 24.12377274429042),
+          ...label
+        },
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 气候分布 */
@@ -704,111 +639,106 @@ export const drawChinaClimateDistribution = (
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   chinaClimateDistributionRef: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(105.90676345, 35.09453359, 5884376.89),
+    cameraFlyTo(105.90676345, 35.09453359, 5884376.89, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707398108470874,
         roll: 0,
       },
-    })
-
-    if (chinaClimateDistributionRef.current?.length) {
-      chinaClimateDistributionRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/china/china-climate-distribution.geojson')
-        .then(res => res.json())
-        .then(data => {
-          // 为5种气候类型定义颜色方案
-          const climateColors: any = {
-            高原山地气候: {
-              fill: Cesium.Color.fromCssColorString('#4A90E2').withAlpha(0.6), // 冷蓝色
-              stroke: Cesium.Color.fromCssColorString('#2C5AA0'),
-              textPosition: [92.09404483908936, 34.53784283747934],
-            },
-            热带季风气候: {
-              fill: Cesium.Color.fromCssColorString('#FF6B6B').withAlpha(0.6), // 暖红色
-              stroke: Cesium.Color.fromCssColorString('#D64545'),
-              textPosition: [100.81780521173025, 22.46855638524489],
-            },
-            温带大陆性气候: {
-              fill: Cesium.Color.fromCssColorString('#FFA726').withAlpha(0.6), // 橙色
-              stroke: Cesium.Color.fromCssColorString('#F57C00'),
-              textPosition: [107.72144131427258, 40.440585432301184],
-            },
-            亚热带季风气候: {
-              fill: Cesium.Color.fromCssColorString('#66BB6A').withAlpha(0.6), // 绿色
-              stroke: Cesium.Color.fromCssColorString('#388E3C'),
-              textPosition: [109.47667037219985, 29.4584931073585],
-            },
-            温带季风气候: {
-              fill: Cesium.Color.fromCssColorString('#AB47BC').withAlpha(0.6), // 紫色
-              stroke: Cesium.Color.fromCssColorString('#8E24AA'),
-              textPosition: [112.99830415726292, 36.593583520746385],
-            },
-          }
-
-          // 获取所有唯一的名称
-          const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))]
-
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.BLACK.withAlpha(0),
-            strokeWidth: 0,
-            fill: Cesium.Color.WHITE.withAlpha(0),
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            const entities = dataSource.entities.values
-            chinaClimateDistributionRef.current = entities
-
-            // 根据气候类型设置颜色
-            entities.forEach(entity => {
-              const climateType = entity.name
-              if (climateType && climateColors[climateType]) {
-                const colorScheme = climateColors[climateType]
-                if (entity.polygon) {
-                  entity.polygon.material = colorScheme.fill
-                  // @ts-ignore
-                  entity.polygon.outline = false
-                  entity.polygon.outlineColor = colorScheme.stroke
-                  // @ts-ignore
-                  entity.polygon.outlineWidth = 0
-                }
-              }
-            })
-
-            // 添加文字标签
-            Object.keys(climateColors).forEach(climateType => {
-              const colorScheme = climateColors[climateType]
-              if (colorScheme.textPosition) {
-                const [longitude, latitude] = colorScheme.textPosition
-
-                // 创建文字标签
-                const text = viewerRef.current!.entities.add({
-                  position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
-                  label: {
-                    text: climateType,
-                    font: '16pt Microsoft YaHei', // 使用微软雅黑字体，更清晰
-                    ...labelConfig,
-                  },
-                })
-
-                chinaClimateDistributionRef.current.push(text)
-              }
-            })
-
-            console.log('气候分布分类:', uniqueNames)
-          })
-        })
-    }
-  } else {
-    chinaClimateDistributionRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  const texts = [
+    {
+      text: '高原山地气候',
+      position: Cesium.Cartesian3.fromDegrees(92.09404483908936, 34.53784283747934),
+      fontSize: 16,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#4A90E2').withAlpha(0.6), // 冷蓝色
+        stroke: Cesium.Color.fromCssColorString('#2C5AA0'),
+      }
+    },
+    {
+      text: '热带季风气候',
+      position: Cesium.Cartesian3.fromDegrees(100.81780521173025, 22.46855638524489),
+      fontSize: 16,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#FF6B6B').withAlpha(0.6), // 暖红色
+        stroke: Cesium.Color.fromCssColorString('#D64545'),
+      }
+    },
+    {
+      text: '温带大陆性气候',
+      position: Cesium.Cartesian3.fromDegrees(107.72144131427258, 40.440585432301184),
+      fontSize: 16,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#FFA726').withAlpha(0.6), // 橙色
+        stroke: Cesium.Color.fromCssColorString('#F57C00'),
+      }
+    },
+    {
+      text: '亚热带季风气候',
+      position: Cesium.Cartesian3.fromDegrees(109.47667037219985, 29.4584931073585),
+      fontSize: 16,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#66BB6A').withAlpha(0.6), // 绿色
+        stroke: Cesium.Color.fromCssColorString('#388E3C'),
+      }
+    },
+    {
+      text: '温带季风气候',
+      position: Cesium.Cartesian3.fromDegrees(112.99830415726292, 36.593583520746385),
+      fontSize: 16,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#AB47BC').withAlpha(0.6), // 紫色
+        stroke: Cesium.Color.fromCssColorString('#8E24AA'),
+      }
+    },
+  ]
+
+  drawGeometry(checked, chinaClimateDistributionRef, '/data/china/china-climate-distribution.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.BLACK.withAlpha(0),
+      strokeWidth: 0,
+      fill: Cesium.Color.WHITE.withAlpha(0),
+    },
+    entities: {
+      texts: texts
+    },
+    callbacks: {
+      loadedDataCallback(data, dataSource) {
+        // 获取所有唯一的名称
+        /*         const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))] */
+
+        // 根据气候类型设置颜色
+        chinaClimateDistributionRef.current.forEach(entity => {
+          const climateType = entity.name
+          const colorScheme = texts.find(item => item.text === climateType)
+
+          if (climateType && colorScheme) {
+
+            if (entity.polygon) {
+              // @ts-ignore
+              entity.polygon.material = colorScheme.labelOptions.fill!
+              // @ts-ignore
+              entity.polygon.outline = false
+              // @ts-ignore
+              entity.polygon.outlineColor = colorScheme.labelOptions.stroke
+              // @ts-ignore
+              entity.polygon.outlineWidth = 0
+            }
+          }
+        })
+      },
+    }
+  }, viewerRef)
 }
 
 /* 土壤分布 */
@@ -818,165 +748,213 @@ export const drawChinaSoilDistribution = (
   chinaSoilDistributionRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(105.90676345, 35.09453359, 5884376.89),
+    cameraFlyTo(105.90676345, 35.09453359, 5884376.89, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707398108470874,
         roll: 0,
       },
-    })
-
-    if (chinaSoilDistributionRef.current?.length) {
-      chinaSoilDistributionRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/china/china-soil-distribution.geojson')
-        .then(res => res.json())
-        .then(data => {
-          // 为土壤类型定义颜色方案
-          const soilColors: any = {
-            砖红壤: {
-              fill: Cesium.Color.fromCssColorString('#8B4513').withAlpha(0.6), // 红棕色
-              stroke: Cesium.Color.fromCssColorString('#654321'),
-              textPosition: [109.60266864561984, 18.925205005894433], // 海南附近
-            },
-            灰漠土: {
-              fill: Cesium.Color.fromCssColorString('#A9A9A9').withAlpha(0.6), // 灰色
-              stroke: Cesium.Color.fromCssColorString('#696969'),
-              textPosition: [85.0, 45.0], // 新疆北部
-            },
-            棕漠土: {
-              fill: Cesium.Color.fromCssColorString('#D2691E').withAlpha(0.6), // 棕色
-              stroke: Cesium.Color.fromCssColorString('#8B4513'),
-              textPosition: [90.0, 40.0], // 新疆南部
-            },
-            黑钙土: {
-              fill: Cesium.Color.fromCssColorString('#2F4F4F').withAlpha(0.6), // 深灰色
-              stroke: Cesium.Color.fromCssColorString('#000000'),
-              textPosition: [111.19799358960789, 40.26795863764495], // 内蒙古东部
-            },
-            亚高山草原土带: {
-              fill: Cesium.Color.fromCssColorString('#61fd61ff').withAlpha(0.6), // 淡绿色
-              stroke: Cesium.Color.fromCssColorString('#556B2F'),
-              textPosition: [88.9329247937849, 28.597591991570404], // 青藏高原
-            },
-            灰钙土: {
-              fill: Cesium.Color.fromCssColorString('#D3D3D3').withAlpha(0.6), // 浅灰色
-              stroke: Cesium.Color.fromCssColorString('#A9A9A9'),
-              textPosition: [102.59440658804448, 36.02267693298963], // 甘肃、宁夏
-            },
-            黑土: {
-              fill: Cesium.Color.fromCssColorString('#2F2F2F').withAlpha(0.6), // 近黑色
-              stroke: Cesium.Color.fromCssColorString('#000000'),
-              textPosition: [128.99970312431063, 45.634047159130965], // 东北地区
-            },
-            寒棕土: {
-              fill: Cesium.Color.fromCssColorString('#8B7355').withAlpha(0.6), // 冷棕色
-              stroke: Cesium.Color.fromCssColorString('#696969'),
-              textPosition: [122.94437565648104, 52.214359020658], // 黑龙江北部
-            },
-            棕壤: {
-              fill: Cesium.Color.fromCssColorString('#A0522D').withAlpha(0.6), // 标准棕色
-              stroke: Cesium.Color.fromCssColorString('#8B4513'),
-              textPosition: [115.0, 35.0], // 华北地区
-            },
-            黄棕壤: {
-              fill: Cesium.Color.fromCssColorString('#DAA520').withAlpha(0.6), // 黄棕色
-              stroke: Cesium.Color.fromCssColorString('#B8860B'),
-              textPosition: [113.66903286043595, 31.508797605755067], // 长江中下游
-            },
-            赤红壤: {
-              fill: Cesium.Color.fromCssColorString('#DC143C').withAlpha(0.6), // 赤红色
-              stroke: Cesium.Color.fromCssColorString('#B22222'),
-              textPosition: [100.68825517044883, 23.042228682822703], // 广东、广西
-            },
-            红壤: {
-              fill: Cesium.Color.fromCssColorString('#CD5C5C').withAlpha(0.6), // 红色
-              stroke: Cesium.Color.fromCssColorString('#B22222'),
-              textPosition: [115.0, 26.0], // 福建、江西
-            },
-            高山漠土带: {
-              fill: Cesium.Color.fromCssColorString('#708090').withAlpha(0.6), // 石板灰色
-              stroke: Cesium.Color.fromCssColorString('#2F4F4F'),
-              textPosition: [78.44630649651444, 36.17994722511998], // 青藏高原西部
-            },
-            亚高山漠土带: {
-              fill: Cesium.Color.fromCssColorString('#46525eff').withAlpha(0.6), // 浅石板灰色
-              stroke: Cesium.Color.fromCssColorString('#696969'),
-              textPosition: [79.97242147078896, 33.4684656396256], // 青藏高原中部
-            },
-            高山草原土带: {
-              fill: Cesium.Color.fromCssColorString('#4d4545ff').withAlpha(0.6), // 淡绿色
-              stroke: Cesium.Color.fromCssColorString('#32CD32'),
-              textPosition: [85.91594544886775, 32.84534541395958], // 青藏高原东部
-            },
-            高山草甸土带: {
-              fill: Cesium.Color.fromCssColorString('#115311ff').withAlpha(0.6), // 草绿色
-              stroke: Cesium.Color.fromCssColorString('#3CB371'),
-              textPosition: [97.3786945658124, 34.218864101076356], // 青藏高原东南部
-            },
-          }
-
-          // 获取所有唯一的名称
-          const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))]
-
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.BLACK.withAlpha(0),
-            strokeWidth: 0,
-            fill: Cesium.Color.WHITE.withAlpha(0),
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            const entities = dataSource.entities.values
-            chinaSoilDistributionRef.current = entities // 假设您有这个引用
-
-            // 根据土壤类型设置颜色
-            entities.forEach(entity => {
-              const soilType = entity.name
-              if (soilType && soilColors[soilType]) {
-                const colorScheme = soilColors[soilType]
-                if (entity.polygon) {
-                  entity.polygon.material = colorScheme.fill
-                  // @ts-ignore
-                  entity.polygon.outline = false
-                  entity.polygon.outlineColor = colorScheme.stroke
-                  // @ts-ignore
-                  entity.polygon.outlineWidth = 0
-                }
-              }
-            })
-
-            // 添加土壤类型文字标签
-            Object.keys(soilColors).forEach(soilType => {
-              const colorScheme = soilColors[soilType]
-              if (colorScheme.textPosition) {
-                const [longitude, latitude] = colorScheme.textPosition
-
-                // 创建文字标签
-                const text = viewerRef.current!.entities.add({
-                  position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
-                  label: {
-                    text: soilType,
-                    font: '14pt Microsoft YaHei', // 稍小一点的字体，因为名称较长
-                    ...labelConfig,
-                  },
-                })
-
-                chinaSoilDistributionRef.current.push(text)
-              }
-            })
-
-            console.log('土壤分布分类:', uniqueNames)
-          })
-        })
-    }
-  } else {
-    chinaSoilDistributionRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  const texts = [
+    {
+      text: '砖红壤',
+      position: Cesium.Cartesian3.fromDegrees(...[109.60266864561984, 18.925205005894433]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#8B4513').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#654321'),
+      }
+    },
+    {
+      text: '灰漠土',
+      position: Cesium.Cartesian3.fromDegrees(...[85.0, 45.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#A9A9A9').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#696969'),
+      }
+    },
+    {
+      text: '棕漠土',
+      position: Cesium.Cartesian3.fromDegrees(...[90.0, 40.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#D2691E').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#8B4513'),
+      }
+    },
+    {
+      text: '黑钙土',
+      position: Cesium.Cartesian3.fromDegrees(...[111.19799358960789, 40.26795863764495]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#2F4F4F').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#000000'),
+      }
+    },
+    {
+      text: '亚高山草原土带',
+      position: Cesium.Cartesian3.fromDegrees(...[88.9329247937849, 28.597591991570404]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#61fd61ff').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#556B2F'),
+      }
+    },
+    {
+      text: '灰钙土',
+      position: Cesium.Cartesian3.fromDegrees(...[102.59440658804448, 36.02267693298963]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#D3D3D3').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#A9A9A9'),
+      }
+    },
+    {
+      text: '黑土',
+      position: Cesium.Cartesian3.fromDegrees(...[128.99970312431063, 45.634047159130965]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#2F2F2F').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#000000'),
+      }
+    },
+    {
+      text: '寒棕土',
+      position: Cesium.Cartesian3.fromDegrees(...[122.94437565648104, 52.214359020658]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#8B7355').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#696969'),
+      }
+    },
+    {
+      text: '棕壤',
+      position: Cesium.Cartesian3.fromDegrees(...[115.0, 35.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#A0522D').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#8B4513'),
+      }
+    },
+    {
+      text: '黄棕壤',
+      position: Cesium.Cartesian3.fromDegrees(...[113.66903286043595, 31.508797605755067]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#DAA520').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#B8860B'),
+      }
+    },
+    {
+      text: '赤红壤',
+      position: Cesium.Cartesian3.fromDegrees(...[100.68825517044883, 23.042228682822703]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#DC143C').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#B22222'),
+      }
+    },
+    {
+      text: '红壤',
+      position: Cesium.Cartesian3.fromDegrees(...[115.0, 26.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#CD5C5C').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#B22222'),
+      }
+    },
+    {
+      text: '高山漠土带',
+      position: Cesium.Cartesian3.fromDegrees(...[78.44630649651444, 36.17994722511998]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#708090').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#2F4F4F'),
+      }
+    },
+    {
+      text: '亚高山漠土带',
+      position: Cesium.Cartesian3.fromDegrees(...[79.97242147078896, 33.4684656396256]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#46525eff').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#696969'),
+      }
+    },
+    {
+      text: '高山草原土带',
+      position: Cesium.Cartesian3.fromDegrees(...[85.91594544886775, 32.84534541395958]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#4d4545ff').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#32CD32'),
+      }
+    },
+    {
+      text: '高山草甸土带',
+      position: Cesium.Cartesian3.fromDegrees(...[97.3786945658124, 34.218864101076356]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#115311ff').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#3CB371'),
+      }
+    }
+  ]
+
+  drawGeometry(checked, chinaSoilDistributionRef, '/data/china/china-soil-distribution.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.BLACK.withAlpha(0),
+      strokeWidth: 0,
+      fill: Cesium.Color.WHITE.withAlpha(0),
+    },
+    entities: {
+      texts: texts
+    },
+    callbacks: {
+      loadedDataCallback(data, dataSource) {
+        // 获取所有唯一的名称
+        /*         const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))] */
+
+        chinaSoilDistributionRef.current.forEach(entity => {
+          const climateType = entity.name
+          const colorScheme = texts.find(item => item.text === climateType)
+
+          if (climateType && colorScheme) {
+
+            if (entity.polygon) {
+              // @ts-ignore
+              entity.polygon.material = colorScheme.labelOptions.fill!
+              // @ts-ignore
+              entity.polygon.outline = false
+              // @ts-ignore
+              entity.polygon.outlineColor = colorScheme.labelOptions.stroke
+              // @ts-ignore
+              entity.polygon.outlineWidth = 0
+            }
+          }
+        })
+      },
+    }
+  }, viewerRef)
 }
 
 /** @description 植被分布 */
@@ -986,125 +964,133 @@ export const drawChinaPlantDistribution = (
   chinaPlantDistributionRef: React.RefObject<Cesium.Entity[]>
 ) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(105.90676345, 35.09453359, 5884376.89),
+    cameraFlyTo(105.90676345, 35.09453359, 5884376.89, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5707398108470874,
         roll: 0,
       },
-    })
-
-    if (chinaPlantDistributionRef.current?.length) {
-      chinaPlantDistributionRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/china/china-plant-distribution.geojson')
-        .then(res => res.json())
-        .then(data => {
-          // 为植被带类型定义颜色方案
-          const plantColors: any = {
-            温带荒漠带: {
-              fill: Cesium.Color.fromCssColorString('#F0E68C').withAlpha(0.6), // 沙黄色
-              stroke: Cesium.Color.fromCssColorString('#DAA520'),
-              textPosition: [85.0, 42.0], // 新疆荒漠地区
-            },
-            热带雨林带: {
-              fill: Cesium.Color.fromCssColorString('#005900').withAlpha(0.6), // 深绿色
-              stroke: Cesium.Color.fromCssColorString('#006400'),
-              textPosition: [110.0, 18.0], // 海南、西双版纳
-            },
-            寒温带针叶林: {
-              fill: Cesium.Color.fromCssColorString('#91a098ff').withAlpha(0.6), // 海绿色
-              stroke: Cesium.Color.fromCssColorString('#1E5B3A'),
-              textPosition: [122.0, 52.0], // 大兴安岭北部
-            },
-            温带针叶阔叶林: {
-              fill: Cesium.Color.fromCssColorString('#3CB371').withAlpha(0.6), // 中绿色
-              stroke: Cesium.Color.fromCssColorString('#2E8B57'),
-              textPosition: [129.9085890708368, 45.408358156786555], // 小兴安岭、长白山
-            },
-            温带草原带: {
-              fill: Cesium.Color.fromCssColorString('#486d48ff').withAlpha(0.6), // 浅绿色
-              stroke: Cesium.Color.fromCssColorString('#6B8E23'),
-              textPosition: [112.0, 44.0], // 内蒙古草原
-            },
-            暖温带落叶阔叶林: {
-              fill: Cesium.Color.fromCssColorString('#32CD32').withAlpha(0.6), // 黄绿色
-              stroke: Cesium.Color.fromCssColorString('#228B22'),
-              textPosition: [115.0, 36.0], // 华北地区
-            },
-            亚热带常绿阔叶林: {
-              fill: Cesium.Color.fromCssColorString('#008000').withAlpha(0.6), // 纯绿色
-              stroke: Cesium.Color.fromCssColorString('#006400'),
-              textPosition: [115.0, 28.0], // 长江以南地区
-            },
-            高原植被: {
-              fill: Cesium.Color.fromCssColorString('#969696ff').withAlpha(0.6), // 淡绿色
-              stroke: Cesium.Color.fromCssColorString('#7CFC00'),
-              textPosition: [92.0, 32.0], // 青藏高原
-            },
-          }
-
-          // 获取所有唯一的名称
-          const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))]
-
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.BLACK.withAlpha(0),
-            strokeWidth: 0,
-            fill: Cesium.Color.WHITE.withAlpha(0),
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-
-            const entities = dataSource.entities.values
-            chinaPlantDistributionRef.current = entities // 假设您有这个引用
-
-            // 根据植被带类型设置颜色
-            entities.forEach(entity => {
-              const vegetationType = entity.name
-              if (vegetationType && plantColors[vegetationType]) {
-                const colorScheme = plantColors[vegetationType]
-                if (entity.polygon) {
-                  entity.polygon.material = colorScheme.fill
-                  // @ts-ignore
-                  entity.polygon.outline = false
-                  entity.polygon.outlineColor = colorScheme.stroke
-                  // @ts-ignore
-                  entity.polygon.outlineWidth = 0
-                }
-              }
-            })
-
-            // 添加植被带类型文字标签
-            Object.keys(plantColors).forEach(vegetationType => {
-              const colorScheme = plantColors[vegetationType]
-              if (colorScheme.textPosition) {
-                const [longitude, latitude] = colorScheme.textPosition
-
-                // 创建文字标签
-                const text = viewerRef.current!.entities.add({
-                  position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
-                  label: {
-                    text: vegetationType,
-                    font: '14pt Microsoft YaHei',
-                    ...labelConfig,
-                  },
-                })
-
-                chinaPlantDistributionRef.current.push(text)
-              }
-            })
-
-            console.log('植被带分布分类:', uniqueNames)
-          })
-        })
-    }
-  } else {
-    chinaPlantDistributionRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  const texts = [
+    {
+      text: '温带荒漠带',
+      position: Cesium.Cartesian3.fromDegrees(...[85.0, 42.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#F0E68C').withAlpha(0.6),
+        stroke: Cesium.Color.fromCssColorString('#DAA520'),
+      }
+    },
+    {
+      text: '热带雨林带',
+      position: Cesium.Cartesian3.fromDegrees(...[110.0, 18.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#005900').withAlpha(0.6), // 深绿色
+        stroke: Cesium.Color.fromCssColorString('#006400'),
+      }
+    },
+    {
+      text: '寒温带针叶林',
+      position: Cesium.Cartesian3.fromDegrees(...[122.0, 52.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#91a098ff').withAlpha(0.6), // 海绿色
+        stroke: Cesium.Color.fromCssColorString('#1E5B3A'),
+      }
+    },
+    {
+      text: '温带针叶阔叶林',
+      position: Cesium.Cartesian3.fromDegrees(...[129.9085890708368, 45.408358156786555]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#3CB371').withAlpha(0.6), // 中绿色
+        stroke: Cesium.Color.fromCssColorString('#2E8B57'),
+      }
+    },
+    {
+      text: '温带草原带',
+      position: Cesium.Cartesian3.fromDegrees(...[112.0, 44.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#486d48ff').withAlpha(0.6), // 浅绿色
+        stroke: Cesium.Color.fromCssColorString('#6B8E23'),
+      }
+    },
+    {
+      text: '暖温带落叶阔叶林',
+      position: Cesium.Cartesian3.fromDegrees(...[115.0, 36.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#32CD32').withAlpha(0.6), // 黄绿色
+        stroke: Cesium.Color.fromCssColorString('#228B22'),
+      }
+    },
+    {
+      text: '亚热带常绿阔叶林',
+      position: Cesium.Cartesian3.fromDegrees(...[115.0, 28.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#008000').withAlpha(0.6), // 纯绿色
+        stroke: Cesium.Color.fromCssColorString('#006400'),
+      }
+    },
+    {
+      text: '高原植被',
+      position: Cesium.Cartesian3.fromDegrees(...[92.0, 32.0]),
+      fontSize: 14,
+      labelOptions: {
+        ...labelConfig,
+        fill: Cesium.Color.fromCssColorString('#969696ff').withAlpha(0.6), // 淡绿色
+        stroke: Cesium.Color.fromCssColorString('#7CFC00'),
+      }
+    }
+  ]
+
+  drawGeometry(checked, chinaPlantDistributionRef, '/data/china/china-plant-distribution.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.BLACK.withAlpha(0),
+      strokeWidth: 0,
+      fill: Cesium.Color.WHITE.withAlpha(0),
+    },
+    entities: {
+      texts: texts
+    },
+    callbacks: {
+      loadedDataCallback(data, dataSource) {
+        // 获取所有唯一的名称
+        /*         const uniqueNames = [...new Set(data.features.map((feature: any) => feature.properties.name))] */
+
+        chinaPlantDistributionRef.current.forEach(entity => {
+          const climateType = entity.name
+          const colorScheme = texts.find(item => item.text === climateType)
+
+          if (climateType && colorScheme) {
+
+            if (entity.polygon) {
+              // @ts-ignore
+              entity.polygon.material = colorScheme.labelOptions.fill!
+              // @ts-ignore
+              entity.polygon.outline = false
+              // @ts-ignore
+              entity.polygon.outlineColor = colorScheme.labelOptions.stroke
+              // @ts-ignore
+              entity.polygon.outlineWidth = 0
+            }
+          }
+        })
+      },
+    }
+  }, viewerRef)
 }
 
 /** @description  三江并流 */
@@ -1156,71 +1142,46 @@ export const drawBoshulaling = (
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   boshulalingRef: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(98.85494471, 27.62975211, 1656506.3),
+    cameraFlyTo(98.85494471, 27.62975211, 1656506.3, {
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5705000185647013,
         roll: 0,
       },
-    })
-
-    if (boshulalingRef.current?.length) {
-      boshulalingRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/boshulaling-gaoligongshan.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
-            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            boshulalingRef.current = dataSource.entities.values
-
-            boshulalingRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(97.34634157900587, 29.0430861127563),
-                label: {
-                  text: '伯舒拉岭',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-            /* viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(98.29562051, 28.14677066, 3036.39),
-                orientation: {
-                    heading: 6.16180360604343,
-                    pitch: -0.5573008123218886,
-                    roll: 6.283169868518325
-                }
-            }); */
-            boshulalingRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(98.37378003814831, 26.79269786960716),
-                label: {
-                  text: '高黎贡山',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    boshulalingRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, boshulalingRef, '/data/hengduan-mountains/boshulaling-gaoligongshan.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+      fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+      strokeWidth: 2,
+    },
+    entities: {
+      texts: [
+        {
+          text: '高黎贡山',
+          position: Cesium.Cartesian3.fromDegrees(98.37378003814831, 26.79269786960716),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        },
+        {
+          text: '伯舒拉岭',
+          position: Cesium.Cartesian3.fromDegrees(97.34634157900587, 29.0430861127563),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 他念他翁山-怒山 */
@@ -1296,64 +1257,46 @@ export const drawMangkangshan = (
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   mangkangshanRef: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.0),
+    cameraFlyTo(99.13110646, 29.56595366, 1887923.0, {
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5703899551321632,
         roll: 0,
       },
-    })
-
-    if (mangkangshanRef.current?.length) {
-      mangkangshanRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/mangkangshan-yunling.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
-            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            mangkangshanRef.current = dataSource.entities.values
-
-            mangkangshanRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(98.40665629320692, 30.489661468408304),
-                label: {
-                  text: '芒康山',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-
-            mangkangshanRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.40211213896258, 26.80612247599627),
-                label: {
-                  text: '云岭',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    mangkangshanRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, mangkangshanRef, '/data/hengduan-mountains/mangkangshan-yunling.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+      fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+      strokeWidth: 2,
+    },
+    entities: {
+      texts: [
+        {
+          text: '芒康山',
+          position: Cesium.Cartesian3.fromDegrees(98.40665629320692, 30.489661468408304),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        },
+        {
+          text: '云岭',
+          position: Cesium.Cartesian3.fromDegrees(99.40211213896258, 26.80612247599627),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        }
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 沙鲁里山 */
@@ -1362,296 +1305,200 @@ export const drawShalulishan = (
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   shalulishanRef: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.0),
+    cameraFlyTo(99.13110646, 29.56595366, 1887923.0, {
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5703899551321632,
         roll: 0,
       },
-    })
-
-    if (shalulishanRef.current?.length) {
-      shalulishanRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/shalulishan.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
-            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            shalulishanRef.current = dataSource.entities.values
-
-            shalulishanRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(99.50471900227845, 31.08962223183079),
-                label: {
-                  text: '沙鲁里山',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    shalulishanRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, shalulishanRef, '/data/hengduan-mountains/shalulishan.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+      fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+      strokeWidth: 2,
+    },
+    entities: {
+      texts: [
+        {
+          text: '沙鲁里山',
+          position: Cesium.Cartesian3.fromDegrees(99.50471900227845, 31.08962223183079),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        },
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description 大雪山 */
 export const drawDaxueshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, daxueshanRef: React.RefObject<Cesium.Entity[]>) => {
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(99.13110646, 29.56595366, 1887923.0),
+    cameraFlyTo(99.13110646, 29.56595366, 1887923.0, {
       orientation: {
         heading: 6.283185307179583,
         pitch: -1.5703899551321632,
         roll: 0,
       },
-    })
-
-    if (daxueshanRef.current?.length) {
-      daxueshanRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/daxueshan.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
-            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            daxueshanRef.current = dataSource.entities.values
-
-            daxueshanRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(101.36515981045625, 31.574323857583252),
-                label: {
-                  text: '大雪山',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    daxueshanRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, daxueshanRef, '/data/hengduan-mountains/daxueshan.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+      fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+      strokeWidth: 2,
+    },
+    entities: {
+      texts: [
+        {
+          text: '大雪山',
+          position: Cesium.Cartesian3.fromDegrees(101.36515981045625, 31.574323857583252),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        },
+      ]
+    }
+  }, viewerRef)
 }
 
-/** @description 大雪山 */
+/** @description 邛崃山 */
 export const drawQionglaishan = (
   checked: boolean,
   viewerRef: React.RefObject<Cesium.Viewer | null>,
   qionglaishan: React.RefObject<Cesium.Entity[]>
 ) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(104.47583212, 31.42273029, 1888526.93),
+    cameraFlyTo(104.47583212, 31.42273029, 1888526.93, {
       orientation: {
         heading: 6.283185307179582,
         pitch: -1.5702841970739416,
         roll: 0,
       },
-    })
-
-    if (qionglaishan.current?.length) {
-      qionglaishan.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/qionglaishan.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
-            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            qionglaishan.current = dataSource.entities.values
-
-            qionglaishan.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(102.80395867428174, 32.28643306644907),
-                label: {
-                  text: '邛崃山',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    qionglaishan.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, qionglaishan, '/data/hengduan-mountains/qionglaishan.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+      fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+      strokeWidth: 2,
+    },
+    entities: {
+      texts: [
+        {
+          text: '邛崃山',
+          position: Cesium.Cartesian3.fromDegrees(102.80395867428174, 32.28643306644907),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        },
+      ]
+    }
+  }, viewerRef)
 }
 
-/** @description 大雪山 */
+/** @description 岷山 */
 export const drawMinshan = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, minshanRef: React.RefObject<Cesium.Entity[]>) => {
+
   if (checked) {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(107.18146906, 31.3145703, 3528324.44),
+    cameraFlyTo(107.18146906, 31.3145703, 3528324.44, {
       orientation: {
         heading: 6.283185307179586,
         pitch: -1.5705239714367836,
         roll: 0,
       },
-    })
-
-    if (minshanRef.current?.length) {
-      minshanRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/minshan.geojson')
-        .then(res => res.json())
-        .then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            stroke: Cesium.Color.fromCssColorString('#43e479ff'),
-            fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
-            strokeWidth: 2,
-            markerSymbol: 'circle',
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            minshanRef.current = dataSource.entities.values
-
-            minshanRef.current.push(
-              viewerRef.current!.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(104.0434617314983, 32.7493986221671),
-                label: {
-                  text: '岷山',
-                  font: '20px sans-serif',
-                  ...labelConfig,
-                  fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
-                },
-              })
-            )
-          })
-        })
-    }
-  } else {
-    minshanRef.current!.forEach(item => {
-      item.show = false
-    })
+    }, viewerRef)
   }
+
+  drawGeometry(checked, minshanRef, '/data/hengduan-mountains/minshan.geojson', {
+    geoOptions: {
+      stroke: Cesium.Color.fromCssColorString('#43e479ff'),
+      fill: Cesium.Color.fromCssColorString('#43e479ff').withAlpha(0.8),
+      strokeWidth: 2,
+    },
+    entities: {
+      texts: [
+        {
+          text: '岷山',
+          position: Cesium.Cartesian3.fromDegrees(104.0434617314983, 32.7493986221671),
+          fontSize: 20,
+          labelOptions: {
+            ...labelConfig,
+            fillColor: Cesium.Color.fromCssColorString('#43e479ff'),
+          }
+        },
+      ]
+    }
+  }, viewerRef)
 }
 
 /** @description  垂直自然区 */
 export const drawVerticalNatureArea = (checked: boolean, viewerRef: React.RefObject<Cesium.Viewer | null>, verticalNatureAreaRef: React.RefObject<Cesium.Entity[]>) => {
 
   if (checked) {
-
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(101.66628020, 29.47521623, 23637.14),
+    cameraFlyTo(101.66628020, 29.47521623, 23637.14, {
       orientation: {
         heading: 1.0086921425934001,
         pitch: -0.8111771661888083,
         roll: 3.091986808811953e-7
       }
-    });
-    if (verticalNatureAreaRef.current?.length) {
-      verticalNatureAreaRef.current.forEach(item => {
-        item.show = true
-      })
-    } else {
-      fetch(window.$$prefix + '/data/hengduan-mountains/vertical-nature-area.geojson')
-        .then(res => res.json())
-        .then(data => {
+    }, viewerRef)
 
-          data.features.forEach((item: any) => {
-            const parmas = {
-              features: [] as any,
-              type: 'FeatureCollection',
-            }
-            parmas.features.push(item)
+  }
 
-            // 添加标注this.generateParticles() this.intervalTimer = setInte
+  drawGeometry(checked, verticalNatureAreaRef, '/data/hengduan-mountains/vertical-nature-area.geojson', {
 
-            Cesium.GeoJsonDataSource.load(parmas, {
-              stroke: Cesium.Color.fromCssColorString(item.properties.color),
-              fill: Cesium.Color.fromCssColorString(item.properties.color).withAlpha(0.5),
-              strokeWidth: 2,
-              markerSymbol: 'circle',
-              clampToGround: true,
-            }).then(function (dataSource) {
-              viewerRef.current!.dataSources.add(dataSource)
+    callbacks: {
+      useFetchOnlyCallback(data) {
+        data.features.forEach((item: any) => {
+          const parmas = {
+            features: [] as any,
+            type: 'FeatureCollection',
+          }
+          parmas.features.push(item)
 
-              verticalNatureAreaRef.current.push(...dataSource.entities.values)
+          Cesium.GeoJsonDataSource.load(parmas, {
+            stroke: Cesium.Color.fromCssColorString(item.properties.color),
+            fill: Cesium.Color.fromCssColorString(item.properties.color).withAlpha(0.5),
+            strokeWidth: 2,
+            markerSymbol: 'circle',
+            clampToGround: true,
+          }).then(function (dataSource) {
+            viewerRef.current!.dataSources.add(dataSource)
 
-              verticalNatureAreaRef.current.push(
-                viewerRef.current!.entities.add({
-                  position: Cesium.Cartesian3.fromDegrees(item.geometry.coordinates[0][0][0], item.geometry.coordinates[0][0][1]),
-                  label: {
-                    text: item.properties.name,
-                    font: '20px sans-serif',
-                    ...labelConfig,
-                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-                  }
-                })
-              )
-            })
+            verticalNatureAreaRef.current.push(...dataSource.entities.values)
+
+            verticalNatureAreaRef.current.push(
+              viewerRef.current!.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(item.geometry.coordinates[0][0][0], item.geometry.coordinates[0][0][1]),
+                label: {
+                  text: item.properties.name,
+                  font: '20px sans-serif',
+                  ...labelConfig,
+                  heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                }
+              })
+            )
           })
         })
-    }
-  } else {
-    verticalNatureAreaRef.current!.forEach(item => {
-      item.show = false
-    })
-  }
-}
-
-/** @description 贡嘎山垂直自然带 */
-export const showVerticalNatureAreaDetails = (value: boolean, notificationApi: NotificationInstance) => {
-  notificationApi.destroy()
-  if (value) {
-    notificationApi.info({
-      message: `贡嘎山垂直自然带`,
-      style: {
-        width: 600
       },
-      description: (
-        <div style={{ height: 600 }}>
-          <img src={VerticalNatureArea} alt="" style={{ display: 'block', width: '100%', height: '100%' }} />
-        </div>
-      ),
-      placement: 'bottomLeft',
-      duration: null,
-    })
-  } else {
-    notificationApi.destroy()
-  }
+    }
+  }, viewerRef)
 }
-
-
-
 
 const researchLinePositionTextStyle = {
   container: {
@@ -2192,7 +2039,6 @@ export const TigerLeapingGorge = () => {
     </div>
   </>
 }
-
 
 export const GonggaMountain = () => {
   const styles = researchLinePositionTextStyle
