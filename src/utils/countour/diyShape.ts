@@ -257,7 +257,7 @@ class DiyShape {
   }
 
   private createPoint(worldPosition: Cesium.Cartesian3, boolPoint: boolean): Cesium.Entity {
-    const _size = boolPoint ? 30 : 5
+    const _size = boolPoint ? 10 : 5
 
     return this.viewer.entities.add({
       position: worldPosition,

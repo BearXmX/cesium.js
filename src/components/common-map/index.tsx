@@ -1,7 +1,18 @@
-import { Spin } from "antd";
-import * as Cesium from "cesium";
-import React, { useEffect, useImperativeHandle, useState } from "react";
-import { useRef } from "react";
+import { Spin } from 'antd'
+import * as Cesium from 'cesium'
+import React, { useEffect, useImperativeHandle, useState } from 'react'
+import { useRef } from 'react'
+import DrawAreaCountourIcon from '@/assets/draw-area-countour-icon.svg'
+import DrawMultipleShapeIcon from '@/assets/draw-multiple-shape-icon.svg'
+import DrawLineShapeIcon from '@/assets/draw-line-shape-icon.svg'
+import DrawMeasureDistanceIcon from '@/assets/draw-measure-distance-icon.svg'
+import DrawProfileAnalysisIcon from '@/assets/draw-profile-analysis-icon.svg'
+
+import DrawCountour from '@/utils/countour'
+import MultipleShape from '@/utils/plugins/draw-multiple-shape'
+import LineShape from '@/utils/plugins/draw-line-shape'
+import MeasureDistance from '@/utils/plugins/draw-measure-distance'
+import ProfileAnalysis from '@/utils/plugins/draw-profile-analysis'
 
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
@@ -14,20 +25,19 @@ export type CommonMapInstanceType = {
 }
 
 const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((props, instance) => {
-
   const { terrainInitCallback } = props
 
   const [loading, setLoading] = useState<boolean>(true)
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const viewerRef = useRef<Cesium.Viewer | null>(null);
+  const viewerRef = useRef<Cesium.Viewer | null>(null)
 
   useImperativeHandle(instance, () => {
     return {
       getViewer() {
         return viewerRef.current!
-      }
+      },
     }
   })
 
@@ -65,52 +75,33 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
   }
 
   const initClickHandler = (viewer: Cesium.Viewer) => {
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
 
-    handler.setInputAction((movement: { position: Cesium.Cartesian2; }) => {
+    handler.setInputAction((movement: { position: Cesium.Cartesian2 }) => {
       // 拾取椭球面上的点
-      const cartesian = viewer.camera.pickEllipsoid(
-        movement.position,
-        viewer.scene.globe.ellipsoid
-      );
-      if (!cartesian) return;
+      const cartesian = viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid)
+      if (!cartesian) return
 
       // 转换为经纬度
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-      const lon = Cesium.Math.toDegrees(cartographic.longitude);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude);
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+      const lon = Cesium.Math.toDegrees(cartographic.longitude)
+      const lat = Cesium.Math.toDegrees(cartographic.latitude)
 
       // 获取当前相机大致层级
-      const zoom = Math.round(
-        Math.log2(
-          (2 * Math.PI * 6378137) /
-          viewer.camera.getMagnitude()
-        )
-      );
+      const zoom = Math.round(Math.log2((2 * Math.PI * 6378137) / viewer.camera.getMagnitude()))
 
       // 经纬度 → XYZ 瓦片坐标
-      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
-      const y = Math.floor(
-        ((1 -
-          Math.log(
-            Math.tan((lat * Math.PI) / 180) +
-            1 / Math.cos((lat * Math.PI) / 180)
-          ) /
-          Math.PI) /
-          2) *
-        Math.pow(2, zoom)
-      );
+      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))
+      const y = Math.floor(((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * Math.pow(2, zoom))
 
-      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`);
-
+      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`)
 
       getCameraParams(viewerRef)
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
-
   const init = () => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN;
+    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN
 
     const viewer = new Cesium.Viewer(containerRef.current!, {
       infoBox: false,
@@ -122,29 +113,26 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       animation: false,
       timeline: false,
       fullscreenButton: false,
-    });
+    })
 
-    viewer.scene.globe.showGroundAtmosphere = false;
+    viewer.scene.globe.showGroundAtmosphere = false
+    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
-    (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = "none";
+    viewerRef.current = viewer
 
-    viewerRef.current = viewer;
-
-    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true }).then(
-      async (terrain) => {
-        viewer.terrainProvider = terrain;
+    Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true })
+      .then(async terrain => {
+        viewer.terrainProvider = terrain
         setLoading(false)
         if (typeof terrainInitCallback === 'function') {
           terrainInitCallback()
         }
-      }
-    ).finally(() => {
-      setLoading(false)
-    });
+      })
+      .finally(() => {
+        setLoading(false)
+      })
 
     initClickHandler(viewer)
-
-    viewerRef.current = viewer;
   }
 
   useEffect(() => {
@@ -155,30 +143,77 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     }
   }, [])
 
+  const tools = [
+    /*     {
+      icon: DrawAreaCountourIcon,
+      title: '区域等高线',
+      onclick: () => {
+        const drawer = DrawCountour.drawDiyShapeCountour(viewerRef.current!, {})
+      },
+    }, */
+    {
+      icon: DrawMultipleShapeIcon,
+      title: '绘制区域',
+      onclick: () => {
+        const drawer = new MultipleShape(viewerRef.current!)
+      },
+    },
+    {
+      icon: DrawLineShapeIcon,
+      title: '绘制线段',
+      onclick: () => {
+        const drawer = new LineShape(viewerRef.current!)
+      },
+    },
+    {
+      icon: DrawMeasureDistanceIcon,
+      title: '测距工具',
+      onclick: () => {
+        const drawer = new MeasureDistance(viewerRef.current!)
+      },
+    },
+    {
+      icon: DrawProfileAnalysisIcon,
+      title: '剖面分析',
+      onclick: () => {
+        const drawer = new ProfileAnalysis(viewerRef.current!)
+      },
+    },
+  ]
+
   return (
     <>
-      {
-        loading && <div className="canvas-container-loading" style={{
-          position: 'fixed',
-          width: '100vw',
-          height: '100vh',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 999999999,
-          background: '#000'
-        }}>
+      {loading && (
+        <div
+          className="canvas-container-loading"
+          style={{
+            position: 'fixed',
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 999999999,
+            background: '#000',
+          }}
+        >
           <Spin spinning={true} tip={<div style={{ width: 200, transform: 'translateX(-50%)' }}>加载中...</div>}>
             <></>
           </Spin>
         </div>
-      }
+      )}
       <div className="canvas-container" style={props.containerStyle}>
         <div className="canvas-container-body" ref={containerRef} />
       </div>
+      <div className="map-diy-tools-container">
+        {tools.map(item => (
+          <div className="map-diy-tools-item" key={item.title} onClick={item.onclick} title={item.title}>
+            <img src={item.icon} alt="" />
+          </div>
+        ))}
+      </div>
     </>
-
-  );
+  )
 })
 
-export default CommonMap;
+export default CommonMap
