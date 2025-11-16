@@ -144,13 +144,13 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
   }, [])
 
   const tools = [
-    /*     {
+    {
       icon: DrawAreaCountourIcon,
       title: '区域等高线',
       onclick: () => {
         const drawer = DrawCountour.drawDiyShapeCountour(viewerRef.current!, {})
       },
-    }, */
+    },
     {
       icon: DrawMultipleShapeIcon,
       title: '绘制区域',

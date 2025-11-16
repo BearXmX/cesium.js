@@ -40,7 +40,7 @@ class ProfileAnalysis {
 
   totalDistanceLabelEntity: Cesium.Entity | null = null
 
-  profileAnalysisPointPosition: { lon: number; lat: number; height: number }[] = []
+  profileAnalysisPointPosition: Cesium.Cartesian3[] = []
 
   constructor(viewer: Cesium.Viewer) {
     this.viewer = viewer
@@ -135,7 +135,7 @@ class ProfileAnalysis {
     const distanceLabel = this.viewer!.entities.add({
       position: distanceLabelPosition,
       label: {
-        text: `${distance}米`,
+        text: `${this.stringDistance(distance)}米`,
         font: '12px sans-serif',
         ...pointLabelStyle,
       },
@@ -145,7 +145,9 @@ class ProfileAnalysis {
 
     this.totalDistance += distance
 
-    const totalText = `总距离：${this.totalDistance}米`
+    this.totalDistance = this.totalDistance
+
+    const totalText = `总距离：${this.stringDistance(this.totalDistance)}米`
 
     if (this.fixedPositions.length >= 2) {
       if (!this.totalDistanceLabelEntity) {
@@ -196,6 +198,10 @@ class ProfileAnalysis {
         ...pointLabelStyle,
         pixelOffset: new Cesium.Cartesian2(0, -30),
         backgroundPadding: new Cesium.Cartesian2(6, 4),
+        backgroundColor: Cesium.Color.WHITE,
+        fillColor: Cesium.Color.BLACK,
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 3,
       },
     })
   }
@@ -278,52 +284,23 @@ class ProfileAnalysis {
       },
     })
 
+    let prepareProfileAnalysisPointPosition = [] as Cesium.Cartesian3[]
+
     for (let i = 0; i < this.fixedPositions.length; i++) {
       if (i !== this.fixedPositions.length - 1) {
-        const segements = this.interpolateBetweenPoints(this.fixedPositions[i], this.fixedPositions[i + 1], 1)
+        const segements = this.interpolateBetweenPoints(this.fixedPositions[i], this.fixedPositions[i + 1], 2)
 
         const segmentPositions = []
+
+        // 第一个点位
+        if (i === 0) {
+          segmentPositions.unshift(this.fixedPositions[0])
+        }
+
         // 转换成经纬度
         for (let j = 0; j < segements.length; j++) {
-          const cartographic = Cesium.Cartographic.fromCartesian(segements[j])
-          const lon = Cesium.Math.toDegrees(cartographic.longitude)
-          const lat = Cesium.Math.toDegrees(cartographic.latitude)
-          const height = cartographic.height
-          segmentPositions.push({
-            lon,
-            lat,
-            height,
-          })
-        }
+          segmentPositions.push(segements[j])
 
-        if (i === 0) {
-          const startLon = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(this.fixedPositions[i]).longitude)
-          const startLat = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(this.fixedPositions[i]).latitude)
-          const startHeight = Cesium.Cartographic.fromCartesian(this.fixedPositions[i]).height
-
-          segmentPositions.unshift({
-            lon: startLon,
-            lat: startLat,
-            height: startHeight,
-          })
-        }
-
-        const endLon = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(this.fixedPositions[i + 1]).longitude)
-        const endLat = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(this.fixedPositions[i + 1]).latitude)
-        const endHeight = Cesium.Cartographic.fromCartesian(this.fixedPositions[i + 1]).height
-
-        segmentPositions.push({
-          lon: endLon,
-          lat: endLat,
-          height: endHeight,
-        })
-
-        this.profileAnalysisPointPosition = [...this.profileAnalysisPointPosition, ...segmentPositions]
-
-        console.log('所有剖面分析点位', this.profileAnalysisPointPosition)
-
-        // 用segmentPositions创建点
-        for (let j = 0; j < segements.length; j++) {
           this.viewer!.entities.add({
             position: segements[j],
             point: {
@@ -336,10 +313,45 @@ class ProfileAnalysis {
             },
           })
         }
+
+        segmentPositions.push(this.fixedPositions[i + 1])
+
+        prepareProfileAnalysisPointPosition = [...prepareProfileAnalysisPointPosition, ...segmentPositions]
       }
     }
 
+    this.computeDistanceFromStart(prepareProfileAnalysisPointPosition as Cesium.Cartesian3[])
+
     this.stop()
+  }
+
+  /** @description 计算与起点之间的距离 */
+  computeDistanceFromStart(positions: Cesium.Cartesian3[]) {
+    const nextPositions = positions.map((item, index) => {
+      const left = index == 0 ? item : positions[index - 1]
+
+      const distance = Cesium.Cartesian3.distance(left, item)
+
+      const total = distance
+
+      return {
+        ...item,
+        distanceFromLeft: index === 0 ? 0 : total,
+      }
+    })
+
+    const totalPositions = nextPositions.map((item, index) => {
+      return {
+        ...item,
+        distanceFromStart: this.stringDistance(
+          item.distanceFromLeft + nextPositions.slice(0, index).reduce((acc, cur) => acc + cur.distanceFromLeft, 0)
+        ),
+      }
+    })
+
+    console.log('totalDistance', this.totalDistance)
+
+    console.log('totalPositions', totalPositions)
   }
 
   /**
@@ -370,7 +382,15 @@ class ProfileAnalysis {
 
     totalLength += distance
 
-    return Math.floor(totalLength)
+    return totalLength
+  }
+
+  stringDistance(distance: number) {
+    const arr = distance.toString().split('.')
+
+    const [int, float = ''] = arr
+
+    return Number(int) === 0 ? '0' : int + '.' + float.slice(0, 1)
   }
 
   stop() {
