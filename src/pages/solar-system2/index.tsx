@@ -12,12 +12,16 @@ const solarTerms = [
   { name: '冬至', angle: (-Math.PI * 3) / 2, directLat: -obliquityRad },
 ]
 
+export const latitudePositionInit = 40 // 北京纬度
+export const longitudePositionInit = 120 // 北京经度
+
 type SolarPropsType = {}
-
-
 
 const Solar: React.FC<SolarPropsType> = (props) => {
   const { } = props
+
+  // 新增：时间显示相关ref
+  const timeDisplayRef = useRef<HTMLDivElement>(null)
 
   // 核心ref（保留）
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -49,7 +53,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
     positionPercent: 0,
     angle: 0,
     lastTime: 0,
-    period: 5,
+    period: 5, // 自转周期5秒（对应现实24小时）
   })
 
   const cameraParams = useRef({
@@ -69,8 +73,52 @@ const Solar: React.FC<SolarPropsType> = (props) => {
     return -(percent / 100) * 2 * Math.PI
   }
 
+  // 替换：最终版时间计算函数（修复夏至日时间错误）
+  const calculateBeijingTime = (rotationAngle: number, revolutionAngle: number) => {
+    // 1. 自转带来的晨线偏移（保留正确逻辑）
+    const rotationDeg = -(rotationAngle / (2 * Math.PI)) * 360;
+
+    // 核心修复：适配公转角度递减（0→-π/2→-π），让晨线正确西移（夏至日）
+    // 原逻辑：revolutionDeg = (revolutionAngle / (2 * Math.PI)) * 360;
+    // 新逻辑：加负号，将递减的公转角度转为递增的晨线偏移
+    const revolutionDeg = (-revolutionAngle / (2 * Math.PI)) * 360;
+
+    // 2. 晨线当前实际经度（初始90°E + 公转偏移 + 自转偏移，归一化到0~360°）
+    const morningLineLon = (90 + revolutionDeg + rotationDeg + 360) % 360;
+
+    // 3. 东八区中央经线（120°E）计算严格北京时间
+    const beijingTimeZoneLon = 120;
+    let lonDiff = beijingTimeZoneLon - morningLineLon;
+    lonDiff = lonDiff < 0 ? lonDiff + 360 : lonDiff; // 确保经度差为正（向东）
+
+    // 4. 时间计算（晨线=6点，15°=1小时，向东加时间）
+    const baseHours = 6;
+    const hoursFromLon = lonDiff / 15;
+    let totalHours = (baseHours + hoursFromLon) % 24;
+    totalHours = totalHours < 0 ? totalHours + 24 : totalHours;
+
+    // 5. 格式化显示
+    const hours = Math.floor(totalHours).toString().padStart(2, '0');
+    const minutes = Math.floor((totalHours - Math.floor(totalHours)) * 60).toString().padStart(2, '0');
+    const seconds = Math.floor(((totalHours - Math.floor(totalHours)) * 60 - Math.floor((totalHours - Math.floor(totalHours)) * 60)) * 60).toString().padStart(2, '0');
+
+    return `${hours}:${minutes}:${seconds}`;
+  };
+
   const init = () => {
     if (!canvasRef.current) return () => { }
+
+    // 新增：创建时间显示元素
+    const timeDisplay = document.createElement('div')
+    timeDisplay.style.position = 'absolute'
+    timeDisplay.style.bottom = '20px'
+    timeDisplay.style.left = '20px'
+    timeDisplay.style.color = 'white'
+    timeDisplay.style.fontSize = '24px'
+    timeDisplay.style.zIndex = '100'
+    timeDisplay.textContent = '北京时间: 00:00:00'
+    canvasRef.current.parentElement?.appendChild(timeDisplay)
+    timeDisplayRef.current = timeDisplay
 
     // 1. 渲染器（保留）
     const renderer = new THREE.WebGLRenderer({
@@ -120,7 +168,6 @@ const Solar: React.FC<SolarPropsType> = (props) => {
 
     mainCamera.lookAt(0, 0, 5)
     cameraRef.current = mainCamera
-
 
     const observeEarthMorningLineCamera = createCamera([80, canvasRef.current!.clientWidth / canvasRef.current!.clientHeight, 0.1, 300], [0, 0, 0], '观察地球晨线相机', scene)
     const observeEarthNightLineCamera = createCamera([80, canvasRef.current!.clientWidth / canvasRef.current!.clientHeight, 0.1, 300], [0, 0, 0], '观察地球昏线相机', scene)
@@ -351,7 +398,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
       })
     rotationFolder.open()
 
-    // 9. 动画循环（新增晨昏线更新）
+    // 9. 动画循环（新增时间更新）
     const animate = (time: number) => {
       animationIdRef.current = requestAnimationFrame(animate)
       if (!scene || !mainCamera || !renderer) return
@@ -359,8 +406,6 @@ const Solar: React.FC<SolarPropsType> = (props) => {
       const deltaTime = (time - revolutionParams.current.lastTime) / 1000
       revolutionParams.current.lastTime = time
       rotationParams.current.lastTime = time
-
-
 
       // 公转逻辑（保留）
       if (revolutionParams.current.isRevolution && earthGroupRef.current) {
@@ -378,11 +423,9 @@ const Solar: React.FC<SolarPropsType> = (props) => {
         earthGroupRef.current.position.set(...earthPos)
 
         revolutionPercentControl.updateDisplay()
-
-
       }
 
-      // 自转逻辑（新增：同步更新晨昏线）
+      // 自转逻辑（新增时间计算）
       if (rotationParams.current.isRotation && earthRef.current) {
         const rotationIncrement = (2 * Math.PI / rotationParams.current.period) * deltaTime
         rotationParams.current.angle = (rotationParams.current.angle + rotationIncrement) % (2 * Math.PI)
@@ -390,6 +433,14 @@ const Solar: React.FC<SolarPropsType> = (props) => {
         earthRef.current.rotation.y = rotationParams.current.angle
 
         rotationPercentControls.updateDisplay()
+      }
+      // 时间更新：传入自转角度+公转角度，共同计算晨线位置
+      if (timeDisplayRef.current) {
+        const beijingTime = calculateBeijingTime(
+          rotationParams.current.angle,
+          revolutionParams.current.angle // 新增：传入公转角度，修正晨线位置
+        );
+        timeDisplayRef.current.textContent = `北京时间: ${beijingTime}`;
       }
 
       updateObserveEarthCamera(observeEarthMorningLineCamera, revolutionParams.current.angle, -Math.PI / 10, 1)
@@ -406,6 +457,8 @@ const Solar: React.FC<SolarPropsType> = (props) => {
       cancelAnimationFrame(animationIdRef.current)
       renderer.dispose()
       guiRef.current?.destroy()
+      // 新增：移除时间显示元素
+      timeDisplayRef.current?.remove()
     }
   }
 

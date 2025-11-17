@@ -6,6 +6,9 @@ export const obliquity = 23.44 // 度
 export const obliquityRad = THREE.MathUtils.degToRad(obliquity) // 弧度制黄赤交角
 export const earthRadius = 2
 
+export const latitudePositionInit = 40 // 北京纬度
+export const longitudePositionInit = 116 // 北京经度
+
 // 节气配置（包含直射纬度）
 export const solarTerms = [
   { name: '春分', angle: 0, directLat: 0 }, // 春分：右侧（0°）
