@@ -14,6 +14,20 @@ const pointLabelStyle = {
   disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
+export type pointMetaType = {
+  longitude: number
+  latitude: number
+  height: number
+  distanceFromPrev: number
+  distanceFromPrevTostring: string
+  distanceFromStart: number
+  distanceFromStartTostring: string
+}
+
+type options = {
+  onLoadData?: (data: pointMetaType[]) => void
+}
+
 class ProfileAnalysis {
   viewer: Cesium.Viewer | null = null
   handler: Cesium.ScreenSpaceEventHandler | null = null
@@ -40,10 +54,17 @@ class ProfileAnalysis {
 
   totalDistanceLabelEntity: Cesium.Entity | null = null
 
-  profileAnalysisPointPosition: Cesium.Cartesian3[] = []
+  profileAnalysisPointPosition: pointMetaType[] = []
 
-  constructor(viewer: Cesium.Viewer) {
+  options: options = {
+    onLoadData: (data: pointMetaType[]) => {},
+  }
+
+  constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
+
+    this.options = options! || {}
+
     this.start()
   }
 
@@ -325,33 +346,55 @@ class ProfileAnalysis {
     this.stop()
   }
 
-  /** @description 计算与起点之间的距离 */
-  computeDistanceFromStart(positions: Cesium.Cartesian3[]) {
-    const nextPositions = positions.map((item, index) => {
-      const left = index == 0 ? item : positions[index - 1]
+  /** @description 计算与起点之间的距离（带真实海拔） */
+  async computeDistanceFromStart(positions: Cesium.Cartesian3[]) {
+    // 1. 将 Cartesian 转成 Cartographic（后面用来查真实高度）
+    const cartos = positions.map(p => Cesium.Cartographic.fromCartesian(p))
 
-      const distance = Cesium.Cartesian3.distance(left, item)
+    // 2. 从地形中获取真实海拔（关键）
+    const terrainCartos = await Cesium.sampleTerrainMostDetailed(this.viewer!.terrainProvider, cartos)
 
+    // 3. 使用带真实海拔的 cartographic 继续你的逻辑
+    const nextPositions = terrainCartos.map((cartographic, index) => {
+      const left = index == 0 ? positions[index] : positions[index - 1]
+
+      // 仍用 Cartesian3.distance（不修改）
+      const distance = Cesium.Cartesian3.distance(left, positions[index])
       const total = distance
+      const distanceFromPrev = index === 0 ? 0 : total
+
+      // ---------- 关键：使用真实海拔 ----------
+      const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+      const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+      const height = cartographic.height // ← 这里现在是真实地形海拔
 
       return {
-        ...item,
-        distanceFromLeft: index === 0 ? 0 : total,
+        longitude,
+        latitude,
+        height,
+        distanceFromPrev,
+        distanceFromPrevTostring: this.stringDistance(distanceFromPrev),
       }
     })
 
     const totalPositions = nextPositions.map((item, index) => {
+      const distanceFromStart = item.distanceFromPrev + nextPositions.slice(0, index).reduce((acc, cur) => acc + cur.distanceFromPrev, 0)
+
       return {
         ...item,
-        distanceFromStart: this.stringDistance(
-          item.distanceFromLeft + nextPositions.slice(0, index).reduce((acc, cur) => acc + cur.distanceFromLeft, 0)
-        ),
+        distanceFromStart,
+        distanceFromStartTostring: this.stringDistance(distanceFromStart),
       }
     })
 
     console.log('totalDistance', this.totalDistance)
-
     console.log('totalPositions', totalPositions)
+
+    this.profileAnalysisPointPosition = totalPositions
+
+    if (typeof this.options.onLoadData === 'function') {
+      this.options.onLoadData(totalPositions)
+    }
   }
 
   /**
@@ -390,7 +433,7 @@ class ProfileAnalysis {
 
     const [int, float = ''] = arr
 
-    return Number(int) === 0 ? '0' : int + '.' + float.slice(0, 1)
+    return Number(int) === 0 ? '0' : int + '.' + float.slice(0, 2)
   }
 
   stop() {

@@ -12,7 +12,7 @@ import DrawCountour from '@/utils/countour'
 import MultipleShape from '@/utils/plugins/draw-multiple-shape'
 import LineShape from '@/utils/plugins/draw-line-shape'
 import MeasureDistance from '@/utils/plugins/draw-measure-distance'
-import ProfileAnalysis from '@/utils/plugins/draw-profile-analysis'
+import ProfileAnalysis, { type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
 
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
@@ -42,11 +42,13 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
   })
 
   /** @description 获取当前相机参数 */
-  const getCameraParams = (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
+  const getCameraParams = async (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
     const camera = viewerRef.current!.camera
 
     // 获取相机位置（笛卡尔坐标）
-    const position = camera.position
+    const position = Cesium.Cartographic.fromCartesian(camera.position)
+
+    const terrainCartos = await Cesium.sampleTerrainMostDetailed(viewerRef.current!.terrainProvider, [position])
 
     // 获取方向参数
     const heading = camera.heading
@@ -54,7 +56,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     const roll = camera.roll
 
     // 转换为经纬度
-    const cartographic = Cesium.Cartographic.fromCartesian(position)
+    const cartographic = terrainCartos[0]
     const lon = Cesium.Math.toDegrees(cartographic.longitude)
     const lat = Cesium.Math.toDegrees(cartographic.latitude)
     const height = cartographic.height
@@ -77,15 +79,18 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
   const initClickHandler = (viewer: Cesium.Viewer) => {
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
 
-    handler.setInputAction((movement: { position: Cesium.Cartesian2 }) => {
+    handler.setInputAction(async (movement: { position: Cesium.Cartesian2 }) => {
       // 拾取椭球面上的点
       const cartesian = viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid)
       if (!cartesian) return
 
-      // 转换为经纬度
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+      const terrainCartos = await Cesium.sampleTerrainMostDetailed(viewer!.terrainProvider, [Cesium.Cartographic.fromCartesian(cartesian)])
+
+      const cartographic = terrainCartos[0]
+
       const lon = Cesium.Math.toDegrees(cartographic.longitude)
       const lat = Cesium.Math.toDegrees(cartographic.latitude)
+      const height = cartographic.height
 
       // 获取当前相机大致层级
       const zoom = Math.round(Math.log2((2 * Math.PI * 6378137) / viewer.camera.getMagnitude()))
@@ -94,7 +99,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))
       const y = Math.floor(((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * Math.pow(2, zoom))
 
-      console.log(`lon=${lon}, lat=${lat}, zoom=${zoom}, x=${x}, y=${y}`)
+      console.log(`lon=${lon}, lat=${lat}, height=${height} zoom=${zoom}, x=${x}, y=${y}`)
 
       getCameraParams(viewerRef)
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
@@ -176,7 +181,11 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       icon: DrawProfileAnalysisIcon,
       title: '剖面分析',
       onclick: () => {
-        const drawer = new ProfileAnalysis(viewerRef.current!)
+        const drawer = new ProfileAnalysis(viewerRef.current!, {
+          onLoadData: (data: pointMetaType[]) => {
+            console.log(data)
+          },
+        })
       },
     },
   ]
