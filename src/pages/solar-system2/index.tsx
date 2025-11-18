@@ -81,7 +81,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
     // 核心修复：适配公转角度递减（0→-π/2→-π），让晨线正确西移（夏至日）
     // 原逻辑：revolutionDeg = (revolutionAngle / (2 * Math.PI)) * 360;
     // 新逻辑：加负号，将递减的公转角度转为递增的晨线偏移
-    const revolutionDeg = (-revolutionAngle / (2 * Math.PI)) * 360;
+    const revolutionDeg = (revolutionAngle / (2 * Math.PI)) * 360;
 
     // 2. 晨线当前实际经度（初始90°E + 公转偏移 + 自转偏移，归一化到0~360°）
     const morningLineLon = (90 + revolutionDeg + rotationDeg + 360) % 360;
@@ -139,7 +139,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
     scene.add(stars)
 
     // 环境光（保留）
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.05)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1)
     scene.add(ambientLight)
 
     // 初始化相机（保留）
