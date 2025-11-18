@@ -265,6 +265,7 @@ export const createDebugLatLonSphere = (earthRadius: number, earthGroup: THREE.G
         depthWrite: false,
       })
     )
+    latLine.name = `latitude-item-${latItem.lat}`
 
     // 5. 位置与旋转（匹配你的正确角度）
     latLine.position.set(0, yPosition, zPosition) // 同时设置Y和Z

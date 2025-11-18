@@ -17,8 +17,8 @@ export const longitudePositionInit = 120 // 北京经度
 
 type SolarPropsType = {}
 
-const Solar: React.FC<SolarPropsType> = (props) => {
-  const { } = props
+const Solar: React.FC<SolarPropsType> = props => {
+  const {} = props
 
   // 新增：时间显示相关ref
   const timeDisplayRef = useRef<HTMLDivElement>(null)
@@ -35,7 +35,6 @@ const Solar: React.FC<SolarPropsType> = (props) => {
   const animationIdRef = useRef<number>(0)
   const guiRef = useRef<GUI>(null)
   const terminatorRef = useRef<THREE.Mesh | null>(null)
-
 
   // 公转参数（保留）
   const revolutionParams = useRef({
@@ -57,7 +56,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
   })
 
   const cameraParams = useRef({
-    activeCameraIndex: 0
+    activeCameraIndex: 0,
   })
 
   // 工具函数（保留）
@@ -76,37 +75,41 @@ const Solar: React.FC<SolarPropsType> = (props) => {
   // 替换：最终版时间计算函数（修复夏至日时间错误）
   const calculateBeijingTime = (rotationAngle: number, revolutionAngle: number) => {
     // 1. 自转带来的晨线偏移（保留正确逻辑）
-    const rotationDeg = -(rotationAngle / (2 * Math.PI)) * 360;
+    const rotationDeg = -(rotationAngle / (2 * Math.PI)) * 360
 
     // 核心修复：适配公转角度递减（0→-π/2→-π），让晨线正确西移（夏至日）
     // 原逻辑：revolutionDeg = (revolutionAngle / (2 * Math.PI)) * 360;
     // 新逻辑：加负号，将递减的公转角度转为递增的晨线偏移
-    const revolutionDeg = (revolutionAngle / (2 * Math.PI)) * 360;
+    const revolutionDeg = -(revolutionAngle / (2 * Math.PI)) * 360
 
     // 2. 晨线当前实际经度（初始90°E + 公转偏移 + 自转偏移，归一化到0~360°）
-    const morningLineLon = (90 + revolutionDeg + rotationDeg + 360) % 360;
+    const morningLineLon = (90 + revolutionDeg + rotationDeg + 360) % 360
 
     // 3. 东八区中央经线（120°E）计算严格北京时间
-    const beijingTimeZoneLon = 120;
-    let lonDiff = beijingTimeZoneLon - morningLineLon;
-    lonDiff = lonDiff < 0 ? lonDiff + 360 : lonDiff; // 确保经度差为正（向东）
+    const beijingTimeZoneLon = 120
+    let lonDiff = beijingTimeZoneLon - morningLineLon
+    lonDiff = lonDiff < 0 ? lonDiff + 360 : lonDiff // 确保经度差为正（向东）
 
     // 4. 时间计算（晨线=6点，15°=1小时，向东加时间）
-    const baseHours = 6;
-    const hoursFromLon = lonDiff / 15;
-    let totalHours = (baseHours + hoursFromLon) % 24;
-    totalHours = totalHours < 0 ? totalHours + 24 : totalHours;
+    const baseHours = 6
+    const hoursFromLon = lonDiff / 15
+    let totalHours = (baseHours + hoursFromLon) % 24
+    totalHours = totalHours < 0 ? totalHours + 24 : totalHours
 
     // 5. 格式化显示
-    const hours = Math.floor(totalHours).toString().padStart(2, '0');
-    const minutes = Math.floor((totalHours - Math.floor(totalHours)) * 60).toString().padStart(2, '0');
-    const seconds = Math.floor(((totalHours - Math.floor(totalHours)) * 60 - Math.floor((totalHours - Math.floor(totalHours)) * 60)) * 60).toString().padStart(2, '0');
+    const hours = Math.floor(totalHours).toString().padStart(2, '0')
+    const minutes = Math.floor((totalHours - Math.floor(totalHours)) * 60)
+      .toString()
+      .padStart(2, '0')
+    const seconds = Math.floor(((totalHours - Math.floor(totalHours)) * 60 - Math.floor((totalHours - Math.floor(totalHours)) * 60)) * 60)
+      .toString()
+      .padStart(2, '0')
 
-    return `${hours}:${minutes}:${seconds}`;
-  };
+    return `${hours}:${minutes}:${seconds}`
+  }
 
   const init = () => {
-    if (!canvasRef.current) return () => { }
+    if (!canvasRef.current) return () => {}
 
     // 新增：创建时间显示元素
     const timeDisplay = document.createElement('div')
@@ -116,7 +119,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
     timeDisplay.style.color = 'white'
     timeDisplay.style.fontSize = '24px'
     timeDisplay.style.zIndex = '100'
-    timeDisplay.textContent = '北京时间: 00:00:00'
+    timeDisplay.textContent = '北京时间: 08:00:00'
     canvasRef.current.parentElement?.appendChild(timeDisplay)
     timeDisplayRef.current = timeDisplay
 
@@ -159,24 +162,26 @@ const Solar: React.FC<SolarPropsType> = (props) => {
       return camera
     }
 
-    const mainCamera = createCamera(
-      [75, canvasRef.current.clientWidth / canvasRef.current.clientHeight, 0.1, 1000],
-      [5, 5, 30],
-      '主相机',
-      scene
-    )
+    const mainCamera = createCamera([75, canvasRef.current.clientWidth / canvasRef.current.clientHeight, 0.1, 1000], [5, 5, 30], '主相机', scene)
 
     mainCamera.lookAt(0, 0, 5)
     cameraRef.current = mainCamera
 
-    const observeEarthMorningLineCamera = createCamera([80, canvasRef.current!.clientWidth / canvasRef.current!.clientHeight, 0.1, 300], [0, 0, 0], '观察地球晨线相机', scene)
-    const observeEarthNightLineCamera = createCamera([80, canvasRef.current!.clientWidth / canvasRef.current!.clientHeight, 0.1, 300], [0, 0, 0], '观察地球昏线相机', scene)
+    const observeEarthMorningLineCamera = createCamera(
+      [80, canvasRef.current!.clientWidth / canvasRef.current!.clientHeight, 0.1, 300],
+      [0, 0, 0],
+      '观察地球晨线相机',
+      scene
+    )
+    const observeEarthNightLineCamera = createCamera(
+      [80, canvasRef.current!.clientWidth / canvasRef.current!.clientHeight, 0.1, 300],
+      [0, 0, 0],
+      '观察地球昏线相机',
+      scene
+    )
 
     const updateObserveEarthCamera = (camera: THREE.PerspectiveCamera, angle: number, angleOffset: number, yOffset: number) => {
-      const position = getEarthCenterPos(
-        angle + angleOffset,
-        revolutionParams.current.orbitRadius
-      )
+      const position = getEarthCenterPos(angle + angleOffset, revolutionParams.current.orbitRadius)
       position[1] += yOffset
       camera.position.set(...position)
       if (earthGroupRef.current) {
@@ -192,11 +197,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
     controls.update()
 
     // 4. 公转轨道（保留）
-    const orbitGeometry = new THREE.RingGeometry(
-      revolutionParams.current.orbitRadius - 0.05,
-      revolutionParams.current.orbitRadius + 0.1,
-      128
-    )
+    const orbitGeometry = new THREE.RingGeometry(revolutionParams.current.orbitRadius - 0.05, revolutionParams.current.orbitRadius + 0.1, 128)
     const orbitMaterial = new THREE.MeshBasicMaterial({
       color: '#f7f7f7',
       side: THREE.DoubleSide,
@@ -240,13 +241,9 @@ const Solar: React.FC<SolarPropsType> = (props) => {
         sunLightRef.current.target.position.copy(earthGroupRef.current.position)
         sunLightRef.current.target.updateMatrixWorld()
 
-
         /* 处理晨昏线 */
         const sunLightPos = new THREE.Vector3(0, 0, 0) // 太阳固定位置
-        const earthPosVec = new THREE.Vector3(...getEarthCenterPos(
-          revolutionParams.current.angle,
-          revolutionParams.current.orbitRadius
-        )) // 地球当前位置
+        const earthPosVec = new THREE.Vector3(...getEarthCenterPos(revolutionParams.current.angle, revolutionParams.current.orbitRadius)) // 地球当前位置
         // 太阳→地球的向量（即太阳光线照射方向）
         const sunToEarthVec = earthPosVec.clone().sub(sunLightPos).normalize()
 
@@ -292,10 +289,7 @@ const Solar: React.FC<SolarPropsType> = (props) => {
       earthMesh.rotation.x = obliquityRad // 地球自转轴倾斜
 
       // 初始位置：春分
-      const earthPosition = getEarthCenterPos(
-        solarTerms[0].angle,
-        revolutionParams.current.orbitRadius
-      )
+      const earthPosition = getEarthCenterPos(solarTerms[0].angle, revolutionParams.current.orbitRadius)
       earthGroup.position.set(...earthPosition)
       earthGroup.add(earthMesh)
 
@@ -345,35 +339,45 @@ const Solar: React.FC<SolarPropsType> = (props) => {
 
     const revolutionFolder = gui.addFolder('公转控制（100秒周期）')
     revolutionFolder.add(revolutionParams.current, 'isRevolution').name('启用自动公转')
-    const revolutionPercentControl = revolutionFolder.add(revolutionParams.current, 'positionPercent', 0, 100, 0.1)
+    const revolutionPercentControl = revolutionFolder
+      .add(revolutionParams.current, 'positionPercent', 0, 100, 0.1)
       .name('公转位置（0~100%）')
       .onChange((percent: number) => {
         const angle = percentToAngle(percent)
         revolutionParams.current.angle = angle
         if (earthGroupRef.current) {
-          earthGroupRef.current.position.set(...getEarthCenterPos(
-            angle,
-            revolutionParams.current.orbitRadius
-          ))
+          earthGroupRef.current.position.set(...getEarthCenterPos(angle, revolutionParams.current.orbitRadius))
         }
         revolutionParams.current.lastTime = performance.now()
       })
 
     solarTerms.forEach(term => {
-      revolutionFolder.add({
-        [term.name]: () => {
-          revolutionParams.current.angle = term.angle
-          const normalized = normalizeAngle(term.angle)
-          revolutionParams.current.positionPercent = angleToPercent(normalized)
-          if (earthGroupRef.current) {
-            earthGroupRef.current.position.set(...getEarthCenterPos(
-              term.angle,
-              revolutionParams.current.orbitRadius
-            ))
-          }
-          revolutionPercentControl.updateDisplay()
-        }
-      }, term.name)
+      revolutionFolder.add(
+        {
+          [term.name]: () => {
+            revolutionParams.current.angle = term.angle
+            const normalized = normalizeAngle(term.angle)
+            revolutionParams.current.positionPercent = angleToPercent(normalized)
+
+            if (earthGroupRef.current) {
+              earthGroupRef.current.position.set(...getEarthCenterPos(term.angle, revolutionParams.current.orbitRadius))
+            }
+
+            revolutionPercentControl.updateDisplay()
+
+            // 时间更新：传入自转角度+公转角度，共同计算晨线位置
+            if (timeDisplayRef.current) {
+              const beijingTime = calculateBeijingTime(
+                rotationParams.current.angle,
+                revolutionParams.current.angle // 新增：传入公转角度，修正晨线位置
+              )
+
+              timeDisplayRef.current.textContent = `北京时间: ${beijingTime}`
+            }
+          },
+        },
+        term.name
+      )
     })
     revolutionFolder.open()
 
@@ -386,15 +390,28 @@ const Solar: React.FC<SolarPropsType> = (props) => {
 
     const rotationFolder = gui.addFolder('自转控制（5秒周期）')
     rotationFolder.add(rotationParams.current, 'isRotation').name('启用自转')
-    const rotationPercentControls = rotationFolder.add(rotationParams.current, 'positionPercent', 0, 100, 0.1)
+    const rotationPercentControls = rotationFolder
+      .add(rotationParams.current, 'positionPercent', 0, 100, 0.1)
       .name('自转位置（0~100%）')
       .onChange((percent: number) => {
         const angle = (percent / 100) * 2 * Math.PI
         rotationParams.current.angle = angle
+
         if (earthRef.current) {
           earthRef.current.rotation.y = angle
         }
+
         rotationParams.current.lastTime = performance.now()
+
+        // 时间更新：传入自转角度+公转角度，共同计算晨线位置
+        if (timeDisplayRef.current) {
+          const beijingTime = calculateBeijingTime(
+            rotationParams.current.angle,
+            revolutionParams.current.angle // 新增：传入公转角度，修正晨线位置
+          )
+
+          timeDisplayRef.current.textContent = `北京时间: ${beijingTime}`
+        }
       })
     rotationFolder.open()
 
@@ -409,17 +426,14 @@ const Solar: React.FC<SolarPropsType> = (props) => {
 
       // 公转逻辑（保留）
       if (revolutionParams.current.isRevolution && earthGroupRef.current) {
-        const angleIncrement = -(2 * Math.PI / revolutionParams.current.period) * deltaTime
+        const angleIncrement = -((2 * Math.PI) / revolutionParams.current.period) * deltaTime
         revolutionParams.current.angle += angleIncrement
 
         const normalizedAngle = normalizeAngle(revolutionParams.current.angle)
         revolutionParams.current.positionPercent = angleToPercent(normalizedAngle)
 
         // 更新地球位置
-        const earthPos = getEarthCenterPos(
-          revolutionParams.current.angle,
-          revolutionParams.current.orbitRadius
-        )
+        const earthPos = getEarthCenterPos(revolutionParams.current.angle, revolutionParams.current.orbitRadius)
         earthGroupRef.current.position.set(...earthPos)
 
         revolutionPercentControl.updateDisplay()
@@ -427,20 +441,22 @@ const Solar: React.FC<SolarPropsType> = (props) => {
 
       // 自转逻辑（新增时间计算）
       if (rotationParams.current.isRotation && earthRef.current) {
-        const rotationIncrement = (2 * Math.PI / rotationParams.current.period) * deltaTime
+        const rotationIncrement = ((2 * Math.PI) / rotationParams.current.period) * deltaTime
         rotationParams.current.angle = (rotationParams.current.angle + rotationIncrement) % (2 * Math.PI)
         rotationParams.current.positionPercent = (rotationParams.current.angle / (2 * Math.PI)) * 100
         earthRef.current.rotation.y = rotationParams.current.angle
 
         rotationPercentControls.updateDisplay()
-      }
-      // 时间更新：传入自转角度+公转角度，共同计算晨线位置
-      if (timeDisplayRef.current) {
-        const beijingTime = calculateBeijingTime(
-          rotationParams.current.angle,
-          revolutionParams.current.angle // 新增：传入公转角度，修正晨线位置
-        );
-        timeDisplayRef.current.textContent = `北京时间: ${beijingTime}`;
+
+        // 时间更新：传入自转角度+公转角度，共同计算晨线位置
+        if (timeDisplayRef.current) {
+          const beijingTime = calculateBeijingTime(
+            rotationParams.current.angle,
+            revolutionParams.current.angle // 新增：传入公转角度，修正晨线位置
+          )
+
+          timeDisplayRef.current.textContent = `北京时间: ${beijingTime}`
+        }
       }
 
       updateObserveEarthCamera(observeEarthMorningLineCamera, revolutionParams.current.angle, -Math.PI / 10, 1)
@@ -468,14 +484,8 @@ const Solar: React.FC<SolarPropsType> = (props) => {
   }, [])
 
   return (
-    <div
-      className="canvas-container"
-      style={{ width: '100vw', height: '100vh', position: 'relative' }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{ width: '100%', height: '100%' }}
-      ></canvas>
+    <div className="canvas-container" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }}></canvas>
     </div>
   )
 }

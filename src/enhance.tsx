@@ -7,33 +7,32 @@ type EnhancePropsType = {
   children: React.ReactNode
 }
 
-const Enhance: React.FC<EnhancePropsType> = (props) => {
-
-  const { } = props
+const Enhance: React.FC<EnhancePropsType> = props => {
+  const {} = props
 
   const navigate = useNavigate()
 
-  useEffect(() => {
+  useEffect(() => {}, [])
 
-  }, [])
-
-  return <>
-    {
-      process.env.NODE_ENV !== 'production' && <Select
-        value={import.meta.env.PROD ? (window.location.hash === '' ? '/' : window.location.hash).replace('#', '') : window.location.pathname}
-        style={{ width: 120, position: 'absolute', top: 10, left: 10, zIndex: 2 }}
-        options={routes.slice(1).map((item, index) => ({
-          value: item.path,
-          label: item.name,
-        }))}
-        onChange={(val) => {
-          navigate(val)
-        }}
-      />
-    }
-    {props.children}
-  </>
-
+  return (
+    <>
+      {process.env.NODE_ENV !== 'production' && (
+        <Select
+          key={window.location.pathname}
+          value={import.meta.env.PROD ? (window.location.hash === '' ? '/' : window.location.hash).replace('#', '') : window.location.pathname}
+          style={{ width: 120, position: 'absolute', top: 10, left: 10, zIndex: 2 }}
+          options={routes.slice(1).map((item, index) => ({
+            value: item.path,
+            label: item.name,
+          }))}
+          onChange={val => {
+            navigate(val)
+          }}
+        />
+      )}
+      {props.children}
+    </>
+  )
 }
 
 export default Enhance

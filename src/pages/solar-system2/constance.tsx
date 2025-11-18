@@ -45,7 +45,6 @@ export const longitudes = [
   { lon: 360, color: '#04a9ff' },
 ]
 
-
 // 静态配置
 export const staticConfig = {
   radius: 20, // 轨道半径
@@ -152,7 +151,6 @@ export const createDebugLatLonSphere = (earthRadius: number, earthGroup: THREE.G
 
   return linesGroup
 }
-
 
 /** 创建星空 */
 export const makeStars = () => {
