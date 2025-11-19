@@ -1,4 +1,4 @@
-import { Spin } from 'antd'
+import { Drawer, Spin } from 'antd'
 import * as Cesium from 'cesium'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
 import { useRef } from 'react'
@@ -33,6 +33,12 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   const viewerRef = useRef<Cesium.Viewer | null>(null)
 
+  const [open, setOpen] = useState<boolean>(false)
+
+  const [profileAnalysisMetaData, setProfileAnalysisMetaData] = useState<{ data: pointMetaType[] }[]>([])
+
+  const [activeTool, setActiveTool] = useState<string | null>(null)
+
   useImperativeHandle(instance, () => {
     return {
       getViewer() {
@@ -46,9 +52,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     const camera = viewerRef.current!.camera
 
     // 获取相机位置（笛卡尔坐标）
-    const position = Cesium.Cartographic.fromCartesian(camera.position)
-
-    const terrainCartos = await Cesium.sampleTerrainMostDetailed(viewerRef.current!.terrainProvider, [position])
+    const position = camera.position
 
     // 获取方向参数
     const heading = camera.heading
@@ -56,7 +60,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     const roll = camera.roll
 
     // 转换为经纬度
-    const cartographic = terrainCartos[0]
+    const cartographic = Cesium.Cartographic.fromCartesian(position)
     const lon = Cesium.Math.toDegrees(cartographic.longitude)
     const lat = Cesium.Math.toDegrees(cartographic.latitude)
     const height = cartographic.height
@@ -121,7 +125,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     })
 
     viewer.scene.globe.showGroundAtmosphere = false
-    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
+      ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
     viewerRef.current = viewer
 
@@ -183,7 +187,8 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       onclick: () => {
         const drawer = new ProfileAnalysis(viewerRef.current!, {
           onLoadData: (data: pointMetaType[]) => {
-            console.log(data)
+            setOpen(true)
+            setProfileAnalysisMetaData([...profileAnalysisMetaData, { data: data }])
           },
         })
       },
@@ -221,6 +226,15 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
           </div>
         ))}
       </div>
+      <Drawer
+        title='剖面分析'
+        placement={'bottom'}
+        onClose={() => {
+          setOpen(false)
+        }}
+        open={open}
+      >
+      </Drawer>
     </>
   )
 })
