@@ -1,5 +1,9 @@
 import * as Cesium from 'cesium'
 
+type options = {
+  onOk?: () => void
+}
+
 class LineShape {
   viewer: Cesium.Viewer | null = null
   handler: Cesium.ScreenSpaceEventHandler | null = null
@@ -18,8 +22,13 @@ class LineShape {
   // 颜色
   color: Cesium.Color = Cesium.Color.CYAN
 
-  constructor(viewer: Cesium.Viewer) {
+  options: options = {
+    onOk: () => {},
+  }
+
+  constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
+    this.options = options! || {}
     this.start()
   }
 
@@ -70,12 +79,6 @@ class LineShape {
         this.defindPoint(picked)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-
-    // 右键点击 - 完成绘制
-    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
-      if (this.state !== 'drawing') return
-      this.terminateShape()
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 
   defindPoint(position: Cesium.Cartesian3) {
@@ -280,6 +283,10 @@ class LineShape {
 
   stop() {
     this.state = 'completed'
+
+    if (typeof this.options.onOk === 'function') {
+      this.options.onOk()
+    }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)

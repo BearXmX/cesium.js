@@ -1,4 +1,4 @@
-import { Drawer, Spin } from 'antd'
+import { Drawer, message, Select, Spin, type DrawerProps } from 'antd'
 import * as Cesium from 'cesium'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
 import { useRef } from 'react'
@@ -13,6 +13,9 @@ import MultipleShape from '@/utils/plugins/draw-multiple-shape'
 import LineShape from '@/utils/plugins/draw-line-shape'
 import MeasureDistance from '@/utils/plugins/draw-measure-distance'
 import ProfileAnalysis, { type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
+import ProfileAnalysisChart from './profile-analysis-chart'
+import './index.css'
+import type DiyShape from '@/utils/countour/diyShape'
 
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
@@ -35,9 +38,11 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   const [open, setOpen] = useState<boolean>(false)
 
-  const [profileAnalysisMetaData, setProfileAnalysisMetaData] = useState<{ data: pointMetaType[] }[]>([])
+  const [profileAnalysisMetaData, setProfileAnalysisMetaData] = useState<{ data: pointMetaType[]; type: string; instance: ProfileAnalysis }[]>([])
 
-  const [activeTool, setActiveTool] = useState<string | null>(null)
+  const [activeTool, setActiveTool] = useState<DiyShape | MultipleShape | LineShape | MeasureDistance | ProfileAnalysis | null>(null)
+
+  const [placement, setPlacement] = useState<DrawerProps['placement']>('bottom');
 
   useImperativeHandle(instance, () => {
     return {
@@ -156,41 +161,102 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     {
       icon: DrawAreaCountourIcon,
       title: '区域等高线',
-      onclick: () => {
-        const drawer = DrawCountour.drawDiyShapeCountour(viewerRef.current!, {})
+      onClick: () => {
+
+        if (!!activeTool) {
+          message.warning('当前正在绘制')
+          return
+        }
+        const drawer = DrawCountour.drawDiyShapeCountour(viewerRef.current!, {
+          onOk() {
+            setActiveTool(null)
+          },
+        })
+
+        setActiveTool(drawer)
       },
     },
     {
       icon: DrawMultipleShapeIcon,
-      title: '绘制区域',
-      onclick: () => {
-        const drawer = new MultipleShape(viewerRef.current!)
+      title: '绘制多边形',
+      onClick: () => {
+
+        if (!!activeTool) {
+          message.warning('当前正在绘制')
+          return
+        }
+
+        const drawer = new MultipleShape(viewerRef.current!, {
+          onOk() {
+            setActiveTool(null)
+          },
+        })
+
+        setActiveTool(drawer)
       },
     },
     {
       icon: DrawLineShapeIcon,
       title: '绘制线段',
-      onclick: () => {
-        const drawer = new LineShape(viewerRef.current!)
+      onClick: () => {
+
+        if (!!activeTool) {
+          message.warning('当前正在绘制')
+          return
+        }
+        const drawer = new LineShape(viewerRef.current!, {
+          onOk() {
+            setActiveTool(null)
+          },
+        })
+
+
+        setActiveTool(drawer)
       },
     },
     {
       icon: DrawMeasureDistanceIcon,
       title: '测距工具',
-      onclick: () => {
-        const drawer = new MeasureDistance(viewerRef.current!)
+      onClick: () => {
+        if (!!activeTool) {
+          message.warning('当前正在绘制')
+          return
+        }
+
+        const drawer = new MeasureDistance(viewerRef.current!, {
+          onOk() {
+            setActiveTool(null)
+          },
+        })
+
+        setActiveTool(drawer)
       },
     },
     {
       icon: DrawProfileAnalysisIcon,
       title: '剖面分析',
-      onclick: () => {
+      showTipsClycle: !!profileAnalysisMetaData.length,
+      onClickTips: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        e.stopPropagation()
+        setOpen(true)
+      },
+      onClick: () => {
+
+        if (!!activeTool) {
+          message.warning('当前正在绘制')
+          return
+        }
         const drawer = new ProfileAnalysis(viewerRef.current!, {
           onLoadData: (data: pointMetaType[]) => {
             setOpen(true)
-            setProfileAnalysisMetaData([...profileAnalysisMetaData, { data: data }])
+            setProfileAnalysisMetaData([...profileAnalysisMetaData, { data: data, instance: drawer, type: '剖面分析' }])
+          },
+          onOk() {
+            setActiveTool(null)
           },
         })
+
+        setActiveTool(drawer)
       },
     },
   ]
@@ -221,19 +287,70 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       </div>
       <div className="map-diy-tools-container">
         {tools.map(item => (
-          <div className="map-diy-tools-item" key={item.title} onClick={item.onclick} title={item.title}>
+          <div className="map-diy-tools-item" key={item.title} onClick={item.onClick} title={item.title}>
             <img src={item.icon} alt="" />
+
+            {
+              item.showTipsClycle && (
+                <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>
+              )
+            }
           </div>
         ))}
       </div>
       <Drawer
         title='剖面分析'
-        placement={'bottom'}
+        placement={placement}
         onClose={() => {
           setOpen(false)
         }}
+        mask={false}
+        styles={{
+          body: {
+            padding: 16
+          }
+        }}
+        destroyOnHidden={true}
         open={open}
+        extra={
+          <>
+            <Select value={placement} onChange={(e) => {
+              setPlacement(e)
+            }} options={[
+              {
+                label: '上方',
+                value: 'top'
+              },
+              {
+                label: '下方',
+                value: 'bottom'
+              },
+              {
+                label: '左侧',
+                value: 'left'
+              },
+              {
+                label: '右侧',
+                value: 'right'
+              },
+            ]}></Select>
+          </>
+        }
       >
+        {
+          profileAnalysisMetaData.map((item, index) => {
+            return (
+              <ProfileAnalysisChart
+                key={index}
+                index={index}
+                data={item.data}
+                instance={item.instance}
+                placement={placement}
+              />
+            )
+          })
+        }
+
       </Drawer>
     </>
   )

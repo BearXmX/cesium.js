@@ -1,25 +1,21 @@
 import * as Cesium from 'cesium'
 import DiyShape from './diyShape'
-import Circle from './circle'
 import Geojson from './geojson'
 
-interface ContourAnalysisOptions {
+export type ContourAnalysisOptionsType = {
   interfaceNum?: number
   colorFill?: string[]
+  onOk?: () => void
 }
 
 class DrawCountour {
-  static drawDiyShapeCountour = (viewer: Cesium.Viewer, options?: ContourAnalysisOptions | {}): DiyShape => {
+  static drawDiyShapeCountour = (viewer: Cesium.Viewer, options?: ContourAnalysisOptionsType | {}): DiyShape => {
     return new DiyShape(viewer, options)
   }
 
-  static drawShapeByGeojson = (viewer: Cesium.Viewer, geojson: any, options?: ContourAnalysisOptions | {}) => {
+  static drawShapeByGeojson = (viewer: Cesium.Viewer, geojson: any, options?: ContourAnalysisOptionsType | {}) => {
     // @ts-ignore
     return new Geojson(viewer, geojson, options)
-  }
-
-  static drawCircleCountour = (viewer: Cesium.Viewer, options?: ContourAnalysisOptions | {}): Circle => {
-    return new Circle(viewer, options)
   }
 }
 

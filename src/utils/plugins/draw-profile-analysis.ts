@@ -18,6 +18,7 @@ export type pointMetaType = {
   longitude: number
   latitude: number
   height: number
+  heightTostring: string
   distanceFromPrev: number
   distanceFromPrevTostring: string
   distanceFromStart: number
@@ -25,6 +26,7 @@ export type pointMetaType = {
 }
 
 type options = {
+  onOk?: () => void
   onLoadData?: (data: pointMetaType[]) => void
 }
 
@@ -36,7 +38,7 @@ class ProfileAnalysis {
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
   // 存储所有点的实体
-  pointEntityList: Cesium.Entity[] = []
+  fixedPointEntityList: Cesium.Entity[] = []
   // 动态线段实体
   activeLine: Cesium.Entity | null = null
   // 浮动点实体
@@ -49,6 +51,9 @@ class ProfileAnalysis {
   // 展示距离的label实体
   distanceLabelEntityList: Cesium.Entity[] = []
 
+  // 插入的点位实体，非点击的点位
+  insertPointEntityList: Cesium.Entity[] = []
+
   // 总距离
   totalDistance: number = 0
 
@@ -56,8 +61,13 @@ class ProfileAnalysis {
 
   profileAnalysisPointPosition: pointMetaType[] = []
 
+  slideEntity: Cesium.Entity | null = null
+
+  finalLineEntity: Cesium.Entity | null = null
+
   options: options = {
     onLoadData: (data: pointMetaType[]) => {},
+    onOk: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
@@ -115,12 +125,6 @@ class ProfileAnalysis {
         this.defindPoint(picked)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-
-    // 右键点击 - 完成绘制
-    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
-      if (this.state !== 'drawing') return
-      this.terminateShape()
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 
   defindPoint(position: Cesium.Cartesian3) {
@@ -138,7 +142,7 @@ class ProfileAnalysis {
     })
 
     this.fixedPositions.push(position)
-    this.pointEntityList.push(pointEntity)
+    this.fixedPointEntityList.push(pointEntity)
 
     console.log(`添加第 ${this.fixedPositions.length} 个点`)
 
@@ -305,11 +309,13 @@ class ProfileAnalysis {
       },
     })
 
+    this.finalLineEntity = finalLine
+
     let prepareProfileAnalysisPointPosition = [] as Cesium.Cartesian3[]
 
     for (let i = 0; i < this.fixedPositions.length; i++) {
       if (i !== this.fixedPositions.length - 1) {
-        const segements = this.interpolateBetweenPoints(this.fixedPositions[i], this.fixedPositions[i + 1], 2)
+        const segements = this.interpolateBetweenPoints(this.fixedPositions[i], this.fixedPositions[i + 1], 50)
 
         const segmentPositions = []
 
@@ -322,7 +328,7 @@ class ProfileAnalysis {
         for (let j = 0; j < segements.length; j++) {
           segmentPositions.push(segements[j])
 
-          this.viewer!.entities.add({
+          const entity = this.viewer!.entities.add({
             position: segements[j],
             point: {
               color: Cesium.Color.RED,
@@ -333,6 +339,8 @@ class ProfileAnalysis {
               disableDepthTestDistance: Number.POSITIVE_INFINITY,
             },
           })
+
+          this.insertPointEntityList.push(entity)
         }
 
         segmentPositions.push(this.fixedPositions[i + 1])
@@ -384,16 +392,39 @@ class ProfileAnalysis {
         ...item,
         distanceFromStart,
         distanceFromStartTostring: this.stringDistance(distanceFromStart),
+        heightTostring: this.stringDistance(item.height),
       }
     })
 
-    console.log('totalDistance', this.totalDistance)
-    console.log('totalPositions', totalPositions)
+    this.slideEntity = this.viewer!.entities.add({
+      billboard: {
+        image: window.$$prefix + '/position-icon-landmark.svg',
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        pixelOffset: new Cesium.Cartesian2(0, -20),
+      },
+    })
+
+    this.slideEntity.show = false
 
     this.profileAnalysisPointPosition = totalPositions
 
     if (typeof this.options.onLoadData === 'function') {
       this.options.onLoadData(totalPositions)
+    }
+  }
+
+  updateSlideEntityPostion(lon: number | boolean, lat?: number, height?: number) {
+    if (!!this.slideEntity) {
+      if (typeof lon === 'boolean') {
+        this.slideEntity.show = lon
+      }
+
+      if (typeof lon === 'number') {
+        this.slideEntity.show = true
+        // @ts-ignore
+        this.slideEntity.position = Cesium.Cartesian3.fromDegrees(lon, lat)
+      }
     }
   }
 
@@ -439,6 +470,10 @@ class ProfileAnalysis {
   stop() {
     this.state = 'completed'
 
+    if (typeof this.options.onOk === 'function') {
+      this.options.onOk()
+    }
+
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
@@ -463,6 +498,18 @@ class ProfileAnalysis {
     if (this.finishButton) {
       this.viewer!.entities.remove(this.finishButton)
     }
+
+    this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    this.insertPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    this.distanceLabelEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
   }
 }
 

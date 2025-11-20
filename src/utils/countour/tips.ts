@@ -1,8 +1,3 @@
-/*
- * 标绘提示弹窗tip
- * @author BJGiser
- * @date 2024/03/27
- */
 // @ts-nocheck
 const CreateRemindertip = function (arr, position, show) {
   let tooltip = document.getElementById('toolTip')

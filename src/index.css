@@ -22,30 +22,6 @@ body,
   flex-shrink: 0;
 }
 
-.map-diy-tools-container {
-  position: absolute;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  height: 40px;
-  padding-right: 16px;
-}
-
-.map-diy-tools-container .map-diy-tools-item {
-  height: 26px;
-  width: 26px;
-  border-radius: 6px;
-  background-color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  line-height: 26px;
-  text-align: center;
-  cursor: pointer;
-  margin-right: 8px;
-}
-
 .ant-notification {
   height: 100%;
   top: 1px !important;

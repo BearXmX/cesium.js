@@ -14,6 +14,10 @@ const pointLabelStyle = {
   disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
+type options = {
+  onOk?: () => void
+}
+
 class MeasureDistance {
   viewer: Cesium.Viewer | null = null
   handler: Cesium.ScreenSpaceEventHandler | null = null
@@ -22,26 +26,33 @@ class MeasureDistance {
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
   // 存储所有点的实体
-  pointEntityList: Cesium.Entity[] = []
+  fixedPointEntityList: Cesium.Entity[] = []
   // 动态线段实体
   activeLine: Cesium.Entity | null = null
   // 浮动点实体
-  floatingPoint: Cesium.Entity | null = null
+  floatingPointEntity: Cesium.Entity | null = null
   // 完成按钮
-  finishButton: Cesium.Entity | null = null
+  finishButtonEntity: Cesium.Entity | null = null
   // 颜色
   color: Cesium.Color = Cesium.Color.CYAN
 
-  // 展示距离的label实体
+  // 展示长度的label实体
   distanceLabelEntityList: Cesium.Entity[] = []
 
-  // 总距离
+  finalLineEntity: Cesium.Entity | null = null
+
+  // 总长度
   totalDistance: number = 0
 
   totalDistanceLabelEntity: Cesium.Entity | null = null
 
-  constructor(viewer: Cesium.Viewer) {
+  options: options = {
+    onOk: () => {},
+  }
+
+  constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
+    this.options = options! || {}
     this.start()
   }
 
@@ -58,8 +69,8 @@ class MeasureDistance {
       if (!Cesium.defined(newPosition)) return
 
       // 更新浮动点位置
-      if (!this.floatingPoint) {
-        this.floatingPoint = this.viewer!.entities.add({
+      if (!this.floatingPointEntity) {
+        this.floatingPointEntity = this.viewer!.entities.add({
           position: newPosition,
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
@@ -69,7 +80,7 @@ class MeasureDistance {
         })
       } else {
         //@ts-ignore
-        this.floatingPoint.position.setValue(newPosition)
+        this.floatingPointEntity.position.setValue(newPosition)
       }
 
       // 更新线段预览（固定点 + 鼠标位置）
@@ -82,7 +93,7 @@ class MeasureDistance {
 
       // 检查是否点击了完成按钮
       const pickedObject = this.viewer!.scene.pick(event.position)
-      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButton) {
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButtonEntity) {
         this.terminateShape()
         return
       }
@@ -92,12 +103,6 @@ class MeasureDistance {
         this.defindPoint(picked)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-
-    // 右键点击 - 完成绘制
-    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
-      if (this.state !== 'drawing') return
-      this.terminateShape()
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 
   defindPoint(position: Cesium.Cartesian3) {
@@ -115,11 +120,11 @@ class MeasureDistance {
     })
 
     this.fixedPositions.push(position)
-    this.pointEntityList.push(pointEntity)
+    this.fixedPointEntityList.push(pointEntity)
 
     console.log(`添加第 ${this.fixedPositions.length} 个点`)
 
-    // 创建距离标签
+    // 创建长度标签
     const distance = this.calculateLineLength([
       this.fixedPositions[this.fixedPositions.length > 1 ? this.fixedPositions.length - 2 : 0],
       this.fixedPositions[this.fixedPositions.length > 1 ? this.fixedPositions.length - 1 : 0],
@@ -143,7 +148,7 @@ class MeasureDistance {
 
     this.totalDistance += distance
 
-    const totalText = `总距离：${this.totalDistance}米`
+    const totalText = `总长度：${this.totalDistance}米`
 
     if (this.fixedPositions.length >= 2) {
       if (!this.totalDistanceLabelEntity) {
@@ -166,12 +171,12 @@ class MeasureDistance {
 
     // 当有2个点以上时，显示完成按钮
     if (this.fixedPositions.length >= 2) {
-      if (!this.finishButton) {
+      if (!this.finishButtonEntity) {
         this.addFinishButton()
       } else {
         // 更新按钮位置到最新点
         // @ts-ignore
-        this.finishButton.position = position
+        this.finishButtonEntity.position = position
       }
     }
   }
@@ -186,14 +191,22 @@ class MeasureDistance {
     // 在最后一个点上方创建按钮
     const buttonPosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, (cartographic.height || 0) + 30)
 
-    this.finishButton = this.viewer!.entities.add({
+    this.finishButtonEntity = this.viewer!.entities.add({
       position: buttonPosition,
       label: {
         text: '点击完成绘制',
         font: '18px sans-serif',
-        ...pointLabelStyle,
-        pixelOffset: new Cesium.Cartesian2(0, -30),
+        fillColor: Cesium.Color.BLACK,
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 3,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -30), // 稍微向上偏移一点
+        showBackground: true,
+        backgroundColor: Cesium.Color.WHITE,
         backgroundPadding: new Cesium.Cartesian2(6, 4),
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
       },
     })
   }
@@ -249,9 +262,9 @@ class MeasureDistance {
     }
 
     // 清理预览实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
-      this.floatingPoint = null
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
     if (this.activeLine) {
@@ -259,9 +272,9 @@ class MeasureDistance {
       this.activeLine = null
     }
 
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
-      this.finishButton = null
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
 
     // 添加最终的线段实体
@@ -276,6 +289,8 @@ class MeasureDistance {
         clampToGround: true,
       },
     })
+
+    this.finalLineEntity = finalLine
 
     console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
 
@@ -296,6 +311,10 @@ class MeasureDistance {
   stop() {
     this.state = 'completed'
 
+    if (typeof this.options.onOk === 'function') {
+      this.options.onOk()
+    }
+
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
@@ -309,16 +328,16 @@ class MeasureDistance {
     }
 
     // 清理所有实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
     if (this.activeLine) {
       this.viewer!.entities.remove(this.activeLine)
     }
 
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
     }
 
     console.log('线段绘制工具已销毁')

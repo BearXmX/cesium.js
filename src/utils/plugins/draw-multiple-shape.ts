@@ -1,5 +1,9 @@
 import * as Cesium from 'cesium'
 
+type options = {
+  onOk?: () => void
+}
+
 class MultipleShape {
   viewer: Cesium.Viewer | null = null
   handler: Cesium.ScreenSpaceEventHandler | null = null
@@ -8,16 +12,21 @@ class MultipleShape {
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
   // 存储所有点的实体
-  pointEntityList: Cesium.Entity[] = []
+  fixedPointEntityList: Cesium.Entity[] = []
   // 动态多边形实体
   activeShape: Cesium.Entity | null = null
   // 浮动点实体
-  floatingPoint: Cesium.Entity | null = null
+  floatingPointEntity: Cesium.Entity | null = null
   // 闭合按钮
-  finishButton: Cesium.Entity | null = null
+  finishButtonEntity: Cesium.Entity | null = null
 
-  constructor(viewer: Cesium.Viewer) {
+  options: options = {
+    onOk: () => {},
+  }
+
+  constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
+    this.options = options! || {}
     this.start()
   }
 
@@ -34,8 +43,8 @@ class MultipleShape {
       if (!Cesium.defined(newPosition)) return
 
       // 更新浮动点位置
-      if (!this.floatingPoint) {
-        this.floatingPoint = this.viewer!.entities.add({
+      if (!this.floatingPointEntity) {
+        this.floatingPointEntity = this.viewer!.entities.add({
           position: newPosition,
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
@@ -45,7 +54,7 @@ class MultipleShape {
         })
       } else {
         //@ts-ignore
-        this.floatingPoint.position.setValue(newPosition)
+        this.floatingPointEntity.position.setValue(newPosition)
       }
 
       // 更新多边形预览（固定点 + 鼠标位置）
@@ -59,7 +68,7 @@ class MultipleShape {
       const picked = this.viewer!.scene.pickPosition(event.position)
 
       const pickedObject = this.viewer!.scene.pick(event.position)
-      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButton) {
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButtonEntity) {
         this.terminateShape()
         return
       }
@@ -68,12 +77,6 @@ class MultipleShape {
         this.defindPoint(picked)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-
-    // 右键点击 - 完成绘制
-    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
-      if (this.state !== 'drawing') return
-      this.terminateShape()
-    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 
   defindPoint(position: Cesium.Cartesian3) {
@@ -91,43 +94,35 @@ class MultipleShape {
     })
 
     this.fixedPositions.push(position)
-    this.pointEntityList.push(pointEntity)
+    this.fixedPointEntityList.push(pointEntity)
 
     console.log(`添加第 ${this.fixedPositions.length} 个点`)
 
     if (this.fixedPositions.length >= 3) {
-      if (!this.finishButton) {
-        // 在第二个点上方插入文字按钮
-        const secondPos = this.fixedPositions[0]
-        const carto = Cesium.Cartographic.fromCartesian(secondPos)
-        const upPos = Cesium.Cartesian3.fromRadians(
-          carto.longitude,
-          carto.latitude,
-          (carto.height || 0) + 30 // 抬高 30
-        )
-
+      if (!this.finishButtonEntity) {
         const buttonEntity = this.viewer!.entities.add({
-          position: upPos,
+          position: this.fixedPositions[this.fixedPositions.length - 1],
           label: {
             text: '点击闭合',
             font: '18px sans-serif',
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
+            fillColor: Cesium.Color.BLACK,
+            outlineColor: Cesium.Color.WHITE,
             outlineWidth: 3,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
             verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -50), // 稍微向上偏移一点
+            pixelOffset: new Cesium.Cartesian2(0, -30), // 稍微向上偏移一点
             showBackground: true,
-            backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
+            backgroundColor: Cesium.Color.WHITE,
             backgroundPadding: new Cesium.Cartesian2(6, 4),
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
           },
         })
 
-        this.finishButton = buttonEntity
+        this.finishButtonEntity = buttonEntity
       } else {
-        this.finishButton.position = pointEntity.position
+        // @ts-ignore
+        this.finishButtonEntity.position = this.fixedPositions[this.fixedPositions.length - 1]
       }
     }
   }
@@ -249,6 +244,10 @@ class MultipleShape {
   stop() {
     this.state = 'completed'
 
+    if (typeof this.options.onOk === 'function') {
+      this.options.onOk()
+    }
+
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
@@ -262,19 +261,19 @@ class MultipleShape {
     }
 
     // 清理所有实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
     if (this.activeShape) {
       this.viewer!.entities.remove(this.activeShape)
     }
 
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
     }
 
-    this.pointEntityList.forEach(entity => {
+    this.fixedPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
   }
