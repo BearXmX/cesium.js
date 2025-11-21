@@ -1,4 +1,4 @@
-import { Drawer, message, Select, Spin, type DrawerProps } from 'antd'
+import { Button, Drawer, message, Select, Spin, Tooltip, type DrawerProps } from 'antd'
 import * as Cesium from 'cesium'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
 import { useRef } from 'react'
@@ -15,7 +15,7 @@ import MeasureDistance from '@/utils/plugins/draw-measure-distance'
 import ProfileAnalysis, { type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
 import ProfileAnalysisChart from './profile-analysis-chart'
 import './index.css'
-import type DiyShape from '@/utils/countour/diyShape'
+import type DiyMultipleShapeCountour from '@/utils/countour/diy-multiple-shape-countour'
 
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
@@ -40,7 +40,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   const [profileAnalysisMetaData, setProfileAnalysisMetaData] = useState<{ data: pointMetaType[]; type: string; instance: ProfileAnalysis }[]>([])
 
-  const [activeTool, setActiveTool] = useState<DiyShape | MultipleShape | LineShape | MeasureDistance | ProfileAnalysis | null>(null)
+  const [activeTool, setActiveTool] = useState<{ type?: string; instance?: DiyMultipleShapeCountour | MultipleShape | LineShape | MeasureDistance | ProfileAnalysis }>({})
 
   const [placement, setPlacement] = useState<DrawerProps['placement']>('bottom');
 
@@ -163,17 +163,20 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       title: '区域等高线',
       onClick: () => {
 
-        if (!!activeTool) {
+        if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
         }
         const drawer = DrawCountour.drawDiyShapeCountour(viewerRef.current!, {
-          onOk() {
-            setActiveTool(null)
+          onCompleted() {
+            setActiveTool({})
+          },
+          onEnd() {
+            setActiveTool({})
           },
         })
 
-        setActiveTool(drawer)
+        setActiveTool({ type: '区域等高线', instance: drawer })
       },
     },
     {
@@ -181,18 +184,21 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       title: '绘制多边形',
       onClick: () => {
 
-        if (!!activeTool) {
+        if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
         }
 
         const drawer = new MultipleShape(viewerRef.current!, {
-          onOk() {
-            setActiveTool(null)
+          onCompleted() {
+            setActiveTool({})
+          },
+          onEnd() {
+            setActiveTool({})
           },
         })
 
-        setActiveTool(drawer)
+        setActiveTool({ type: '绘制多边形', instance: drawer })
       },
     },
     {
@@ -200,36 +206,42 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       title: '绘制线段',
       onClick: () => {
 
-        if (!!activeTool) {
+        if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
         }
         const drawer = new LineShape(viewerRef.current!, {
-          onOk() {
-            setActiveTool(null)
+          onCompleted() {
+            setActiveTool({})
+          },
+          onEnd() {
+            setActiveTool({})
           },
         })
 
 
-        setActiveTool(drawer)
+        setActiveTool({ type: '绘制线段', instance: drawer })
       },
     },
     {
       icon: DrawMeasureDistanceIcon,
       title: '测距工具',
       onClick: () => {
-        if (!!activeTool) {
+        if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
         }
 
         const drawer = new MeasureDistance(viewerRef.current!, {
-          onOk() {
-            setActiveTool(null)
+          onCompleted() {
+            setActiveTool({})
+          },
+          onEnd() {
+            setActiveTool({})
           },
         })
 
-        setActiveTool(drawer)
+        setActiveTool({ type: '测距工具', instance: drawer })
       },
     },
     {
@@ -241,8 +253,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         setOpen(true)
       },
       onClick: () => {
-
-        if (!!activeTool) {
+        if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
         }
@@ -251,12 +262,15 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
             setOpen(true)
             setProfileAnalysisMetaData([...profileAnalysisMetaData, { data: data, instance: drawer, type: '剖面分析' }])
           },
-          onOk() {
-            setActiveTool(null)
+          onCompleted() {
+            setActiveTool({})
+          },
+          onEnd() {
+            setActiveTool({})
           },
         })
 
-        setActiveTool(drawer)
+        setActiveTool({ type: '剖面分析', instance: drawer })
       },
     },
   ]
@@ -287,15 +301,21 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       </div>
       <div className="map-diy-tools-container">
         {tools.map(item => (
-          <div className="map-diy-tools-item" key={item.title} onClick={item.onClick} title={item.title}>
-            <img src={item.icon} alt="" />
-
-            {
-              item.showTipsClycle && (
-                <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>
-              )
-            }
+          <div className="map-diy-tools-item-wrapper" key={item.title}>
+            <Tooltip open={item.title === activeTool.type} title={<Button type='link' style={{ color: '#fff' }} size='small' onClick={() => {
+              activeTool.instance!.toEnd()
+            }}>结束绘制</Button>}>
+              <div className="map-diy-tools-item" onClick={item.onClick} title={item.title}>
+                <img src={item.icon} alt="" />
+                {
+                  item.showTipsClycle && (
+                    <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>
+                  )
+                }
+              </div>
+            </Tooltip>
           </div>
+
         ))}
       </div>
       <Drawer

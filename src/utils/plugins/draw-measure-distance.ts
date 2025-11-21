@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium'
+import type { EventType } from './type'
 
 const pointLabelStyle = {
   fillColor: Cesium.Color.WHITE,
@@ -14,9 +15,7 @@ const pointLabelStyle = {
   disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
-type options = {
-  onOk?: () => void
-}
+type options = {} & EventType
 
 class MeasureDistance {
   viewer: Cesium.Viewer | null = null
@@ -28,7 +27,7 @@ class MeasureDistance {
   // 存储所有点的实体
   fixedPointEntityList: Cesium.Entity[] = []
   // 动态线段实体
-  activeLine: Cesium.Entity | null = null
+  activeLineEntity: Cesium.Entity | null = null
   // 浮动点实体
   floatingPointEntity: Cesium.Entity | null = null
   // 完成按钮
@@ -47,7 +46,7 @@ class MeasureDistance {
   totalDistanceLabelEntity: Cesium.Entity | null = null
 
   options: options = {
-    onOk: () => {},
+    onCompleted: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
@@ -219,12 +218,12 @@ class MeasureDistance {
     const previewPositions = [...this.fixedPositions, mousePosition]
 
     // 更新或创建动态线段
-    if (!this.activeLine) {
+    if (!this.activeLineEntity) {
       const dynamicPositions = new Cesium.CallbackProperty(() => {
         return previewPositions
       }, false)
 
-      this.activeLine = this.viewer!.entities.add({
+      this.activeLineEntity = this.viewer!.entities.add({
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
@@ -241,8 +240,8 @@ class MeasureDistance {
       }, false)
 
       // 移除旧实体，创建新实体
-      this.viewer!.entities.remove(this.activeLine)
-      this.activeLine = this.viewer!.entities.add({
+      this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = this.viewer!.entities.add({
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
@@ -267,9 +266,9 @@ class MeasureDistance {
       this.floatingPointEntity = null
     }
 
-    if (this.activeLine) {
-      this.viewer!.entities.remove(this.activeLine)
-      this.activeLine = null
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
     if (this.finishButtonEntity) {
@@ -294,7 +293,7 @@ class MeasureDistance {
 
     console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
 
-    this.stop()
+    this.completed()
   }
 
   // 计算线段长度（近似值）
@@ -308,20 +307,66 @@ class MeasureDistance {
     return Math.floor(totalLength)
   }
 
-  stop() {
+  completed() {
     this.state = 'completed'
 
-    if (typeof this.options.onOk === 'function') {
-      this.options.onOk()
+    if (typeof this.options.onCompleted === 'function') {
+      this.options.onCompleted()
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
-    this.destroy()
+    this.completedDestroy()
   }
 
-  destroy() {
+  /* 在点击绘制完成前，不想绘制了，则调用此方法 */
+  toEnd() {
+    this.state = 'end'
+
+    if (typeof this.options.onEnd === 'function') {
+      this.options.onEnd()
+    }
+
+    this.destroyAll()
+  }
+
+  destroyAll() {
+    if (this.handler) {
+      this.handler.destroy()
+      this.handler = null
+    }
+
+    this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+    }
+
+    // 清理所有实体
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+    }
+
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+    }
+    this.distanceLabelEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.totalDistanceLabelEntity) {
+      this.viewer!.entities.remove(this.totalDistanceLabelEntity)
+    }
+
+    if (this.finalLineEntity) {
+      this.viewer!.entities.remove(this.finalLineEntity)
+    }
+  }
+
+  completedDestroy() {
     if (this.handler) {
       this.handler.destroy()
       this.handler = null
@@ -332,8 +377,8 @@ class MeasureDistance {
       this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
-    if (this.activeLine) {
-      this.viewer!.entities.remove(this.activeLine)
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
     }
 
     if (this.finishButtonEntity) {

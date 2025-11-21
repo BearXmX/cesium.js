@@ -1,8 +1,7 @@
 import * as Cesium from 'cesium'
+import type { EventType } from './type'
 
-type options = {
-  onOk?: () => void
-}
+type options = {} & EventType
 
 class MultipleShape {
   viewer: Cesium.Viewer | null = null
@@ -14,14 +13,16 @@ class MultipleShape {
   // 存储所有点的实体
   fixedPointEntityList: Cesium.Entity[] = []
   // 动态多边形实体
-  activeShape: Cesium.Entity | null = null
+  activeShapeEntity: Cesium.Entity | null = null
   // 浮动点实体
   floatingPointEntity: Cesium.Entity | null = null
   // 闭合按钮
   finishButtonEntity: Cesium.Entity | null = null
 
+  finalShapeEntity: Cesium.Entity | null = null
+
   options: options = {
-    onOk: () => {},
+    onCompleted: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
@@ -103,7 +104,7 @@ class MultipleShape {
         const buttonEntity = this.viewer!.entities.add({
           position: this.fixedPositions[this.fixedPositions.length - 1],
           label: {
-            text: '点击闭合',
+            text: '点击完成绘制',
             font: '18px sans-serif',
             fillColor: Cesium.Color.BLACK,
             outlineColor: Cesium.Color.WHITE,
@@ -135,12 +136,12 @@ class MultipleShape {
     const previewPositions = [...this.fixedPositions, mousePosition]
 
     // 更新或创建动态形状
-    if (!this.activeShape) {
+    if (!this.activeShapeEntity) {
       const dynamicPositions = new Cesium.CallbackProperty(() => {
         return new Cesium.PolygonHierarchy(previewPositions)
       }, false)
 
-      this.activeShape = this.viewer!.entities.add({
+      this.activeShapeEntity = this.viewer!.entities.add({
         polygon: {
           hierarchy: dynamicPositions,
           material: Cesium.Color.CYAN.withAlpha(0.3),
@@ -154,9 +155,9 @@ class MultipleShape {
       }, false)
 
       // 移除旧实体，创建新实体（简化更新逻辑）
-      this.viewer!.entities.remove(this.activeShape)
+      this.viewer!.entities.remove(this.activeShapeEntity)
 
-      this.activeShape = this.viewer!.entities.add({
+      this.activeShapeEntity = this.viewer!.entities.add({
         polygon: {
           hierarchy: dynamicPositions,
           material: Cesium.Color.CYAN.withAlpha(0.3),
@@ -181,6 +182,8 @@ class MultipleShape {
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
       },
     })
+
+    this.finalShapeEntity = finalShape
 
     console.log(`多边形绘制完成，共 ${this.fixedPositions.length} 个点`)
 
@@ -244,17 +247,56 @@ class MultipleShape {
   stop() {
     this.state = 'completed'
 
-    if (typeof this.options.onOk === 'function') {
-      this.options.onOk()
+    if (typeof this.options.onCompleted === 'function') {
+      this.options.onCompleted()
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
-    this.destroy()
+    this.completedDestroy()
   }
 
-  destroy() {
+  /* 在点击绘制完成前，不想绘制了，则调用此方法 */
+  toEnd() {
+    this.state = 'end'
+
+    if (typeof this.options.onEnd === 'function') {
+      this.options.onEnd()
+    }
+
+    this.destroyAll()
+  }
+
+  destroyAll() {
+    if (this.handler) {
+      this.handler.destroy()
+      this.handler = null
+    }
+
+    this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.activeShapeEntity) {
+      this.viewer!.entities.remove(this.activeShapeEntity)
+    }
+
+    // 清理所有实体
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+    }
+
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+    }
+
+    if (this.finalShapeEntity) {
+      this.viewer!.entities.remove(this.finalShapeEntity)
+    }
+  }
+
+  completedDestroy() {
     if (this.handler) {
       this.handler.destroy()
       this.handler = null
@@ -265,8 +307,8 @@ class MultipleShape {
       this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
-    if (this.activeShape) {
-      this.viewer!.entities.remove(this.activeShape)
+    if (this.activeShapeEntity) {
+      this.viewer!.entities.remove(this.activeShapeEntity)
     }
 
     if (this.finishButtonEntity) {

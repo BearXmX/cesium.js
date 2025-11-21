@@ -1,16 +1,16 @@
 import * as Cesium from 'cesium'
-import DiyShape from './diyShape'
+import DiyMultipleShapeCountour from './diy-multiple-shape-countour'
 import Geojson from './geojson'
+import type { EventType } from '../plugins/type'
 
 export type ContourAnalysisOptionsType = {
   interfaceNum?: number
   colorFill?: string[]
-  onOk?: () => void
-}
+} & EventType
 
 class DrawCountour {
-  static drawDiyShapeCountour = (viewer: Cesium.Viewer, options?: ContourAnalysisOptionsType | {}): DiyShape => {
-    return new DiyShape(viewer, options)
+  static drawDiyShapeCountour = (viewer: Cesium.Viewer, options?: ContourAnalysisOptionsType | {}): DiyMultipleShapeCountour => {
+    return new DiyMultipleShapeCountour(viewer, options)
   }
 
   static drawShapeByGeojson = (viewer: Cesium.Viewer, geojson: any, options?: ContourAnalysisOptionsType | {}) => {

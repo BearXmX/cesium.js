@@ -1,8 +1,7 @@
 import * as Cesium from 'cesium'
+import type { EventType } from './type'
 
-type options = {
-  onOk?: () => void
-}
+type options = {} & EventType
 
 class LineShape {
   viewer: Cesium.Viewer | null = null
@@ -12,18 +11,20 @@ class LineShape {
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
   // 存储所有点的实体
-  pointEntityList: Cesium.Entity[] = []
+  fixedPointEntityList: Cesium.Entity[] = []
   // 动态线段实体
-  activeLine: Cesium.Entity | null = null
+  activeLineEntity: Cesium.Entity | null = null
   // 浮动点实体
-  floatingPoint: Cesium.Entity | null = null
+  floatingPointEntity: Cesium.Entity | null = null
   // 完成按钮
-  finishButton: Cesium.Entity | null = null
+  finishButtonEntity: Cesium.Entity | null = null
   // 颜色
   color: Cesium.Color = Cesium.Color.CYAN
 
+  finalLineEntity: Cesium.Entity | null = null
+
   options: options = {
-    onOk: () => {},
+    onCompleted: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
@@ -45,8 +46,8 @@ class LineShape {
       if (!Cesium.defined(newPosition)) return
 
       // 更新浮动点位置
-      if (!this.floatingPoint) {
-        this.floatingPoint = this.viewer!.entities.add({
+      if (!this.floatingPointEntity) {
+        this.floatingPointEntity = this.viewer!.entities.add({
           position: newPosition,
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
@@ -56,7 +57,7 @@ class LineShape {
         })
       } else {
         //@ts-ignore
-        this.floatingPoint.position.setValue(newPosition)
+        this.floatingPointEntity.position.setValue(newPosition)
       }
 
       // 更新线段预览（固定点 + 鼠标位置）
@@ -69,7 +70,7 @@ class LineShape {
 
       // 检查是否点击了完成按钮
       const pickedObject = this.viewer!.scene.pick(event.position)
-      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButton) {
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButtonEntity) {
         this.terminateShape()
         return
       }
@@ -96,18 +97,18 @@ class LineShape {
     })
 
     this.fixedPositions.push(position)
-    this.pointEntityList.push(pointEntity)
+    this.fixedPointEntityList.push(pointEntity)
 
     console.log(`添加第 ${this.fixedPositions.length} 个点`)
 
     // 当有2个点以上时，显示完成按钮
     if (this.fixedPositions.length >= 2) {
-      if (!this.finishButton) {
+      if (!this.finishButtonEntity) {
         this.addFinishButton()
       } else {
         // 更新按钮位置到最新点
         // @ts-ignore
-        this.finishButton.position = position
+        this.finishButtonEntity.position = position
       }
     }
   }
@@ -122,22 +123,22 @@ class LineShape {
     // 在最后一个点上方创建按钮
     const buttonPosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, (cartographic.height || 0) + 30)
 
-    this.finishButton = this.viewer!.entities.add({
+    this.finishButtonEntity = this.viewer!.entities.add({
       position: buttonPosition,
       label: {
         text: '点击完成绘制',
         font: '18px sans-serif',
-        fillColor: Cesium.Color.WHITE,
-        outlineColor: Cesium.Color.BLACK,
+        fillColor: Cesium.Color.BLACK,
+        outlineColor: Cesium.Color.WHITE,
         outlineWidth: 3,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        pixelOffset: new Cesium.Cartesian2(0, -50),
+        pixelOffset: new Cesium.Cartesian2(0, -30), // 稍微向上偏移一点
         showBackground: true,
-        backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
+        backgroundColor: Cesium.Color.WHITE,
         backgroundPadding: new Cesium.Cartesian2(6, 4),
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
       },
     })
   }
@@ -150,12 +151,12 @@ class LineShape {
     const previewPositions = [...this.fixedPositions, mousePosition]
 
     // 更新或创建动态线段
-    if (!this.activeLine) {
+    if (!this.activeLineEntity) {
       const dynamicPositions = new Cesium.CallbackProperty(() => {
         return previewPositions
       }, false)
 
-      this.activeLine = this.viewer!.entities.add({
+      this.activeLineEntity = this.viewer!.entities.add({
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
@@ -172,8 +173,8 @@ class LineShape {
       }, false)
 
       // 移除旧实体，创建新实体
-      this.viewer!.entities.remove(this.activeLine)
-      this.activeLine = this.viewer!.entities.add({
+      this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = this.viewer!.entities.add({
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
@@ -193,19 +194,19 @@ class LineShape {
     }
 
     // 清理预览实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
-      this.floatingPoint = null
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
-    if (this.activeLine) {
-      this.viewer!.entities.remove(this.activeLine)
-      this.activeLine = null
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
-      this.finishButton = null
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
 
     // 添加最终的线段实体
@@ -221,9 +222,11 @@ class LineShape {
       },
     })
 
+    this.finalLineEntity = finalLine
+
     console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
 
-    this.stop()
+    this.completed()
 
     // 生成并打印 GeoJSON
     this.printGeoJSON()
@@ -281,39 +284,78 @@ class LineShape {
     return totalLength
   }
 
-  stop() {
+  completed() {
     this.state = 'completed'
 
-    if (typeof this.options.onOk === 'function') {
-      this.options.onOk()
+    if (typeof this.options.onCompleted === 'function') {
+      this.options.onCompleted()
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
-    this.destroy()
+    this.completedDestroy()
   }
 
-  destroy() {
+  destroyAll() {
+    if (this.handler) {
+      this.handler.destroy()
+      this.handler = null
+    }
+
+    this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+    }
+
+    // 清理所有实体
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+    }
+
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+    }
+
+    if (this.finalLineEntity) {
+      this.viewer!.entities.remove(this.finalLineEntity)
+    }
+  }
+
+  /* 在点击绘制完成前，不想绘制了，则调用此方法 */
+  toEnd() {
+    this.state = 'end'
+
+    if (typeof this.options.onEnd === 'function') {
+      this.options.onEnd()
+    }
+
+    this.destroyAll()
+  }
+
+  completedDestroy() {
     if (this.handler) {
       this.handler.destroy()
       this.handler = null
     }
 
     // 清理所有实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
-    if (this.activeLine) {
-      this.viewer!.entities.remove(this.activeLine)
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
     }
 
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
     }
 
-    this.pointEntityList.forEach(entity => {
+    this.fixedPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
 

@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium'
+import type { EventType } from './type'
 
 const pointLabelStyle = {
   fillColor: Cesium.Color.WHITE,
@@ -26,9 +27,8 @@ export type pointMetaType = {
 }
 
 type options = {
-  onOk?: () => void
   onLoadData?: (data: pointMetaType[]) => void
-}
+} & EventType
 
 class ProfileAnalysis {
   viewer: Cesium.Viewer | null = null
@@ -37,16 +37,23 @@ class ProfileAnalysis {
 
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
+
+  // 颜色
+  color: Cesium.Color = Cesium.Color.CYAN
+
+  // 总距离
+  totalDistance: number = 0
+
+  profileAnalysisPointPosition: pointMetaType[] = []
+
   // 存储所有点的实体
   fixedPointEntityList: Cesium.Entity[] = []
   // 动态线段实体
-  activeLine: Cesium.Entity | null = null
+  activeLineEntity: Cesium.Entity | null = null
   // 浮动点实体
-  floatingPoint: Cesium.Entity | null = null
+  floatingPointEntity: Cesium.Entity | null = null
   // 完成按钮
-  finishButton: Cesium.Entity | null = null
-  // 颜色
-  color: Cesium.Color = Cesium.Color.CYAN
+  finishButtonEntity: Cesium.Entity | null = null
 
   // 展示距离的label实体
   distanceLabelEntityList: Cesium.Entity[] = []
@@ -54,12 +61,7 @@ class ProfileAnalysis {
   // 插入的点位实体，非点击的点位
   insertPointEntityList: Cesium.Entity[] = []
 
-  // 总距离
-  totalDistance: number = 0
-
   totalDistanceLabelEntity: Cesium.Entity | null = null
-
-  profileAnalysisPointPosition: pointMetaType[] = []
 
   slideEntity: Cesium.Entity | null = null
 
@@ -67,7 +69,7 @@ class ProfileAnalysis {
 
   options: options = {
     onLoadData: (data: pointMetaType[]) => {},
-    onOk: () => {},
+    onCompleted: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
@@ -91,8 +93,8 @@ class ProfileAnalysis {
       if (!Cesium.defined(newPosition)) return
 
       // 更新浮动点位置
-      if (!this.floatingPoint) {
-        this.floatingPoint = this.viewer!.entities.add({
+      if (!this.floatingPointEntity) {
+        this.floatingPointEntity = this.viewer!.entities.add({
           position: newPosition,
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
@@ -102,7 +104,7 @@ class ProfileAnalysis {
         })
       } else {
         //@ts-ignore
-        this.floatingPoint.position.setValue(newPosition)
+        this.floatingPointEntity.position.setValue(newPosition)
       }
 
       // 更新线段预览（固定点 + 鼠标位置）
@@ -115,7 +117,7 @@ class ProfileAnalysis {
 
       // 检查是否点击了完成按钮
       const pickedObject = this.viewer!.scene.pick(event.position)
-      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButton) {
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finishButtonEntity) {
         this.terminateShape()
         return
       }
@@ -195,12 +197,12 @@ class ProfileAnalysis {
 
     // 当有2个点以上时，显示完成按钮
     if (this.fixedPositions.length >= 2) {
-      if (!this.finishButton) {
+      if (!this.finishButtonEntity) {
         this.addFinishButton()
       } else {
         // 更新按钮位置到最新点
         // @ts-ignore
-        this.finishButton.position = position
+        this.finishButtonEntity.position = position
       }
     }
   }
@@ -215,7 +217,7 @@ class ProfileAnalysis {
     // 在最后一个点上方创建按钮
     const buttonPosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, (cartographic.height || 0) + 30)
 
-    this.finishButton = this.viewer!.entities.add({
+    this.finishButtonEntity = this.viewer!.entities.add({
       position: buttonPosition,
       label: {
         text: '点击完成绘制',
@@ -239,12 +241,12 @@ class ProfileAnalysis {
     const previewPositions = [...this.fixedPositions, mousePosition]
 
     // 更新或创建动态线段
-    if (!this.activeLine) {
+    if (!this.activeLineEntity) {
       const dynamicPositions = new Cesium.CallbackProperty(() => {
         return previewPositions
       }, false)
 
-      this.activeLine = this.viewer!.entities.add({
+      this.activeLineEntity = this.viewer!.entities.add({
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
@@ -261,8 +263,8 @@ class ProfileAnalysis {
       }, false)
 
       // 移除旧实体，创建新实体
-      this.viewer!.entities.remove(this.activeLine)
-      this.activeLine = this.viewer!.entities.add({
+      this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = this.viewer!.entities.add({
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
@@ -281,19 +283,19 @@ class ProfileAnalysis {
     }
 
     // 清理预览实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
-      this.floatingPoint = null
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
-    if (this.activeLine) {
-      this.viewer!.entities.remove(this.activeLine)
-      this.activeLine = null
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
-      this.finishButton = null
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
 
     // 添加最终的线段实体
@@ -351,7 +353,7 @@ class ProfileAnalysis {
 
     this.computeDistanceFromStart(prepareProfileAnalysisPointPosition as Cesium.Cartesian3[])
 
-    this.stop()
+    this.completed()
   }
 
   /** @description 计算与起点之间的距离（带真实海拔） */
@@ -467,39 +469,53 @@ class ProfileAnalysis {
     return Number(int) === 0 ? '0' : int + '.' + float.slice(0, 2)
   }
 
-  stop() {
+  completed() {
     this.state = 'completed'
 
-    if (typeof this.options.onOk === 'function') {
-      this.options.onOk()
+    if (typeof this.options.onCompleted === 'function') {
+      this.options.onCompleted()
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
-    this.destroy()
+    this.completedDestroy()
   }
 
-  destroy() {
+  /* 在点击绘制完成前，不想绘制了，则调用此方法 */
+  toEnd() {
+    this.state = 'end'
+
+    if (typeof this.options.onEnd === 'function') {
+      this.options.onEnd()
+    }
+
+    this.destroyAll()
+  }
+
+  destroyAll() {
     if (this.handler) {
       this.handler.destroy()
       this.handler = null
     }
 
-    // 清理所有实体
-    if (this.floatingPoint) {
-      this.viewer!.entities.remove(this.floatingPoint)
-    }
-
-    if (this.activeLine) {
-      this.viewer!.entities.remove(this.activeLine)
-    }
-
-    if (this.finishButton) {
-      this.viewer!.entities.remove(this.finishButton)
-    }
-
     this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+    }
+
+    // 清理所有实体
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+    }
+
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+    }
+    this.distanceLabelEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
 
@@ -507,7 +523,47 @@ class ProfileAnalysis {
       this.viewer!.entities.remove(entity)
     })
 
+    if (this.totalDistanceLabelEntity) {
+      this.viewer!.entities.remove(this.totalDistanceLabelEntity)
+    }
+
+    if (this.slideEntity) {
+      this.viewer!.entities.remove(this.slideEntity)
+    }
+
+    if (this.finalLineEntity) {
+      this.viewer!.entities.remove(this.finalLineEntity)
+    }
+  }
+
+  completedDestroy() {
+    if (this.handler) {
+      this.handler.destroy()
+      this.handler = null
+    }
+
+    this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.activeLineEntity) {
+      this.viewer!.entities.remove(this.activeLineEntity)
+    }
+
+    // 清理所有实体
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+    }
+
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+    }
+
     this.distanceLabelEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    this.insertPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
   }

@@ -3,7 +3,7 @@ import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/
 import CreateRemindertip from './tips'
 import type { ContourAnalysisOptionsType } from '.'
 
-class DiyShape {
+class DiyMultipleShapeCountour {
   viewer!: Cesium.Viewer
 
   interfaceNum: number = 25
@@ -12,7 +12,7 @@ class DiyShape {
 
   countorLineList: Cesium.DataSource[] = []
 
-  drawGeomtry: Cesium.Entity | null = null
+  drawGeomtryEntity: Cesium.Entity | null = null
 
   countorLine: Cesium.GeoJsonDataSource | null = null
 
@@ -31,7 +31,7 @@ class DiyShape {
 
   activeShapePoints: Cesium.Cartesian3[] = []
 
-  activeShape: Cesium.Entity | null = null
+  activeShapeEntity: Cesium.Entity | null = null
 
   handler: Cesium.ScreenSpaceEventHandler | null = null
 
@@ -194,7 +194,7 @@ class DiyShape {
             return new Cesium.PolygonHierarchy(this.activeShapePoints)
           }, false)
 
-          this.activeShape = this.drawShape(dynamicPositions)
+          this.activeShapeEntity = this.drawShape(dynamicPositions)
         } else {
           toolTip = '左键添加点'
         }
@@ -227,27 +227,27 @@ class DiyShape {
       this.viewer.entities.remove(this.floatingPointEntity!)
     }
 
-    if (this.activeShape) {
-      this.activeShape.show = false
-      this.viewer.entities.remove(this.activeShape)
+    if (this.activeShapeEntity) {
+      this.activeShapeEntity.show = false
+      this.viewer.entities.remove(this.activeShapeEntity)
     }
 
     this.interpolatePoint(this.activeShapePoints)
 
-    this.stop()
+    this.completed()
   }
 
-  stop() {
+  completed() {
     this.state = 'completed'
 
-    if (typeof this.options.onOk === 'function') {
-      this.options.onOk()
+    if (typeof this.options.onCompleted === 'function') {
+      this.options.onCompleted()
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
-    this.destroy()
+    this.completedDestroy()
   }
 
   createPoint(worldPosition: Cesium.Cartesian3, boolPoint: boolean): Cesium.Entity {
@@ -267,14 +267,14 @@ class DiyShape {
   }
 
   drawShape(positionData: any): Cesium.Entity {
-    this.drawGeomtry = this.viewer.entities.add({
+    this.drawGeomtryEntity = this.viewer.entities.add({
       name: 'contourBoundary',
       polygon: {
         hierarchy: positionData,
         material: new Cesium.ColorMaterialProperty(Cesium.Color.BLUE.withAlpha(0.4)),
       },
     })
-    return this.drawGeomtry
+    return this.drawGeomtryEntity
   }
 
   interpolatePoint(curPoints: Cesium.Cartesian3[]): void {
@@ -395,8 +395,8 @@ class DiyShape {
       }
     })
 
-    if (this.drawGeomtry) {
-      this.viewer.entities.remove(this.drawGeomtry)
+    if (this.drawGeomtryEntity) {
+      this.viewer.entities.remove(this.drawGeomtryEntity)
     }
   }
 
@@ -415,7 +415,54 @@ class DiyShape {
     }
   }
 
-  destroy(): void {
+  /* 在点击绘制完成前，不想绘制了，则调用此方法 */
+  toEnd() {
+    this.state = 'end'
+
+    if (typeof this.options.onEnd === 'function') {
+      this.options.onEnd()
+    }
+
+    this.destroyAll()
+  }
+
+  destroyAll() {
+    CreateRemindertip('', { x: 0, y: 0 }, false)
+
+    if (this.handler) {
+      this.handler.destroy()
+      this.handler = null
+    }
+
+    if (this.drawGeomtryEntity) {
+      this.viewer.entities.remove(this.drawGeomtryEntity)
+    }
+
+    this.countorLineList.forEach(element => this.viewer.dataSources.remove(element))
+    this.countorLineList = []
+
+    this.countorLineLabelList.forEach(element => this.viewer.entities.remove(element))
+    this.countorLineLabelList = []
+
+    // 清理所有实体
+    if (this.floatingPointEntity) {
+      this.viewer!.entities.remove(this.floatingPointEntity)
+    }
+
+    this.fixedPointEntityList.forEach(entity => {
+      this.viewer!.entities.remove(entity)
+    })
+
+    if (this.finishButtonEntity) {
+      this.viewer!.entities.remove(this.finishButtonEntity)
+    }
+
+    if (this.activeShapeEntity) {
+      this.viewer!.entities.remove(this.activeShapeEntity)
+    }
+  }
+
+  completedDestroy(): void {
     this.countorLineList.forEach(element => this.viewer.dataSources.remove(element))
     this.countorLineList = []
 
@@ -438,11 +485,11 @@ class DiyShape {
       this.viewer.entities.remove(this.floatingPointEntity!)
     }
 
-    if (this.activeShape) {
-      this.activeShape.show = false
-      this.viewer.entities.remove(this.activeShape)
+    if (this.activeShapeEntity) {
+      this.activeShapeEntity.show = false
+      this.viewer.entities.remove(this.activeShapeEntity)
     }
   }
 }
 
-export default DiyShape
+export default DiyMultipleShapeCountour
