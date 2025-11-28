@@ -241,7 +241,9 @@ export const MapWidgetSettingComponent: React.FC<props> = (props) => {
                     }
 
                     if (item.type === 'text') {
-
+                      console.log(item)
+                      const positions = Cesium.Cartesian3.fromDegreesArray([item.position.longitude, item.position.latitude])
+                      mapInstance.current?.flyToBoundingSphere(positions)
                     }
 
                   }} />

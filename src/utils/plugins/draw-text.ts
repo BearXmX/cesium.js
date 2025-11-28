@@ -82,6 +82,7 @@ class DrawText {
       const picked = this.viewer!.scene.pickPosition(event.position)
 
       if (Cesium.defined(picked)) {
+        this.fixedPositions.push(picked)
         this.createFinalTextEntity(picked)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
