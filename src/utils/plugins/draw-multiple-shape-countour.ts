@@ -1,9 +1,12 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
+import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/turf'
+type options = {
+  interfaceNum?: number
+  colorFill?: string[]
+} & EventType
 
-type options = {} & EventType
-
-class MultipleShape {
+class MultipleShapeCountour {
   viewer: Cesium.Viewer | null = null
   handler: Cesium.ScreenSpaceEventHandler | null = null
   state: string = 'pending'
@@ -21,13 +24,51 @@ class MultipleShape {
 
   finalShapeEntity: Cesium.Entity | null = null
 
+  countorLine: Cesium.GeoJsonDataSource | null = null
+
+  countorLineList: Cesium.DataSource[] = []
+
+  countorLineLabelList: Cesium.Entity[] = []
+
+  interfaceNum: number = 25
+
+  colorFill: string[] = []
+
   options: options = {
     onCompleted: () => {},
+    onEnd: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
-    this.options = options! || {}
+
+    this.interfaceNum = options?.interfaceNum || 25
+
+    this.colorFill = options?.colorFill || [
+      '#8CEA00',
+      '#B7FF4A',
+      '#FFFF37',
+      '#FFE66F',
+      '#FFD1A4',
+      '#FFCBB3',
+      '#FFBD9D',
+      '#FFAD86',
+      '#FF9D6F',
+      '#FF8F59',
+      '#FF8040',
+      '#FF5809',
+      '#F75000',
+      '#D94600',
+      '#BB3D00',
+      '#A23400',
+      '#842B00',
+      '#642100',
+      '#4D0000',
+      '#2F0000',
+    ]
+
+    this.options = options || {}
+
     this.start()
   }
 
@@ -167,6 +208,13 @@ class MultipleShape {
     }
   }
 
+  getObjectIndex(arr: number[], num: number): number | undefined {
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] > num) return i
+    }
+    return undefined
+  }
+
   terminateShape() {
     if (this.fixedPositions.length < 3) {
       return
@@ -187,61 +235,128 @@ class MultipleShape {
 
     console.log(`多边形绘制完成，共 ${this.fixedPositions.length} 个点`)
 
-    this.completed()
+    this.interpolatePoint(this.fixedPositions)
 
-    // 生成并打印 GeoJSON
-    /*     this.printGeoJSON() */
+    this.completed()
   }
 
-  // 生成并打印 GeoJSON
-  printGeoJSON(): void {
-    if (this.fixedPositions.length < 3) {
-      console.warn('无法生成GeoJSON：点数不足')
-      return
+  interpolatePoint(curPoints: Cesium.Cartesian3[]): void {
+    const $this = this
+    const features: any[] = []
+    const boundaryCoord = { minX: 360, maxX: -360, minY: 180, maxY: -180 }
+
+    for (let index = 0; index < curPoints.length; index++) {
+      const element = curPoints[index]
+      const ellipsoid = this.viewer!.scene.globe.ellipsoid
+      const cartographic = ellipsoid.cartesianToCartographic(element)
+      const lat = Cesium.Math.toDegrees(cartographic.latitude)
+      const lng = Cesium.Math.toDegrees(cartographic.longitude)
+      boundaryCoord.maxY = Math.max(lat, boundaryCoord.maxY)
+      boundaryCoord.minY = Math.min(lat, boundaryCoord.minY)
+      boundaryCoord.maxX = Math.max(lng, boundaryCoord.maxX)
+      boundaryCoord.minX = Math.min(lng, boundaryCoord.minX)
+
+      features.push({
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'Point', coordinates: [lng, lat] },
+      })
     }
 
-    const geoJSON = this.generateGeoJSON()
-    console.log('生成的GeoJSON:')
-    console.log(JSON.stringify(geoJSON, null, 2))
-  }
+    const boundaryJson: any = { type: 'FeatureCollection', features }
 
-  // 生成 GeoJSON 数据
-  generateGeoJSON(): any {
-    // 将 Cartesian3 坐标转换为经纬度
-    const coordinates = this.fixedPositions.map(position => {
-      const cartographic = Cesium.Cartographic.fromCartesian(position)
-      const longitude = Cesium.Math.toDegrees(cartographic.longitude)
-      const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-      return [longitude, latitude]
+    featureEach(boundaryJson, function (point) {
+      point.properties!.height = 0
     })
 
-    // 确保多边形闭合
-    if (coordinates.length > 0) {
-      const firstCoord = coordinates[0]
-      const lastCoord = coordinates[coordinates.length - 1]
+    const options = { gridType: 'points', property: 'height', units: 'kilometers' as const }
+    const from = point([boundaryCoord.minX, boundaryCoord.minY])
+    const to = point([boundaryCoord.maxX, boundaryCoord.maxY])
+    const diagonalDistance = rhumbDistance(from, to, { units: 'kilometers' })
+    const grid = interpolate(boundaryJson, diagonalDistance / this.interfaceNum, options as any)
 
-      if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
-        coordinates.push([...firstCoord])
+    let minHeight = 1e7
+    let maxHeight = -1e8
+
+    featureEach(grid, function (point) {
+      const pos = point.geometry.coordinates
+      const cartographic = Cesium.Cartographic.fromDegrees(pos[0], pos[1])
+      const height = $this.viewer!.scene.globe.getHeight(cartographic)
+      if (height !== null && height !== undefined) {
+        maxHeight = Math.max(height, maxHeight)
+        minHeight = Math.min(height, minHeight)
+        point.properties!.height = height
       }
+    })
+
+    const breaks: number[] = []
+    const stepCount = this.colorFill.length - 1
+    const step = (maxHeight - minHeight) / stepCount
+    for (let index = 0; index < stepCount + 1; index++) {
+      breaks.push(Math.ceil(minHeight + step * index))
     }
 
-    return {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          properties: {
-            name: '绘制多边形',
-            pointCount: this.fixedPositions.length,
-            createdAt: new Date().toISOString(),
-          },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [coordinates],
-          },
-        },
-      ],
-    }
+    const linesJson = isolines(grid, breaks, { zProperty: 'height' })
+
+    const _countorLine = Cesium.GeoJsonDataSource.load(linesJson, { clampToGround: true })
+
+    _countorLine.then(function (dataSource) {
+      $this.countorLine = dataSource
+      $this.countorLineList.push(dataSource)
+      $this.viewer!.dataSources.add(dataSource)
+      const entities = dataSource.entities.values
+
+      const heightList = [] as string[]
+
+      for (let index = 0; index < entities.length; index++) {
+        const element = entities[index]
+        const cur_index = $this.getObjectIndex(breaks, element.properties!.height._value)
+        if (cur_index !== undefined) {
+          // 设置等高线颜色
+          // @ts-ignore
+          element.polyline!.material = Cesium.Color.fromCssColorString($this.colorFill[cur_index - 1])
+
+          // 只生成一个 label
+          if (element.polyline && element.polyline.positions) {
+            const positions = element.polyline.positions.getValue(Cesium.JulianDate.now()) as any[]
+
+            if (positions && positions.length > 0) {
+              const heights = positions.map(p => $this.viewer!.scene.globe.getHeight(Cesium.Cartographic.fromCartesian(p)) || 0)
+
+              const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length
+
+              const midPos = positions[Math.floor(positions.length / 2)]
+
+              const carto = Cesium.Cartographic.fromCartesian(midPos)
+
+              const fixedHeight = avgHeight + 2 // 2 米偏
+              const fixedPos = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, fixedHeight)
+
+              const labelHeight = Math.floor(avgHeight).toFixed(0)
+              if (!heightList.includes(labelHeight)) {
+                heightList.push(labelHeight)
+
+                const labelEntity = $this.viewer!.entities.add({
+                  position: fixedPos,
+                  label: {
+                    text: labelHeight,
+                    font: '16px sans-serif',
+                    fillColor: Cesium.Color.YELLOW,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 2,
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    heightReference: Cesium.HeightReference.NONE, // 关键
+                  },
+                })
+
+                $this.countorLineLabelList.push(labelEntity)
+              }
+            }
+          }
+        }
+      }
+    })
   }
 
   completed() {
@@ -318,7 +433,11 @@ class MultipleShape {
     this.fixedPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
+
+    if (this.finalShapeEntity) {
+      this.viewer!.entities.remove(this.finalShapeEntity)
+    }
   }
 }
 
-export default MultipleShape
+export default MultipleShapeCountour

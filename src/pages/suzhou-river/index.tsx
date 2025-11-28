@@ -21,7 +21,7 @@ type SuzhouRiverPropsType = {}
 const defaultMinYear = 1986
 const defaultMaxYear = 2021
 const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
-  const mapIntance = useRef<CommonMapInstanceType>(null);
+  const mapInstance = useRef<CommonMapInstanceType>(null);
 
   const [notificationApi, notificationContextHolder] = notification.useNotification()
 
@@ -550,7 +550,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
 
   useEffect(() => {
 
-    viewerRef.current = mapIntance.current?.getViewer()!
+    viewerRef.current = mapInstance.current?.getViewer()!
 
     drawGeometry(true, { current: [] }, window.$$prefix + '/data/china/china-boundary.geojson', [], {
       stroke: Cesium.Color.BROWN,
@@ -726,7 +726,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
           </div>
         </div>
       }
-      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+      <CommonMap ref={mapInstance} terrainInitCallback={() => {
         cameraFlyTo(121.491185, 31.250281, 25000)
       }}></CommonMap>
       <div id="slider" style={{ display: 'none' }}></div>

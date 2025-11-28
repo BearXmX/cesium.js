@@ -12,6 +12,10 @@ import SolarSystem from './pages/solar-system/index.tsx'
 import SimpleSeismograph from './pages/simple-seismograph/index.tsx'
 import EarthConstruction from './pages/earth-construction/index.tsx'
 import Solar from './pages/solar-system2/index.tsx'
+import BuildMapSetting from './pages/build-map-setting/index.tsx'
+import { useEffect } from 'react'
+import BuildMapList from './pages/build-map-list/index.tsx'
+import BuildMapShow from './pages/build-map-show/index.tsx'
 
 export const links = [
   {
@@ -113,14 +117,50 @@ export const links = [
         <Solar></Solar>
       </Enhance>
     ),
+  },
+  {
+    name: '构建地图',
+    path: '/build-map-setting',
+    content: '',
+    element: (
+      <Enhance>
+        <BuildMapSetting></BuildMapSetting>
+      </Enhance>
+    ),
+  },
+  {
+    name: '构建地图列表页',
+    path: '/build-map-list',
+    content: '',
+    element: (
+      <Enhance>
+        <BuildMapList></BuildMapList>
+      </Enhance>
+    ),
+  },
+  {
+    name: '地图详情',
+    path: '/build-map-show',
+    content: '',
+    element: (
+      <Enhance>
+        <BuildMapShow></BuildMapShow>
+      </Enhance>
+    ),
   }
 ]
 
 
 window.$$prefix = import.meta.env.PROD ? import.meta.env.VITE_APP_GITHUB_PROJECT_PATH : ''
 
-createRoot(document.getElementById('root')!).render(
-  <ConfigProvider
+
+const Config = () => {
+
+  useEffect(() => {
+
+  })
+
+  return <ConfigProvider
     theme={{
       algorithm: theme.darkAlgorithm,
       token: {
@@ -147,4 +187,9 @@ createRoot(document.getElementById('root')!).render(
       </BrowserRouter>
     )}
   </ConfigProvider>
+}
+
+createRoot(document.getElementById('root')!).render(
+
+  <Config></Config>
 )

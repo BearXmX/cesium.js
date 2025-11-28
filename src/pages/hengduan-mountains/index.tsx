@@ -69,7 +69,7 @@ const HengduanMountains = () => {
     })
   }
 
-  const mapIntance = useRef<CommonMapInstanceType>(null)
+  const mapInstance = useRef<CommonMapInstanceType>(null)
 
   const viewerRef = useRef<Cesium.Viewer | null>(null)
 
@@ -660,7 +660,7 @@ const HengduanMountains = () => {
   }
 
   useEffect(() => {
-    viewerRef.current = mapIntance.current?.getViewer()!
+    viewerRef.current = mapInstance.current?.getViewer()!
 
     // 深度测试
     viewerRef.current.scene.globe.depthTestAgainstTerrain = false
@@ -747,7 +747,7 @@ const HengduanMountains = () => {
 
 
       <CommonMap
-        ref={mapIntance}
+        ref={mapInstance}
         terrainInitCallback={() => {
           viewerRef.current!.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(106.47433746783226, 35.22179132388041, 8000000),

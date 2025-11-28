@@ -1,0 +1,88 @@
+@background-color: #292a2e;
+
+.teacher-page-container {
+  height: 100%;
+  background-color: #f8f8f8;
+
+  .teacher-page-header {
+    background-color: @background-color;
+    color: #fff;
+    height: 60px;
+    line-height: 60px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .teacher-page-body {
+    padding: 20px;
+    height: calc(100% - 60px);
+    overflow: auto;
+    background-color: #373737;
+
+    .build-map-list-tools {
+      display: flex;
+      flex-direction: row-reverse;
+      height: 40px;
+      margin-bottom: 16px;
+    }
+
+    .build-map-list-content {
+      display: flex;
+      flex-wrap: wrap;
+
+      .build-map-item {
+        position: relative;
+        margin-right: 16px;
+        margin-bottom: 16px;
+        width: 350px;
+        height: 320px;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+        box-shadow: 0 0 10px 4px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+        overflow: hidden;
+        cursor: pointer;
+        &-actions {
+          position: absolute;
+          right: 0;
+          top: 0;
+          width: 40px;
+          height: 30px;
+          background-color: var(--primary-active-color);
+          border-bottom-left-radius: 20px;
+          text-align: center;
+          line-height: 30px;
+          color: #fff;
+          font-size: 12px;
+          cursor: pointer;
+        }
+
+        &-title {
+          height: 40px;
+          line-height: 40px;
+          padding: 0 16px;
+          font-size: 16px;
+          font-weight: bold;
+        }
+        &-description {
+          height: 60px;
+          padding: 0 12px;
+          font-size: 12px;
+          line-height: 20px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 4;
+          -webkit-box-orient: vertical;
+          white-space: normal;
+          word-break: break-all;
+          color: #919191;
+        }
+
+        &:hover {
+          box-shadow: 0 0 10px 4px var(--primary-active-color);
+        }
+      }
+    }
+  }
+}

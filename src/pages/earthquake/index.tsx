@@ -7,7 +7,7 @@ import Radiant from "./radiant";
 import { tangshanEarthquake, wenchuangEarthquake } from "./constance";
 import WavesCharts from "./wenchuan-earthquake-waves-charts";
 const Earthquake = () => {
-  const mapIntance = useRef<CommonMapInstanceType>(null);
+  const mapInstance = useRef<CommonMapInstanceType>(null);
 
   const [modal, modalContext] = Modal.useModal();
   const [notificationApi, notificationContextHolder] = notification.useNotification()
@@ -792,7 +792,7 @@ const Earthquake = () => {
   }
 
   useEffect(() => {
-    viewerRef.current = mapIntance.current?.getViewer()!
+    viewerRef.current = mapInstance.current?.getViewer()!
 
     drawChinaBoundary()
 
@@ -828,7 +828,7 @@ const Earthquake = () => {
     <>
       {modalContext}
       {notificationContextHolder}
-      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+      <CommonMap ref={mapInstance} terrainInitCallback={() => {
         cameraFlyTo(105.63717584, 35.63459892, 6664311.55)
       }}></CommonMap>
 

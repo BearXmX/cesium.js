@@ -11,7 +11,7 @@ const YellowRiver = () => {
   const [notificationApi, notificationContextHolder] = notification.useNotification()
   const [modal, modalContext] = Modal.useModal();
 
-  const mapIntance = useRef<CommonMapInstanceType>(null);
+  const mapInstance = useRef<CommonMapInstanceType>(null);
   const viewerRef = useRef<Cesium.Viewer>(null);
   const guiRef = useRef<gui.GUI | null>(null);
 
@@ -1095,7 +1095,7 @@ const YellowRiver = () => {
   }
 
   useEffect(() => {
-    viewerRef.current = mapIntance.current?.getViewer()!
+    viewerRef.current = mapInstance.current?.getViewer()!
 
     drawGeometry(true, { current: [] }, window.$$prefix + "/data/china/china-boundary.geojson", [], {
       stroke: Cesium.Color.BROWN,
@@ -1238,7 +1238,7 @@ const YellowRiver = () => {
     <>
       {notificationContextHolder}
       {modalContext}
-      <CommonMap ref={mapIntance} terrainInitCallback={() => {
+      <CommonMap ref={mapInstance} terrainInitCallback={() => {
         cameraFlyTo(106.42574140217508, 37.565051396604, 4000000)
       }}></CommonMap>
     </>

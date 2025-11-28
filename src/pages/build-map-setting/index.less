@@ -1,0 +1,220 @@
+@build-map-background-color: #292a2e;
+
+.build-map-container {
+  height: 100%;
+  width: 100%;
+  .build-map-header {
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    background-color: @build-map-background-color;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.24);
+  }
+
+  .build-map-header-build {
+    display: none;
+  }
+
+  .build-map-body {
+    display: flex;
+    width: 100%;
+    height: calc(100% - 60px);
+
+    .build-map-body-tools {
+      display: flex;
+      width: 300px;
+      height: 100%;
+      background-color: @build-map-background-color;
+      transition: width 0.5s;
+
+      .build-map-body-tools-left {
+        width: 40px;
+        height: 100%;
+        background-color: #0000008a;
+
+        .build-map-body-tools-item {
+          width: 100%;
+          height: 40px;
+          line-height: 40px;
+          text-align: center;
+          color: #fff;
+          border-bottom: 1px solid rgba(92, 92, 92, 0.3);
+          cursor: pointer;
+        }
+
+        .build-map-body-tools-item-active {
+          color: var(--primary-active-color);
+        }
+      }
+
+      .build-map-body-tools-right {
+        width: calc(100% - 40px);
+        height: 100%;
+        padding: 16px;
+        overflow: auto;
+        color: #fff;
+
+        .build-map-body-tools-item-description {
+          color: #a7a7a7;
+          font-size: 14px;
+        }
+      }
+    }
+
+    .build-map-body-tools-preview {
+      width: 0px;
+      overflow: hidden;
+    }
+
+    .build-map-body-content {
+      flex: 1;
+      height: 100%;
+    }
+
+    .build-map-body-setting {
+      width: 300px;
+      height: 100%;
+      background-color: @build-map-background-color;
+      transition: width 0.5s;
+      padding: 16px;
+      overflow: auto;
+      color: #fff;
+
+      .setting-item-edit {
+        cursor: pointer;
+        color: #aaa;
+        margin-left: 8px;
+      }
+
+      .setting-item-aim {
+        cursor: pointer;
+        color: #aaa;
+        margin-left: 8px;
+      }
+      .setting-item-delete {
+        cursor: pointer;
+        color: #d61717;
+        margin-left: 8px;
+      }
+    }
+
+    .build-map-body-setting-preview {
+      width: 0px;
+      overflow: hidden;
+      padding: 0;
+    }
+  }
+
+  .build-map-body-build {
+    height: 100%;
+  }
+}
+
+.initial-view-setting-component {
+  .initial-view-setting-item {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+
+    &-left {
+      display: flex;
+      align-items: center;
+
+      .initial-view-setting-item-drag-icon {
+        font-size: 14px;
+        margin-right: 10px;
+        cursor: grab;
+        color: #aaa;
+        user-select: none;
+      }
+    }
+
+    &-right {
+      display: flex;
+      align-items: center;
+    }
+  }
+}
+
+.map-widget-tools-container {
+  display: flex;
+  flex-wrap: wrap;
+  .map-widget-tools-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 12px;
+    flex-direction: column;
+    width: 60px;
+    height: 60px;
+    border: 1px solid #c5c5c5;
+    border-radius: 6px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border 0.5s ease, color 0.5s ease;
+    &:hover {
+      border: 1px solid var(--primary-active-color);
+      color: var(--primary-active-color);
+    }
+  }
+
+  .map-widget-tools-item-active {
+    border: 1px solid var(--primary-active-color);
+    color: var(--primary-active-color);
+  }
+}
+
+.map-widget-setting-container {
+  .map-widget-setting-item {
+    margin-bottom: 12px;
+    &-header {
+      padding: 8px 12px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      transition: background-color 0.2s ease;
+      background-color: #383838ff;
+      height: 40px;
+    }
+    &-body {
+      padding: 8px 12px;
+      min-height: 40px;
+      background-color: #494949;
+
+      .ant-form-item {
+        margin-bottom: 12px;
+      }
+    }
+  }
+}
+
+.map-metadata-setting-container {
+  .map-metadata-cover-item {
+    width: 150px;
+    height: 155px;
+    text-align: center;
+    cursor: pointer;
+    img {
+      width: 100%;
+      height: 120px;
+    }
+  }
+  .map-metadata-cover-item-active {
+    border: 1px solid var(--primary-active-color);
+    color: var(--primary-active-color);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}

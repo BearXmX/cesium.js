@@ -2,33 +2,65 @@ import { Button, Drawer, message, Select, Spin, Tooltip, type DrawerProps } from
 import * as Cesium from 'cesium'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
 import { useRef } from 'react'
-import DrawAreaCountourIcon from '@/assets/draw-area-countour-icon.svg'
-import DrawMultipleShapeIcon from '@/assets/draw-multiple-shape-icon.svg'
-import DrawLineShapeIcon from '@/assets/draw-line-shape-icon.svg'
-import DrawMeasureDistanceIcon from '@/assets/draw-measure-distance-icon.svg'
-import DrawProfileAnalysisIcon from '@/assets/draw-profile-analysis-icon.svg'
+import DrawAreaCountourIcon from '@/assets/svg/draw-area-countour-icon.svg?react'
+import DrawMultipleShapeIcon from '@/assets/svg/draw-multiple-shape-icon.svg?react'
+import DrawLineShapeIcon from '@/assets/svg/draw-line-shape-icon.svg?react'
+import DrawMeasureDistanceIcon from '@/assets/svg/draw-measure-distance-icon.svg?react'
+import DrawProfileAnalysisIcon from '@/assets/svg/draw-profile-analysis-icon.svg?react'
 
-import DrawCountour from '@/utils/countour'
+import DrawCountour from '@/utils/plugins/draw-multiple-shape-countour'
 import MultipleShape from '@/utils/plugins/draw-multiple-shape'
 import LineShape from '@/utils/plugins/draw-line-shape'
 import MeasureDistance from '@/utils/plugins/draw-measure-distance'
 import ProfileAnalysis, { type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
+import type MultipleShapeCountour from '@/utils/plugins/draw-multiple-shape-countour'
 import ProfileAnalysisChart from './profile-analysis-chart'
 import './index.css'
-import type DiyMultipleShapeCountour from '@/utils/countour/diy-multiple-shape-countour'
+
+
 
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
   terrainInitCallback?: () => void
   containerStyle?: React.CSSProperties
+  model?: 'build-edit' | 'build-preview' | 'build'
+  pickToolsList?: string[]
+}
+
+export type cameraFlyParamsType = Parameters<Cesium.Viewer['camera']['flyTo']>[0]
+
+type cameraParamsType = {
+  destination: {
+    longitude: number,
+    latitude: number,
+    height: number
+  },
+  orientation?: {
+    heading: number
+    pitch: number
+    roll: number
+  }
 }
 
 export type CommonMapInstanceType = {
   getViewer: () => Cesium.Viewer
+  cameraFlyTo: (
+    params: cameraFlyParamsType
+  ) => void
+  getCameraParams: () => cameraParamsType
+
+  executeFlySequence: (flySequence: cameraFlyParamsType[]) => void
+
+  flyToBoundingSphere: (
+    positions: Cesium.Cartesian3[]
+  ) => void
 }
 
+const pick_tools_List_default = ['区域等高线', '绘制多边形', '绘制线段', '测距工具', '剖面分析']
+
 const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((props, instance) => {
-  const { terrainInitCallback } = props
+
+  const { terrainInitCallback, model = 'build', pickToolsList = pick_tools_List_default } = props
 
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -40,7 +72,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   const [profileAnalysisMetaData, setProfileAnalysisMetaData] = useState<{ data: pointMetaType[]; type: string; instance: ProfileAnalysis }[]>([])
 
-  const [activeTool, setActiveTool] = useState<{ type?: string; instance?: DiyMultipleShapeCountour | MultipleShape | LineShape | MeasureDistance | ProfileAnalysis }>({})
+  const [activeTool, setActiveTool] = useState<{ type?: string; instance?: MultipleShapeCountour | MultipleShape | LineShape | MeasureDistance | ProfileAnalysis }>({})
 
   const [placement, setPlacement] = useState<DrawerProps['placement']>('bottom');
 
@@ -49,11 +81,52 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       getViewer() {
         return viewerRef.current!
       },
+      cameraFlyTo(params) {
+        viewerRef.current!.camera.flyTo({
+          ...params,
+        })
+      },
+      getCameraParams() {
+        return getCameraParams(viewerRef)
+      },
+      executeFlySequence(flySequence: cameraFlyParamsType[]) {
+        // 边界检查：地图实例不存在或序列为空，直接返回
+        if (flySequence.length === 0) return;
+
+        // 递归执行每一步飞行
+        const executeStep = (index: number) => {
+          // 所有步骤执行完毕，退出
+          if (index >= flySequence.length) return;
+
+          const currentStep = flySequence[index];
+
+          // 执行当前步骤的相机飞行
+          viewerRef.current!.camera.flyTo({
+            // 透传当前步骤的所有配置（destination/duration/orientation等）
+            ...currentStep,
+            // 当前步骤完成后，执行下一个步骤
+            complete: () => {
+              // 如果当前步骤本身有complete回调，先执行它
+              currentStep.complete?.();
+              // 执行下一个步骤
+              executeStep(index + 1);
+            },
+          });
+        };
+
+        // 从第一个步骤开始执行
+        executeStep(0);
+      }
+      ,
+      flyToBoundingSphere(positions) {
+        const boundingSphere = Cesium.BoundingSphere.fromPoints(positions)
+        viewerRef.current!.camera.flyToBoundingSphere(boundingSphere)
+      }
     }
   })
 
   /** @description 获取当前相机参数 */
-  const getCameraParams = async (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
+  const getCameraParams = (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
     const camera = viewerRef.current!.camera
 
     // 获取相机位置（笛卡尔坐标）
@@ -82,7 +155,18 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
     console.log(code)
 
-    return code
+    return {
+      destination: {
+        longitude: lon,
+        latitude: lat,
+        height: height
+      },
+      orientation: {
+        heading: heading,
+        pitch: pitch,
+        roll: roll
+      }
+    }
   }
 
   const initClickHandler = (viewer: Cesium.Viewer) => {
@@ -159,15 +243,20 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   const tools = [
     {
-      icon: DrawAreaCountourIcon,
+      icon: <DrawAreaCountourIcon></DrawAreaCountourIcon>,
       title: '区域等高线',
       onClick: () => {
+
+        if (model !== 'build') {
+          return
+        }
 
         if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
         }
-        const drawer = DrawCountour.drawDiyShapeCountour(viewerRef.current!, {
+
+        const drawer = new DrawCountour(viewerRef.current!, {
           onCompleted() {
             setActiveTool({})
           },
@@ -180,9 +269,13 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       },
     },
     {
-      icon: DrawMultipleShapeIcon,
+      icon: <DrawMultipleShapeIcon></DrawMultipleShapeIcon>,
       title: '绘制多边形',
       onClick: () => {
+        if (model !== 'build') {
+          return
+        }
+
 
         if (!!activeTool.type) {
           message.warning('当前正在绘制')
@@ -202,9 +295,13 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       },
     },
     {
-      icon: DrawLineShapeIcon,
+      icon: <DrawLineShapeIcon></DrawLineShapeIcon>,
       title: '绘制线段',
       onClick: () => {
+        if (model !== 'build') {
+          return
+        }
+
 
         if (!!activeTool.type) {
           message.warning('当前正在绘制')
@@ -224,9 +321,14 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       },
     },
     {
-      icon: DrawMeasureDistanceIcon,
+      icon: <DrawMeasureDistanceIcon></DrawMeasureDistanceIcon>,
       title: '测距工具',
       onClick: () => {
+        if (model !== 'build') {
+          return
+        }
+
+
         if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
@@ -245,7 +347,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       },
     },
     {
-      icon: DrawProfileAnalysisIcon,
+      icon: <DrawProfileAnalysisIcon></DrawProfileAnalysisIcon>,
       title: '剖面分析',
       showTipsClycle: !!profileAnalysisMetaData.length,
       onClickTips: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -253,6 +355,10 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         setOpen(true)
       },
       onClick: () => {
+        if (model !== 'build') {
+          return
+        }
+
         if (!!activeTool.type) {
           message.warning('当前正在绘制')
           return
@@ -277,47 +383,48 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   return (
     <>
-      {loading && (
-        <div
-          className="canvas-container-loading"
-          style={{
-            position: 'fixed',
-            width: '100vw',
-            height: '100vh',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 999999999,
-            background: '#000',
-          }}
-        >
-          <Spin spinning={true} tip={<div style={{ width: 200, transform: 'translateX(-50%)' }}>加载中...</div>}>
-            <></>
-          </Spin>
-        </div>
-      )}
+
       <div className="canvas-container" style={props.containerStyle}>
         <div className="canvas-container-body" ref={containerRef} />
-      </div>
-      <div className="map-diy-tools-container">
-        {tools.map(item => (
-          <div className="map-diy-tools-item-wrapper" key={item.title}>
-            <Tooltip open={item.title === activeTool.type} title={<Button type='link' style={{ color: '#fff' }} size='small' onClick={() => {
-              activeTool.instance!.toEnd()
-            }}>结束绘制</Button>}>
-              <div className="map-diy-tools-item" onClick={item.onClick} title={item.title}>
-                <img src={item.icon} alt="" />
-                {
-                  item.showTipsClycle && (
-                    <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>
-                  )
-                }
-              </div>
-            </Tooltip>
-          </div>
+        <div className="map-diy-tools-container">
+          {tools.filter(item => pickToolsList.includes(item.title)).map(item => (
+            <div className="map-diy-tools-item-wrapper" key={item.title}>
+              <Tooltip open={item.title === activeTool.type} title={<Button type='link' style={{ color: '#fff' }} size='small' onClick={() => {
+                activeTool.instance!.toEnd()
+              }}>结束绘制</Button>}>
+                <div className="map-diy-tools-item" onClick={item.onClick} title={item.title}>
+                  {item.icon}
+                  {
+                    item.showTipsClycle && (
+                      <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>
+                    )
+                  }
+                </div>
+              </Tooltip>
+            </div>
 
-        ))}
+          ))}
+        </div>
+        {loading && (
+          <div
+            className="canvas-container-loading"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 999999999,
+              background: '#000',
+            }}
+          >
+            <Spin spinning={true} tip={<div style={{ width: 200, transform: 'translateX(-50%)' }}>加载中...</div>}>
+              <></>
+            </Spin>
+          </div>
+        )}
       </div>
+
       <Drawer
         title='剖面分析'
         placement={placement}

@@ -1,7 +1,10 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
 
-type options = {} & EventType
+type options = {
+  color?: string
+  width?: number
+} & EventType
 
 class LineShape {
   viewer: Cesium.Viewer | null = null
@@ -18,18 +21,24 @@ class LineShape {
   floatingPointEntity: Cesium.Entity | null = null
   // 完成按钮
   finishButtonEntity: Cesium.Entity | null = null
-  // 颜色
-  color: Cesium.Color = Cesium.Color.CYAN
 
   finalLineEntity: Cesium.Entity | null = null
 
   options: options = {
+    color: '#00FFFF',
+    width: 5,
     onCompleted: () => {},
+    onEnd() {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
-    this.options = options! || {}
+
+    this.options = {
+      ...this.options,
+      ...options,
+    }
+
     this.start()
   }
 
@@ -83,6 +92,21 @@ class LineShape {
   }
 
   defindPoint(position: Cesium.Cartesian3) {
+    this.createPointEntity(position)
+
+    // 当有2个点以上时，显示完成按钮
+    if (this.fixedPositions.length >= 2) {
+      if (!this.finishButtonEntity) {
+        this.addFinishButton()
+      } else {
+        // 更新按钮位置到最新点
+        // @ts-ignore
+        this.finishButtonEntity.position = position
+      }
+    }
+  }
+
+  createPointEntity(position: Cesium.Cartesian3) {
     // 添加固定点实体
     const pointEntity = this.viewer!.entities.add({
       position,
@@ -100,17 +124,6 @@ class LineShape {
     this.fixedPointEntityList.push(pointEntity)
 
     console.log(`添加第 ${this.fixedPositions.length} 个点`)
-
-    // 当有2个点以上时，显示完成按钮
-    if (this.fixedPositions.length >= 2) {
-      if (!this.finishButtonEntity) {
-        this.addFinishButton()
-      } else {
-        // 更新按钮位置到最新点
-        // @ts-ignore
-        this.finishButtonEntity.position = position
-      }
-    }
   }
 
   // 添加完成按钮
@@ -160,7 +173,7 @@ class LineShape {
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: this.color.withAlpha(0.8),
+            color: Cesium.Color.fromCssColorString(this.options.color!)!.withAlpha(0.8),
           }),
           width: 3,
           clampToGround: true,
@@ -178,7 +191,7 @@ class LineShape {
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: this.color.withAlpha(0.8),
+            color: Cesium.Color.fromCssColorString(this.options.color!)!.withAlpha(0.8),
           }),
           width: 3,
           clampToGround: true,
@@ -209,92 +222,65 @@ class LineShape {
       this.finishButtonEntity = null
     }
 
+    this.creatFinalShape(this.fixedPositions)
+  }
+
+  creatFinalShape(fixedPositions: Cesium.Cartesian3[]) {
+    if (this.fixedPositions !== fixedPositions) {
+      this.fixedPositions = fixedPositions
+    }
+
     // 添加最终的线段实体
     const finalLine = this.viewer!.entities.add({
       polyline: {
-        positions: this.fixedPositions,
-        material: new Cesium.PolylineGlowMaterialProperty({
-          glowPower: 0.2,
-          color: this.color,
-        }),
-        width: 5,
+        positions: fixedPositions,
+        material: Cesium.Color.fromCssColorString(this.options.color!)!,
+        width: this.options.width,
         clampToGround: true,
       },
     })
 
     this.finalLineEntity = finalLine
 
-    console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
-
     this.completed()
 
-    // 生成并打印 GeoJSON
-    this.printGeoJSON()
-  }
-
-  // 生成并打印 GeoJSON
-  printGeoJSON(): void {
-    if (this.fixedPositions.length < 2) {
-      console.warn('无法生成GeoJSON：点数不足')
-      return
-    }
-
-    const geoJSON = this.generateGeoJSON()
-    console.log('生成的GeoJSON:')
-    console.log(JSON.stringify(geoJSON, null, 2))
+    console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
   }
 
   // 生成 GeoJSON 数据 (LineString)
-  generateGeoJSON(): any {
-    // 将 Cartesian3 坐标转换为经纬度
-    const coordinates = this.fixedPositions.map(position => {
-      const cartographic = Cesium.Cartographic.fromCartesian(position)
-      const longitude = Cesium.Math.toDegrees(cartographic.longitude)
-      const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-      return [longitude, latitude]
-    })
-
-    return {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          properties: {
-            name: '绘制线段',
-            pointCount: this.fixedPositions.length,
-            length: this.calculateLineLength(), // 计算线段长度
-            createdAt: new Date().toISOString(),
-          },
-          geometry: {
-            type: 'LineString', // 线段使用 LineString 类型
-            coordinates: coordinates,
-          },
-        },
-      ],
-    }
-  }
 
   // 计算线段长度（近似值）
-  private calculateLineLength(): number {
+  calculateLineLength(positions: Cesium.Cartesian3[]): number {
     let totalLength = 0
-    for (let i = 1; i < this.fixedPositions.length; i++) {
-      const distance = Cesium.Cartesian3.distance(this.fixedPositions[i - 1], this.fixedPositions[i])
-      totalLength += distance
-    }
-    return totalLength
+
+    const distance = Cesium.Cartesian3.distance(positions[0], positions[1])
+
+    totalLength += distance
+
+    return Math.floor(totalLength)
   }
 
   completed() {
     this.state = 'completed'
 
     if (typeof this.options.onCompleted === 'function') {
-      this.options.onCompleted()
+      this.options.onCompleted(this.fixedPositions)
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.completedDestroy()
+  }
+
+  updateFinalEntityColor(color: string) {
+    // @ts-ignore
+    this.finalLineEntity!.polyline.material = Cesium.Color.fromCssColorString(color)
+  }
+
+  updateFinalEntityWidth(width: number = 5) {
+    // @ts-ignore
+    this.finalLineEntity!.polyline.width = width
   }
 
   destroyAll() {
@@ -323,6 +309,13 @@ class LineShape {
     if (this.finalLineEntity) {
       this.viewer!.entities.remove(this.finalLineEntity)
     }
+
+    this.fixedPositions = []
+    this.fixedPointEntityList = []
+    this.floatingPointEntity = null
+    this.activeLineEntity = null
+    this.finishButtonEntity = null
+    this.finalLineEntity = null
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
@@ -370,23 +363,6 @@ class LineShape {
   // 获取当前状态
   getState(): string {
     return this.state
-  }
-
-  // 导出 GeoJSON 数据
-  exportGeoJSON(): any {
-    return this.generateGeoJSON()
-  }
-
-  // 下载 GeoJSON 文件
-  downloadGeoJSON(filename: string = 'line.geojson'): void {
-    const geoJSON = this.exportGeoJSON()
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(geoJSON, null, 2))
-    const downloadAnchorNode = document.createElement('a')
-    downloadAnchorNode.setAttribute('href', dataStr)
-    downloadAnchorNode.setAttribute('download', filename)
-    document.body.appendChild(downloadAnchorNode)
-    downloadAnchorNode.click()
-    downloadAnchorNode.remove()
   }
 }
 

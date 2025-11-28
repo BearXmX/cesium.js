@@ -1,4 +1,6 @@
+import * as Cesium from 'cesium'
+
 export type EventType = {
-  onCompleted?: () => void
+  onCompleted?: (fixedPositions?: Cesium.Cartesian3[]) => void
   onEnd?: () => void
 }

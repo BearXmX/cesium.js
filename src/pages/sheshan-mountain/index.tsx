@@ -104,13 +104,13 @@ const SheshanMountain: React.FC = () => {
       async (terrain) => {
         viewer.terrainProvider = terrain;
         viewer.camera.flyTo({
+
           destination: Cesium.Cartesian3.fromDegrees(121.19439881893892, 31.085280932994194, 1400),
           orientation: {
             heading: 6.1552778668430514,
             pitch: -0.774444999584774,
             roll: 6.282667953914245
           }
-
         });
       }
     );
