@@ -1,10 +1,15 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
 
-type options = {
+export type LINE_SHAPE_OPTIONS_TYPE = {
   color?: string
   width?: number
 } & EventType
+
+export const LINE_SHAPE_OPTIONS_DEFAULT = {
+  color: '#00FFFF',
+  width: 5,
+} as LINE_SHAPE_OPTIONS_TYPE
 
 class LineShape {
   viewer: Cesium.Viewer | null = null
@@ -24,14 +29,13 @@ class LineShape {
 
   finalLineEntity: Cesium.Entity | null = null
 
-  options: options = {
-    color: '#00FFFF',
-    width: 5,
+  options: LINE_SHAPE_OPTIONS_TYPE = {
+    ...LINE_SHAPE_OPTIONS_DEFAULT,
     onCompleted: () => {},
     onEnd() {},
   }
 
-  constructor(viewer: Cesium.Viewer, options?: options) {
+  constructor(viewer: Cesium.Viewer, options?: LINE_SHAPE_OPTIONS_TYPE) {
     this.viewer = viewer
 
     this.options = {
@@ -326,7 +330,7 @@ class LineShape {
       this.options.onEnd()
     }
 
-    this.destroyAll()
+    this.completedDestroy()
   }
 
   completedDestroy() {

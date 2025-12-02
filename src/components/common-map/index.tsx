@@ -25,6 +25,7 @@ export type CommonMapPropsType = {
   containerStyle?: React.CSSProperties
   model?: 'build-edit' | 'build-preview' | 'build'
   pickToolsList?: string[]
+  children?: React.ReactNode
 }
 
 export type cameraFlyParamsType = Parameters<Cesium.Viewer['camera']['flyTo']>[0]
@@ -423,6 +424,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
             </Spin>
           </div>
         )}
+        {props.children}
       </div>
 
       <Drawer

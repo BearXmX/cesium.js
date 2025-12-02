@@ -6,7 +6,6 @@ import SheshanMountain from './pages/sheshan-mountain/index.tsx'
 import YellowRiver from './pages/yellow-river/index.tsx'
 import Earthquake from './pages/earthquake/index.tsx'
 import SuzhouRiver from './pages/suzhou-river/index.tsx'
-import './index.css'
 import HengduanMountains from './pages/hengduan-mountains/index.tsx'
 import SolarSystem from './pages/solar-system/index.tsx'
 import SimpleSeismograph from './pages/simple-seismograph/index.tsx'
@@ -16,6 +15,8 @@ import BuildMapSetting from './pages/build-map-setting/index.tsx'
 import { useEffect } from 'react'
 import BuildMapList from './pages/build-map-list/index.tsx'
 import BuildMapShow from './pages/build-map-show/index.tsx'
+import './index.css'
+import '@wangeditor/editor/dist/css/style.css' // 引入 css
 
 export const links = [
   {

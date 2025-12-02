@@ -1,31 +1,19 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
 
-export type TEXT_OPTIONS_TYPE = {
-  label?: string
-  color?: string
-  fontSize?: number
-  outlineColor?: string
-  outlineWidth?: number
-  showBackground?: number
-  backgroundColor?: string
-  backgroundPaddingX?: number
-  backgroundPaddingY?: number
-} & EventType
+export type BILLBOARD_OPTIONS_TYPE = {
+  scale?: number
+  content?: string
+} & EventType & {
+    onClick?: (instance: DrawBillboard) => void
+  }
 
-export const TEXT_OPTIONS_DEFAULT = {
-  label: '一段测试文本',
-  color: '#00FFFF',
-  fontSize: 14,
-  outlineColor: '#ffffffff',
-  outlineWidth: 0,
-  showBackground: 0,
-  backgroundColor: '#ffffffff',
-  backgroundPaddingX: 0,
-  backgroundPaddingY: 0,
-} as TEXT_OPTIONS_TYPE
+export const BILLBOARD_OPTIONS_DEFAULT = {
+  scale: 1,
+  content: '',
+} as BILLBOARD_OPTIONS_TYPE
 
-class DrawText {
+class DrawBillboard {
   viewer: Cesium.Viewer | null = null
   handler: Cesium.ScreenSpaceEventHandler | null = null
   state: string = 'pending'
@@ -34,15 +22,16 @@ class DrawText {
   floatingPointEntity: Cesium.Entity | null = null
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
-  finalTextEntity: Cesium.Entity | null = null
+  finalBillboardEntity: Cesium.Entity | null = null
 
-  options: TEXT_OPTIONS_TYPE = {
-    ...TEXT_OPTIONS_DEFAULT,
+  options: BILLBOARD_OPTIONS_TYPE = {
+    ...BILLBOARD_OPTIONS_DEFAULT,
     onCompleted: () => {},
     onEnd() {},
+    onClick() {},
   }
 
-  constructor(viewer: Cesium.Viewer, options?: TEXT_OPTIONS_TYPE) {
+  constructor(viewer: Cesium.Viewer, options?: BILLBOARD_OPTIONS_TYPE) {
     this.viewer = viewer
 
     this.options = {
@@ -95,28 +84,21 @@ class DrawText {
         const heightToZeroPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, height)
 
         this.fixedPositions.push(heightToZeroPosition)
-        this.createFinalTextEntity(heightToZeroPosition)
+        this.createFinalbBillboardEntity(heightToZeroPosition)
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
-  createFinalTextEntity(position: Cesium.Cartesian3) {
+  createFinalbBillboardEntity(position: Cesium.Cartesian3) {
     this.fixedPositions = [position]
 
-    this.finalTextEntity = this.viewer!.entities.add({
+    this.finalBillboardEntity = this.viewer!.entities.add({
       position: position,
-      label: {
-        text: this.options.label,
-        font: `${this.options.fontSize}px sans-serif`,
-        fillColor: Cesium.Color.fromCssColorString(this.options.color!),
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        outlineColor: Cesium.Color.fromCssColorString(this.options.outlineColor!),
+      billboard: {
+        image: window.$$prefix + '/position-icon-landmark.svg',
+        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
-        showBackground: !!this.options.showBackground,
-        backgroundColor: Cesium.Color.fromCssColorString(this.options.backgroundColor!),
-        backgroundPadding: new Cesium.Cartesian2(this.options.backgroundPaddingX!, this.options.backgroundPaddingY!),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
         heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
       },
     })
@@ -134,69 +116,6 @@ class DrawText {
     this.completedDestroy()
   }
 
-  updateTextEntityLabel(label: string) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.text = label
-    }
-  }
-
-  updateTextEntityColor(color: string) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.fillColor = Cesium.Color.fromCssColorString(color)
-    }
-  }
-
-  updateTextEntityFontSize(fontSize: number) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.font = `${fontSize}px sans-serif`
-    }
-  }
-
-  updateTextEntityOutlineColor(outlineColor: string) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.outlineColor = Cesium.Color.fromCssColorString(outlineColor)
-    }
-  }
-
-  updateTextEntityOutlineWidth(outlineWidth: number) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.outlineWidth = outlineWidth
-    }
-  }
-
-  updateTextEntityShowBackground(showBackground: boolean) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.showBackground = showBackground
-    }
-  }
-
-  updateTextEntityBackgroundColor(backgroundColor: string) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.backgroundColor = Cesium.Color.fromCssColorString(backgroundColor)
-    }
-  }
-
-  updateTextEntityBackgroundPadding(backgroundPaddingX: number, backgroundPaddingY: number) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.label.backgroundPadding = new Cesium.Cartesian2(backgroundPaddingX!, backgroundPaddingY)
-    }
-  }
-
-  updateTextEntityHeight(position: Cesium.Cartesian3) {
-    if (this.finalTextEntity) {
-      // @ts-ignore
-      this.finalTextEntity.position = position
-    }
-  }
-
   completed() {
     this.state = 'completed'
 
@@ -208,6 +127,17 @@ class DrawText {
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.completedDestroy()
+
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer!.canvas)
+
+    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      // 检查是否点击了完成按钮
+      const pickedObject = this.viewer!.scene.pick(event.position)
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finalBillboardEntity) {
+        this.options.onClick && this.options.onClick(this)
+        return
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
   completedDestroy() {
@@ -221,7 +151,21 @@ class DrawText {
       this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
-    console.log('文字绘制工具已销毁')
+    console.log('图标绘制工具已销毁')
+  }
+
+  updateBillboardEntityHeight(position: Cesium.Cartesian3) {
+    if (this.finalBillboardEntity) {
+      // @ts-ignore
+      this.finalBillboardEntity.position = position
+    }
+  }
+
+  updateFinalEntityScale(scale: number) {
+    if (this.finalBillboardEntity) {
+      //@ts-ignore
+      this.finalBillboardEntity.billboard.scale = scale
+    }
   }
 
   destroyAll() {
@@ -235,13 +179,13 @@ class DrawText {
       this.viewer!.entities.remove(this.floatingPointEntity)
     }
 
-    if (this.finalTextEntity) {
-      this.viewer!.entities.remove(this.finalTextEntity)
+    if (this.finalBillboardEntity) {
+      this.viewer!.entities.remove(this.finalBillboardEntity)
     }
 
     this.floatingPointEntity = null
-    this.finalTextEntity = null
+    this.finalBillboardEntity = null
   }
 }
 
-export default DrawText
+export default DrawBillboard

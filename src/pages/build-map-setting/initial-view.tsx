@@ -1,6 +1,6 @@
 import type { cameraFlyParamsType, CommonMapInstanceType } from "@/components/common-map"
 import type { settingType } from "./constance"
-import { transfromDestination } from "."
+import { transfromDestination } from "./constance"
 import { AimOutlined, CameraOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, DragOutlined, EditOutlined, SaveOutlined, TwitterOutlined } from "@ant-design/icons"
 import { Button, Input, type InputRef } from "antd"
 import { useEffect, useRef, useState } from "react"
