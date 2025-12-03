@@ -12,6 +12,21 @@ body,
 #root {
   height: 100%;
   overflow: hidden;
+
+  --w-e-textarea-bg-color: #333;
+  --w-e-textarea-color: #fff;
+  --w-e-toolbar-bg-color: #333;
+  --w-e-toolbar-color: #fff;
+  --w-e-toolbar-active-color: #fff;
+  --w-e-toolbar-active-bg-color: #333;
+}
+
+.w-e-bar-item {
+  padding: 2px !important;
+}
+
+.w-e-bar-item button:hover {
+  color: #fff !important;
 }
 
 .lil-gui.root {
@@ -350,4 +365,8 @@ body,
 
 .ant-drawer .ant-drawer-header-title {
   flex-direction: row-reverse;
+}
+
+.w-e-full-screen-container {
+  z-index: 999999;
 }

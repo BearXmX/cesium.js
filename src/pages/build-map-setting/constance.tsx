@@ -20,6 +20,7 @@ export type lineWidget = {
     height?: number
   }[]
   params: {
+    content?: string
     color?: string
     width?: number
   }
@@ -36,6 +37,7 @@ export type textWidget = {
   }
   instance?: DrawerText
   params: {
+    content?: string
     label?: string
     color?: string
     fontSize?: number
@@ -103,7 +105,7 @@ export const transfromDestination = (destination: settingType['initialView'][0][
 }
 
 export const parseMapJson = (viewerRef: React.RefObject<Cesium.Viewer | null>, mapInstance: React.RefObject<CommonMapInstanceType | null>, options?: {
-  onBillboardClick?: (index: number) => void
+  onClickWidget?: (index: number) => void
 }): settingType => {
   // 拿url的查询参数
   const query = new URLSearchParams(window.location.search)
@@ -141,7 +143,12 @@ export const parseMapJson = (viewerRef: React.RefObject<Cesium.Viewer | null>, m
       const { points, params } = item
 
       const instance = new LineShape(viewerRef.current!, {
-        ...params
+        ...params,
+        onClick(ref) {
+          if (options?.onClickWidget) {
+            options.onClickWidget(index)
+          }
+        }
       })
 
       instance.creatFinalShape(points.map(item => {
@@ -161,7 +168,12 @@ export const parseMapJson = (viewerRef: React.RefObject<Cesium.Viewer | null>, m
 
       const instance = new DrawText(viewerRef.current!, {
         label: item.params.label,
-        ...params
+        ...params,
+        onClick(ref) {
+          if (options?.onClickWidget) {
+            options.onClickWidget(index)
+          }
+        }
       })
 
       item.instance = instance
@@ -180,8 +192,8 @@ export const parseMapJson = (viewerRef: React.RefObject<Cesium.Viewer | null>, m
       const instance = new DrawBillboard(viewerRef.current!, {
         ...params,
         onClick(ref) {
-          if (options?.onBillboardClick) {
-            options.onBillboardClick(index)
+          if (options?.onClickWidget) {
+            options.onClickWidget(index)
           }
         }
       })

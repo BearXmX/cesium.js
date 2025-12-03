@@ -1,11 +1,11 @@
 import { Editor, Toolbar } from '@wangeditor/editor-for-react'
-import type { billboardWidget, settingType } from "./constance"
+import type { billboardWidget, lineWidget, settingType, textWidget } from "./constance"
 import type { IDomEditor, IToolbarConfig } from '@wangeditor/editor'
 import { useEffect, useState } from 'react'
 
 type EditorPropsType = {
   setting: settingType
-  item: billboardWidget
+  item: billboardWidget | textWidget | lineWidget
   index: number
   setSetting: React.Dispatch<React.SetStateAction<settingType>>
 }

@@ -11,9 +11,12 @@ export type TEXT_OPTIONS_TYPE = {
   backgroundColor?: string
   backgroundPaddingX?: number
   backgroundPaddingY?: number
-} & EventType
+} & EventType & {
+    onClick?: (instance: DrawText) => void
+  }
 
 export const TEXT_OPTIONS_DEFAULT = {
+  content: '',
   label: '一段测试文本',
   color: '#00FFFF',
   fontSize: 14,
@@ -208,6 +211,17 @@ class DrawText {
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.completedDestroy()
+
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer!.canvas)
+
+    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      // 检查是否点击了完成按钮
+      const pickedObject = this.viewer!.scene.pick(event.position)
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finalTextEntity) {
+        this.options.onClick && this.options.onClick(this)
+        return
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
   completedDestroy() {

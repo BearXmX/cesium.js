@@ -14,7 +14,12 @@
   }
 
   .build-map-header-build {
-    display: none;
+  }
+
+  .build-map-header-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #fff;
   }
 
   .build-map-body {
@@ -52,7 +57,7 @@
       .build-map-body-tools-right {
         width: calc(100% - 40px);
         height: 100%;
-        padding: 16px;
+        padding: 12px;
         overflow: auto;
         color: #fff;
 
@@ -78,7 +83,7 @@
       height: 100%;
       background-color: @build-map-background-color;
       transition: width 0.5s;
-      padding: 16px;
+      padding: 12px;
       overflow: auto;
       color: #fff;
 
@@ -176,6 +181,17 @@
 .map-widget-setting-container {
   .map-widget-setting-item {
     margin-bottom: 12px;
+    border: 0px solid var(--primary-active-color);
+    border-radius: 8px;
+    transition: border 0.1s;
+
+    &:hover {
+      border: 2px solid var(--primary-active-color);
+    }
+    &:focus-within {
+      border: 2px solid var(--primary-active-color);
+    }
+
     &-header {
       padding: 8px 12px;
       font-size: 12px;
@@ -184,7 +200,6 @@
       align-items: center;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
-      transition: background-color 0.2s ease;
       background-color: #383838ff;
       height: 40px;
     }
@@ -192,6 +207,8 @@
       padding: 8px 12px;
       min-height: 40px;
       background-color: #494949;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
 
       .ant-form-item {
         margin-bottom: 10px;

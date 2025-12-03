@@ -125,7 +125,7 @@ export const links = [
     content: '',
     element: (
       <Enhance>
-        <BuildMapSetting></BuildMapSetting>
+        <BuildMapSetting mapModel='build-edit'></BuildMapSetting>
       </Enhance>
     ),
   },

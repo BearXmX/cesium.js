@@ -25,10 +25,12 @@ type props = {
   mapInstance: React.RefObject<CommonMapInstanceType | null>
   setSetting: React.Dispatch<React.SetStateAction<settingType>>
   viewerRef: React.RefObject<Cesium.Viewer | null>
+  onDeleteWidget?: (index: number) => void
+  onClickWidget?: (index: number) => void
 }
 
 export const MapWidgetToolComponent: React.FC<props> = props => {
-  const { setting, setSetting, viewerRef } = props
+  const { setting, setSetting, viewerRef, onDeleteWidget, onClickWidget } = props
 
   const [activeTool, setActiveTool] = useState<{ type?: string; instance?: LineShape | DrawText | DrawBillboard }>({})
 
@@ -90,6 +92,12 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
           onEnd() {
             setActiveTool({})
           },
+          onClick(ref) {
+            const index = settingRef.current.mapWidget.findIndex(item => item.type === 'line' && item.instance === ref)
+            if (onClickWidget) {
+              onClickWidget(index)
+            }
+          },
         })
 
         setActiveTool({ type: '绘制线段', instance: drawer })
@@ -145,6 +153,12 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
           },
           onEnd() {
             setActiveTool({})
+          },
+          onClick(ref) {
+            const index = settingRef.current.mapWidget.findIndex(item => item.type === 'text' && item.instance === ref)
+            if (onClickWidget) {
+              onClickWidget(index)
+            }
           },
         })
 
@@ -204,8 +218,10 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
             setActiveTool({})
           },
           onClick(ref) {
-            const current = settingRef.current.mapWidget.find(item => item.type === 'billboard' && item.instance === ref)
-            console.log(current)
+            const index = settingRef.current.mapWidget.findIndex(item => item.type === 'billboard' && item.instance === ref)
+            if (onClickWidget) {
+              onClickWidget(index)
+            }
           },
         })
 
@@ -249,7 +265,7 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
 }
 
 export const MapWidgetSettingComponent: React.FC<props> = props => {
-  const { setting, mapInstance, setSetting } = props
+  const { setting, mapInstance, setSetting, onDeleteWidget } = props
 
   const [editIndex, setEditIndex] = useState<number | null>(null)
 
@@ -274,7 +290,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     {
                       <span>
                         {editIndex === index ? (
-                          <Input size="small" ref={editInputRef} style={{ width: 130 }} autoFocus maxLength={10} defaultValue={item.title} />
+                          <Input size="small" ref={editInputRef} style={{ width: 110 }} autoFocus maxLength={10} defaultValue={item.title} />
                         ) : (
                           item.title
                         )}
@@ -352,6 +368,9 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                           ...prev,
                           mapWidget: prev.mapWidget.filter((_, i) => i !== index),
                         }))
+                        if (onDeleteWidget) {
+                          onDeleteWidget(index)
+                        }
                       }}
                     />
                   </span>
@@ -412,6 +431,11 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                           }))
                         }}
                       />
+                    </Form.Item>
+                    <Form.Item label="内容介绍" labelCol={{
+                      span: 24
+                    }}>
+                      <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>
                     </Form.Item>
                   </Form>
                 )}
@@ -648,6 +672,11 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                         }}
                       />
                     </Form.Item>
+                    <Form.Item label="内容介绍" labelCol={{
+                      span: 24
+                    }}>
+                      <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>
+                    </Form.Item>
                   </Form>
                 )}
 
@@ -704,7 +733,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                           }}
                         />
                       </Form.Item>
-                      <Form.Item label="内容" labelCol={{
+                      <Form.Item label="内容介绍" labelCol={{
                         span: 24
                       }}>
                         <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>

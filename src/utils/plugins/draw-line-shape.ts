@@ -4,9 +4,12 @@ import type { EventType } from './type'
 export type LINE_SHAPE_OPTIONS_TYPE = {
   color?: string
   width?: number
-} & EventType
+} & EventType & {
+    onClick?: (instance: LineShape) => void
+  }
 
 export const LINE_SHAPE_OPTIONS_DEFAULT = {
+  content: '',
   color: '#00FFFF',
   width: 5,
 } as LINE_SHAPE_OPTIONS_TYPE
@@ -275,6 +278,17 @@ class LineShape {
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.completedDestroy()
+
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer!.canvas)
+
+    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      // 检查是否点击了完成按钮
+      const pickedObject = this.viewer!.scene.pick(event.position)
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finalLineEntity) {
+        this.options.onClick && this.options.onClick(this)
+        return
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
   updateFinalEntityColor(color: string) {

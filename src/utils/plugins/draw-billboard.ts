@@ -4,7 +4,7 @@ import type { EventType } from './type'
 export type BILLBOARD_OPTIONS_TYPE = {
   scale?: number
   content?: string
-} & EventType & {
+} & EventType  & {
     onClick?: (instance: DrawBillboard) => void
   }
 
