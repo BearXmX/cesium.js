@@ -17,6 +17,7 @@ import BuildMapList from './pages/build-map-list/index.tsx'
 import BuildMapShow from './pages/build-map-show/index.tsx'
 import './index.css'
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
+import PlayMap from './pages/play-map/index.tsx'
 
 export const links = [
   {
@@ -148,8 +149,20 @@ export const links = [
         <BuildMapShow></BuildMapShow>
       </Enhance>
     ),
+  },
+
+].concat(import.meta.env.DEV ? [
+  {
+    name: '玩转地图',
+    path: '/play-map',
+    content: '',
+    element: (
+      <Enhance>
+        <PlayMap></PlayMap>
+      </Enhance>
+    ),
   }
-]
+] : [])
 
 
 window.$$prefix = import.meta.env.PROD ? import.meta.env.VITE_APP_GITHUB_PROJECT_PATH : ''

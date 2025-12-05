@@ -26,6 +26,7 @@ export type CommonMapPropsType = {
   model?: 'build-edit' | 'build-preview' | 'build'
   pickToolsList?: string[]
   children?: React.ReactNode
+  depthTestAgainstTerrain?: boolean
 }
 
 export type cameraFlyParamsType = Parameters<Cesium.Viewer['camera']['flyTo']>[0]
@@ -61,7 +62,7 @@ const pick_tools_List_default = ['区域等高线', '绘制多边形', '绘制�
 
 const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((props, instance) => {
 
-  const { terrainInitCallback, model = 'build', pickToolsList = pick_tools_List_default } = props
+  const { terrainInitCallback, model = 'build', pickToolsList = pick_tools_List_default, depthTestAgainstTerrain = false } = props
 
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -223,8 +224,13 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       .then(async terrain => {
         viewer.terrainProvider = terrain
         setLoading(false)
+
         if (typeof terrainInitCallback === 'function') {
           terrainInitCallback()
+        }
+
+        if (depthTestAgainstTerrain && terrain) {
+          viewer.scene.globe.depthTestAgainstTerrain = true
         }
       })
       .finally(() => {

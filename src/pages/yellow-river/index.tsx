@@ -1,11 +1,13 @@
 import * as Cesium from "cesium";
 import { useEffect, useRef, useState, type JSX } from "react";
-import { Button, Checkbox, Form, Modal, notification } from 'antd'
+import { Button, Checkbox, Form, Modal, notification, Slider } from 'antd'
 import * as gui from 'lil-gui'
 import SampleLabel from "@/utils/plugins/sample-label";
 import ImageText from "@/utils/plugins/image-text";
 import { cangzhoujueheStory, dahongshuiStory, dayuzhishuiStory, duchongzijuehuangheStory, handaidiyicijuekouStory, huangfanquReason, huayuankoujuediStory, jialuzhiheStory, jindiStory, jinfuzhiheStory, sanmenxiashuiku, shanghusaojuekouStory, taihanggudiStory, xiaolangdishuiku, xingxiuhai, yellowRiverEnding, yellowRiverOrigin, zhihesanceStory } from "./constance";
 import CommonMap, { type CommonMapInstanceType } from "@/components/common-map";
+import './index.less'
+import { debounce } from "lodash";
 
 const YellowRiver = () => {
   const [notificationApi, notificationContextHolder] = notification.useNotification()
@@ -57,6 +59,17 @@ const YellowRiver = () => {
     }[]
   >([])
 
+  const [year, setYear] = useState<number>(-603)
+
+  const yuhegudaoControlRef = useRef<gui.Controller>(null)
+  const xihangudaoControlRef = useRef<gui.Controller>(null)
+  const donghangudaoControlRef = useRef<gui.Controller>(null)
+  const beisonggudaoControlRef = useRef<gui.Controller>(null)
+  const nansonggudaoControlRef = useRef<gui.Controller>(null)
+  const mingqinggudaoControlRef = useRef<gui.Controller>(null)
+
+  const [showTimeLine, setShowTimeLine] = useState<boolean>(false)
+
   const historyChangeFlyTo = [116.68159000606285, 37.064512255466, 2000000] as [number, number, number]
 
   const drawGeometry = (show: boolean, ref: React.RefObject<Cesium.Entity[]>, url: string, texts: { position: Cesium.Cartesian3, text: string, fontSize?: number }[], options: Cesium.GeoJsonDataSource.LoadOptions & { color?: Cesium.Color }) => {
@@ -103,6 +116,7 @@ const YellowRiver = () => {
   }
 
   const guiControls = {
+    showTimeLine: false,
     drawAdministrativeRegion: false,
 
     drawYellowRiverBranch: false,
@@ -418,6 +432,7 @@ const YellowRiver = () => {
 
 
     /* 历史改道 */
+    const timelineChangeContols = historyChangeContols.addFolder('控制器')
     const shangguHistoryChangeContols = historyChangeContols.addFolder('上古时期')
     const xihanHistoryChangeContols = historyChangeContols.addFolder('西汉时期')
     const donghanHistoryChangeContols = historyChangeContols.addFolder('东汉时期')
@@ -426,8 +441,13 @@ const YellowRiver = () => {
     const mingqingHistoryChangeContols = historyChangeContols.addFolder('明清时期')
     const minguoHistoryChangeContols = historyChangeContols.addFolder('民国现代')
 
+    timelineChangeContols.add(guiControls, 'showTimeLine').name('时间轴').onChange((value: boolean) => {
+      setShowTimeLine(value)
+      setYear(-603)
+    })
+
     /* 上古时期 */
-    shangguHistoryChangeContols.add(guiControls, 'drawYuhegudao').name('禹河故道').onChange((value: boolean) => {
+    yuhegudaoControlRef.current = shangguHistoryChangeContols.add(guiControls, 'drawYuhegudao').name('禹河故道').onChange((value: boolean) => {
       if (value) {
         cameraFlyTo(...historyChangeFlyTo)
       }
@@ -480,7 +500,7 @@ const YellowRiver = () => {
     shangguHistoryChangeContols.add(guiControls, 'dayuzhishui').name('大禹治水')
 
     /* 西汉时期 */
-    xihanHistoryChangeContols.add(guiControls, 'drawXihangudao').name('西汉故道').onChange((value: boolean) => {
+    xihangudaoControlRef.current = xihanHistoryChangeContols.add(guiControls, 'drawXihangudao').name('西汉故道').onChange((value: boolean) => {
       if (value) {
         cameraFlyTo(...historyChangeFlyTo)
       }
@@ -499,7 +519,7 @@ const YellowRiver = () => {
     xihanHistoryChangeContols.add(guiControls, 'handaidiyicijuekou').name('汉代第一次重大决口')
 
     /* 东汉时期 */
-    donghanHistoryChangeContols.add(guiControls, 'drawDonghangudao').name('东汉故道').onChange((value: boolean) => {
+    donghangudaoControlRef.current = donghanHistoryChangeContols.add(guiControls, 'drawDonghangudao').name('东汉故道').onChange((value: boolean) => {
       if (value) {
 
         cameraFlyTo(...historyChangeFlyTo)
@@ -509,7 +529,7 @@ const YellowRiver = () => {
     donghanHistoryChangeContols.add(guiControls, 'zhihesance').name('贾让“治河三策”')
 
     /* 北宋时期 */
-    beisongHistoryChangeContols.add(guiControls, 'drawBeisonggudao').name('北宋故道').onChange((value: boolean) => {
+    beisonggudaoControlRef.current = beisongHistoryChangeContols.add(guiControls, 'drawBeisonggudao').name('北宋故道').onChange((value: boolean) => {
       if (value) {
 
         cameraFlyTo(...historyChangeFlyTo)
@@ -530,7 +550,7 @@ const YellowRiver = () => {
     beisongHistoryChangeContols.add(guiControls, 'cangzhoujuehe').name('瀛洲、沧州决河')
 
     /* 南宋时期 */
-    nansongHistoryChangeContols.add(guiControls, 'drawNansonggudao').name('南宋、元故道').onChange((value: boolean) => {
+    nansonggudaoControlRef.current = nansongHistoryChangeContols.add(guiControls, 'drawNansonggudao').name('南宋、元故道').onChange((value: boolean) => {
       if (value) {
 
         cameraFlyTo(...historyChangeFlyTo)
@@ -557,7 +577,7 @@ const YellowRiver = () => {
     nansongHistoryChangeContols.add(guiControls, 'jialuzhihe').name('贾鲁治河')
 
     /* 明清时期 */
-    mingqingHistoryChangeContols.add(guiControls, 'drawMingqinggudao').name('明清故道').onChange((value: boolean) => {
+    mingqinggudaoControlRef.current = mingqingHistoryChangeContols.add(guiControls, 'drawMingqinggudao').name('明清故道').onChange((value: boolean) => {
 
       if (value) {
         cameraFlyTo(...historyChangeFlyTo)
@@ -1235,13 +1255,67 @@ const YellowRiver = () => {
   }, []);
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {
+        showTimeLine && <div className="yellow-river-timeline" style={{ height: 50, backgroundColor: '#000', padding: '0 32px' }}>
+          <Slider styles={{
+            track: {
+              backgroundColor: 'transparent',
+            },
+            tracks: {
+              background: '#00b96b',
+            },
+            handle: {
+              backgroundColor: '#fff',
+            },
+          }} marks={{
+            '-603': '前603',
+            11: '11',
+            1048: '1048',
+            1128: '1128',
+            1855: '1855',
+            2000: '2000'
+          }} step={1} min={-603} max={2000} value={year} onChange={debounce((value) => {
+            setYear(value)
+
+            if (value >= -602) {
+              yuhegudaoControlRef.current?.setValue(true)
+              yuhegudaoControlRef.current?.updateDisplay()
+            }
+
+            if (value >= 11) {
+              console.log(value)
+              xihangudaoControlRef.current?.setValue(true)
+              xihangudaoControlRef.current?.updateDisplay()
+            }
+            if (value >= 69) {
+              donghangudaoControlRef.current?.setValue(true)
+              donghangudaoControlRef.current?.updateDisplay()
+
+            }
+            if (value >= 1048) {
+              beisonggudaoControlRef.current?.setValue(true)
+              beisonggudaoControlRef.current?.updateDisplay()
+            }
+            if (value >= 1128) {
+              nansonggudaoControlRef.current?.setValue(true)
+              nansonggudaoControlRef.current?.updateDisplay()
+            }
+
+            if (value >= 1855) {
+              mingqinggudaoControlRef.current?.setValue(true)
+              mingqinggudaoControlRef.current?.updateDisplay()
+            }
+          }, 300)} />
+        </div>
+      }
+
       {notificationContextHolder}
       {modalContext}
-      <CommonMap ref={mapInstance} terrainInitCallback={() => {
+      <CommonMap ref={mapInstance} containerStyle={{ flex: '1' }} terrainInitCallback={() => {
         cameraFlyTo(106.42574140217508, 37.565051396604, 4000000)
       }}></CommonMap>
-    </>
+    </div>
 
   );
 };
