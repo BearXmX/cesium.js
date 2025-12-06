@@ -35,7 +35,8 @@ class LineShape {
   options: LINE_SHAPE_OPTIONS_TYPE = {
     ...LINE_SHAPE_OPTIONS_DEFAULT,
     onCompleted: () => {},
-    onEnd() {},
+    onCancel() {},
+    onShowFinishEntity() {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: LINE_SHAPE_OPTIONS_TYPE) {
@@ -161,6 +162,7 @@ class LineShape {
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
       },
     })
+    this.options.onShowFinishEntity?.()
   }
 
   // 更新线段预览（固定点 + 当前鼠标位置）
@@ -337,11 +339,11 @@ class LineShape {
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
-  toEnd() {
-    this.state = 'end'
+  toCancel() {
+    this.state = 'cancel'
 
-    if (typeof this.options.onEnd === 'function') {
-      this.options.onEnd()
+    if (typeof this.options.onCancel === 'function') {
+      this.options.onCancel()
     }
 
     this.completedDestroy()

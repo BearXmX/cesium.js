@@ -42,7 +42,7 @@ class DrawText {
   options: TEXT_OPTIONS_TYPE = {
     ...TEXT_OPTIONS_DEFAULT,
     onCompleted: () => {},
-    onEnd() {},
+    onCancel() {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: TEXT_OPTIONS_TYPE) {
@@ -127,11 +127,11 @@ class DrawText {
     this.completed()
   }
 
-  toEnd() {
-    this.state = 'end'
+  toCancel() {
+    this.state = 'cancel'
 
-    if (typeof this.options.onEnd === 'function') {
-      this.options.onEnd()
+    if (typeof this.options.onCancel === 'function') {
+      this.options.onCancel()
     }
 
     this.completedDestroy()

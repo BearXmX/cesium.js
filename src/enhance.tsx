@@ -8,11 +8,11 @@ type EnhancePropsType = {
 }
 
 const Enhance: React.FC<EnhancePropsType> = props => {
-  const { } = props
+  const {} = props
 
   const navigate = useNavigate()
 
-  useEffect(() => { }, [])
+  useEffect(() => {}, [])
 
   return (
     <>
@@ -20,7 +20,7 @@ const Enhance: React.FC<EnhancePropsType> = props => {
         <Select
           key={window.location.pathname}
           value={import.meta.env.PROD ? (window.location.hash === '' ? '/' : window.location.hash).replace('#', '') : window.location.pathname}
-          style={{ width: 120, position: 'absolute', top: 55, left: 10, zIndex: 2 }}
+          style={{ width: 120, position: 'absolute', top: '50%', left: 10, zIndex: 2 }}
           options={routes.slice(1).map((item, index) => ({
             value: item.path,
             label: item.name,

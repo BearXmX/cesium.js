@@ -21,7 +21,7 @@ type SuzhouRiverPropsType = {}
 const defaultMinYear = 1986
 const defaultMaxYear = 2021
 const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
-  const mapInstance = useRef<CommonMapInstanceType>(null);
+  const mapInstance = useRef<CommonMapInstanceType>(null)
 
   const [notificationApi, notificationContextHolder] = notification.useNotification()
 
@@ -69,51 +69,55 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     })
   }
 
-  const drawGeometry = (show: boolean, ref: React.RefObject<Cesium.Entity[]>, url: string, texts: { position: Cesium.Cartesian3, text: string, fontSize?: number }[], options: Cesium.GeoJsonDataSource.LoadOptions & {
-    color?: Cesium.Color,
-    loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
-  }) => {
+  const drawGeometry = (
+    show: boolean,
+    ref: React.RefObject<Cesium.Entity[]>,
+    url: string,
+    texts: { position: Cesium.Cartesian3; text: string; fontSize?: number }[],
+    options: Cesium.GeoJsonDataSource.LoadOptions & {
+      color?: Cesium.Color
+      loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
+    }
+  ) => {
     if (show) {
-
       if (ref.current?.length) {
-
         ref.current.forEach(item => {
           item.show = true
         })
-
       } else {
-        fetch(url).then(res => res.json()).then(data => {
-          Cesium.GeoJsonDataSource.load(data, {
-            markerSymbol: "circle",
-            ...options
-          }).then(function (dataSource) {
-            viewerRef.current!.dataSources.add(dataSource)
-            ref.current.push(...dataSource.entities.values)
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            Cesium.GeoJsonDataSource.load(data, {
+              markerSymbol: 'circle',
+              ...options,
+            }).then(function (dataSource) {
+              viewerRef.current!.dataSources.add(dataSource)
+              ref.current.push(...dataSource.entities.values)
 
-            texts.forEach(item => {
-              ref.current.push(viewerRef.current!.entities.add({
-                position: item.position,
-                label: {
-                  text: item.text,
-                  font: `${item.fontSize || 16}px sans-serif`,
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                  outlineWidth: 2,
-                  outlineColor: options.color || options.fill?.withAlpha(1),
-                  fillColor: Cesium.Color.WHITE,
-                  disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-                }
-              }))
+              texts.forEach(item => {
+                ref.current.push(
+                  viewerRef.current!.entities.add({
+                    position: item.position,
+                    label: {
+                      text: item.text,
+                      font: `${item.fontSize || 16}px sans-serif`,
+                      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                      outlineWidth: 2,
+                      outlineColor: options.color || options.fill?.withAlpha(1),
+                      fillColor: Cesium.Color.WHITE,
+                      disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
+                    },
+                  })
+                )
+              })
+
+              if (typeof options.loadedDataCallback === 'function') {
+                options.loadedDataCallback(data, dataSource)
+              }
             })
-
-            if (typeof options.loadedDataCallback === 'function') {
-              options.loadedDataCallback(data, dataSource)
-            }
-          });
-        });
-
-
+          })
       }
-
     } else {
       ref.current!.forEach(item => {
         item.show = false
@@ -175,7 +179,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   }
 
   const drawSuzhouRiverDistrictArea = (checked: boolean) => {
-    drawGeometry(checked, suzhouRiverDistrictAreaRef, window.$$prefix + "/data/suzhou-river/district.geojson", [], {
+    drawGeometry(checked, suzhouRiverDistrictAreaRef, window.$$prefix + '/data/suzhou-river/district.geojson', [], {
       stroke: Cesium.Color.BROWN.withAlpha(1),
       fill: Cesium.Color.WHITE.withAlpha(0.6),
       strokeWidth: 2,
@@ -204,7 +208,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   }
 
   const handleLandUseBox = () => {
-
     if (!showTimeLine.includes('landUse')) return
 
     suzhouRiverBoxRef.current.forEach(item => {
@@ -212,23 +215,29 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     })
 
     if (year < 1989) {
-      suzhouRiverBoxRef.current.filter(item => {
-        return item.properties!.year < 1989;
-      }).forEach(item => {
-        item.show = true
-      })
+      suzhouRiverBoxRef.current
+        .filter(item => {
+          return item.properties!.year < 1989
+        })
+        .forEach(item => {
+          item.show = true
+        })
     } else if (year >= 1989 && year < 2021) {
-      suzhouRiverBoxRef.current.filter(item => {
-        return item.properties!.year >= 1989 && item.properties!.year < 2021;
-      }).forEach(item => {
-        item.show = true
-      })
+      suzhouRiverBoxRef.current
+        .filter(item => {
+          return item.properties!.year >= 1989 && item.properties!.year < 2021
+        })
+        .forEach(item => {
+          item.show = true
+        })
     } else if (year >= 2021) {
-      suzhouRiverBoxRef.current.filter(item => {
-        return item.properties!.year >= 2021;
-      }).forEach(item => {
-        item.show = true
-      })
+      suzhouRiverBoxRef.current
+        .filter(item => {
+          return item.properties!.year >= 2021
+        })
+        .forEach(item => {
+          item.show = true
+        })
     }
   }
 
@@ -247,7 +256,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     drawSuzhouRiverLandUseTypeTimeline: false,
 
     drawFishChangeCharts: false,
-
 
     history: () => {
       viewerRef.current?.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(121.44681124210383, 31.253252971821134, 300) })
@@ -418,7 +426,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         showLandUseType(value)
       })
 
-
     landUseTypeControls
       .add(guiControls, 'drawSuzhouRiverLandUseTypeTimeline')
       .name('用地类型历年分布')
@@ -426,7 +433,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         setYear(defaultMinYear)
 
         if (value) {
-          setShowTimeLine((prev) => {
+          setShowTimeLine(prev => {
             return [...prev, 'landUse']
           })
 
@@ -435,12 +442,11 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
             orientation: {
               heading: 6.283185307179581,
               pitch: -1.5707961669977455,
-              roll: 0
-            }
-          });
+              roll: 0,
+            },
+          })
         } else {
-
-          setShowTimeLine((prev) => {
+          setShowTimeLine(prev => {
             return [...prev].filter(item => item !== 'landUse')
           })
 
@@ -468,18 +474,19 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         }
       })
 
-    waterQualityControls.add(guiControls, 'drawWaterQualitycheckCharts')
+    waterQualityControls
+      .add(guiControls, 'drawWaterQualitycheckCharts')
       .name('水质变化历年图表')
       .onChange((value: boolean) => {
         setYear(defaultMinYear)
         setShowSuzhouRiverWaterQualityCharts(value)
 
         if (value) {
-          setShowTimeLine((prev) => {
+          setShowTimeLine(prev => {
             return [...prev, 'waterQuality']
           })
         } else {
-          setShowTimeLine((prev) => {
+          setShowTimeLine(prev => {
             return [...prev].filter(item => item !== 'waterQuality')
           })
         }
@@ -511,11 +518,11 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         setYear(2001)
         setShowSuzhouRiverFishCharts(value)
         if (value) {
-          setShowTimeLine((prev) => {
+          setShowTimeLine(prev => {
             return [...prev, 'fish']
           })
         } else {
-          setShowTimeLine((prev) => {
+          setShowTimeLine(prev => {
             return [...prev].filter(item => item !== 'fish')
           })
         }
@@ -529,10 +536,13 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       })
   }
 
-  const drawRiver = (url: string, ref: React.RefObject<any[]>, options?: {
-    loadDataCallback?: (data: any) => void
-
-  }) => {
+  const drawRiver = (
+    url: string,
+    ref: React.RefObject<any[]>,
+    options?: {
+      loadDataCallback?: (data: any) => void
+    }
+  ) => {
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -549,7 +559,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
   }
 
   useEffect(() => {
-
     viewerRef.current = mapInstance.current?.getViewer()!
 
     drawGeometry(true, { current: [] }, window.$$prefix + '/data/china/china-boundary.geojson', [], {
@@ -564,35 +573,32 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
       strokeWidth: 3,
     })
 
-    drawRiver(window.$$prefix + '/data/suzhou-river/suzhou-river.geojson', suzhouRiverWaterPrimitivesRef, {
-    })
+    drawRiver(window.$$prefix + '/data/suzhou-river/suzhou-river.geojson', suzhouRiverWaterPrimitivesRef, {})
     drawRiver(window.$$prefix + '/data/suzhou-river/huangpu-river.geojson', huangpuRiverWaterPrimitivesRef)
     drawRiver(window.$$prefix + '/data/suzhou-river/wenzaobang.geojson', wenzaobangWaterPrimitivesRef)
     drawRiver(window.$$prefix + '/data/suzhou-river/wusongjiang-river.geojson', wusongjiangWaterPrimitivesRef)
 
     const landUseYear = [1958, 1989, 2021]
 
-    landUseYear.forEach((year) => {
+    landUseYear.forEach(year => {
       drawGeometry(true, suzhouRiverBoxRef, window.$$prefix + `/data/suzhou-river/land-use-${year}.geojson`, [], {
         stroke: Cesium.Color.TRANSPARENT,
         fill: Cesium.Color.BROWN,
         strokeWidth: 4,
         loadedDataCallback(data, dataSource) {
-          dataSource.entities.values.forEach((entity) => {
+          dataSource.entities.values.forEach(entity => {
             entity.show = false
             entity.properties!.year = year
             // 获取自定义属性
-            const use = entity.properties!.use.getValue();
+            const use = entity.properties!.use.getValue()
 
             const useColor = {
-              "1": '#9dcf88',
-              "2": '#ed6f8a',
-              "3": '#05a552'
-
+              '1': '#9dcf88',
+              '2': '#ed6f8a',
+              '3': '#05a552',
             }
             // @ts-ignore
             entity.polygon.material = Cesium.Color.fromCssColorString(useColor[use + '']).withAlpha(0.7)
-
           })
         },
       })
@@ -651,22 +657,22 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
               const instance =
                 v.type === 'SampleLabel'
                   ? new SampleLabel(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.text, {
-                    containerBackgroundUrlType: v.containerBackgroundUrlType,
-                    defaultVisible: v.defaultVisible,
-                    indicationLineColor: v.indicationLineColor,
-                    clickCallback() {
-                      const [longitude, latitude, height] = v.position
+                      containerBackgroundUrlType: v.containerBackgroundUrlType,
+                      defaultVisible: v.defaultVisible,
+                      indicationLineColor: v.indicationLineColor,
+                      clickCallback() {
+                        const [longitude, latitude, height] = v.position
 
-                      viewerRef.current?.camera.flyTo({
-                        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
-                      })
-                    },
-                  })
+                        viewerRef.current?.camera.flyTo({
+                          destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
+                        })
+                      },
+                    })
                   : v.type === 'ImageText'
-                    ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), window.$$prefix + v.image, v.content, {
+                  ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), window.$$prefix + v.image, v.content, {
                       defaultVisible: v.defaultVisible,
                     })
-                    : null
+                  : null
 
               return {
                 ...v,
@@ -682,70 +688,95 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
     }
   }, [])
 
-
   useEffect(() => {
     if (showTimeLine.includes('landUse')) {
       handleLandUseBox()
     }
-
   }, [year, showTimeLine])
 
   return (
     <>
       {notificationContextHolder}
-      {
-        showTimeLine.length > 0 && <div className='suzhou-river-timeline-container'>
+      {showTimeLine.length > 0 && (
+        <div className="suzhou-river-timeline-container">
           {/*           <div className='suzhou-river-timeline-title'>时间轴</div> */}
-          <div className='suzhou-river-timeline'>
-            <Slider styles={{
-              track: {
-                backgroundColor: 'transparent',
-              },
-              tracks: {
-                background: '#00b96b',
-              },
-              handle: {
-                backgroundColor: '#fff',
-
-              },
-            }} marks={{
-              1986: '1986',
-              1990: '1990',
-              1995: '1995',
-              2000: '2000',
-              2005: '2005',
-              2010: '2010',
-              2015: '2015',
-              2020: '2020',
-              2021: '2021',
-            }} step={1} value={year} min={defaultMinYear} max={defaultMaxYear} onChange={debounce((value) => {
-              setYear(() => {
-                return value
-              })
-            }, 300)} />
+          <div className="suzhou-river-timeline">
+            <Slider
+              styles={{
+                track: {
+                  backgroundColor: 'transparent',
+                },
+                tracks: {
+                  background: '#00b96b',
+                },
+                handle: {
+                  backgroundColor: '#fff',
+                },
+              }}
+              marks={{
+                1986: '1986',
+                1990: '1990',
+                1995: '1995',
+                2000: '2000',
+                2005: '2005',
+                2010: '2010',
+                2015: '2015',
+                2020: '2020',
+                2021: '2021',
+              }}
+              step={1}
+              value={year}
+              min={defaultMinYear}
+              max={defaultMaxYear}
+              onChange={debounce(value => {
+                setYear(() => {
+                  return value
+                })
+              }, 300)}
+            />
           </div>
         </div>
-      }
-      <CommonMap ref={mapInstance} terrainInitCallback={() => {
-        cameraFlyTo(121.491185, 31.250281, 25000)
-      }}></CommonMap>
+      )}
+      <CommonMap
+        ref={mapInstance}
+        defaultCameraFlyToParams={{
+          destination: {
+            longitude: 121.491185,
+            latitude: 31.250281,
+            height: 25000,
+          },
+        }}
+      ></CommonMap>
       <div id="slider" style={{ display: 'none' }}></div>
-      {
-
-        [showSuzhouRiverWaterQualityCharts, showSuzhouRiverFishCharts].includes(true) && <div className="project-charts-container" style={{ width: '100%', maxWidth: '90%' }}>
-          {showSuzhouRiverWaterQualityCharts && <WaterQualityCharts year={year} chartsContainerStyle={{
-            width: '33.3%',
-          }}></WaterQualityCharts>}
-          {showSuzhouRiverWaterQualityCharts && <Images year={year} chartsContainerStyle={{
-            width: '33.3%',
-          }}></Images>}
-          {showSuzhouRiverFishCharts && <FishCharts year={year} chartsContainerStyle={{
-            width: '33.3%',
-          }}></FishCharts>}
+      {[showSuzhouRiverWaterQualityCharts, showSuzhouRiverFishCharts].includes(true) && (
+        <div className="project-charts-container" style={{ width: '100%', maxWidth: '90%' }}>
+          {showSuzhouRiverWaterQualityCharts && (
+            <WaterQualityCharts
+              year={year}
+              chartsContainerStyle={{
+                width: '33.3%',
+              }}
+            ></WaterQualityCharts>
+          )}
+          {showSuzhouRiverWaterQualityCharts && (
+            <Images
+              year={year}
+              chartsContainerStyle={{
+                width: '33.3%',
+              }}
+            ></Images>
+          )}
+          {showSuzhouRiverFishCharts && (
+            <FishCharts
+              year={year}
+              chartsContainerStyle={{
+                width: '33.3%',
+              }}
+            ></FishCharts>
+          )}
         </div>
-      }
+      )}
     </>
-
   )
 }
 

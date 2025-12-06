@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
+import { message } from 'antd'
 
 const pointLabelStyle = {
   fillColor: Cesium.Color.WHITE,
@@ -27,6 +28,8 @@ export type pointMetaType = {
 }
 
 type options = {
+  // 颜色
+  color?: string
   onLoadData?: (data: pointMetaType[]) => void
 } & EventType
 
@@ -37,9 +40,6 @@ class ProfileAnalysis {
 
   // 存储已确定的点坐标
   fixedPositions: Cesium.Cartesian3[] = []
-
-  // 颜色
-  color: Cesium.Color = Cesium.Color.CYAN
 
   // 总距离
   totalDistance: number = 0
@@ -68,14 +68,20 @@ class ProfileAnalysis {
   finalLineEntity: Cesium.Entity | null = null
 
   options: options = {
+    color: '#00FFFF',
     onLoadData: (data: pointMetaType[]) => {},
     onCompleted: () => {},
+    onCancel() {},
+    onShowFinishEntity: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
 
-    this.options = options! || {}
+    this.options = {
+      ...this.options,
+      ...options,
+    }
 
     this.start()
   }
@@ -231,6 +237,8 @@ class ProfileAnalysis {
         outlineWidth: 3,
       },
     })
+
+    this.options?.onShowFinishEntity?.()
   }
 
   // 更新线段预览（固定点 + 当前鼠标位置）
@@ -250,7 +258,7 @@ class ProfileAnalysis {
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: this.color.withAlpha(0.8),
+            color: Cesium.Color.fromCssColorString(this.options.color!),
           }),
           width: 3,
           clampToGround: true,
@@ -268,7 +276,7 @@ class ProfileAnalysis {
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: this.color.withAlpha(0.8),
+            color: Cesium.Color.fromCssColorString(this.options.color!).withAlpha(0.8),
           }),
           width: 3,
           clampToGround: true,
@@ -302,10 +310,7 @@ class ProfileAnalysis {
     const finalLine = this.viewer!.entities.add({
       polyline: {
         positions: this.fixedPositions,
-        material: new Cesium.PolylineGlowMaterialProperty({
-          glowPower: 0.2,
-          color: this.color,
-        }),
+        material: Cesium.Color.fromCssColorString(this.options.color!),
         width: 5,
         clampToGround: true,
       },
@@ -317,7 +322,7 @@ class ProfileAnalysis {
 
     for (let i = 0; i < this.fixedPositions.length; i++) {
       if (i !== this.fixedPositions.length - 1) {
-        const segements = this.interpolateBetweenPoints(this.fixedPositions[i], this.fixedPositions[i + 1], 50)
+        const segements = this.interpolateBetweenPoints(this.fixedPositions[i], this.fixedPositions[i + 1], 30)
 
         const segmentPositions = []
 
@@ -352,17 +357,27 @@ class ProfileAnalysis {
     }
 
     this.computeDistanceFromStart(prepareProfileAnalysisPointPosition as Cesium.Cartesian3[])
-
-    this.completed()
   }
 
   /** @description 计算与起点之间的距离（带真实海拔） */
   async computeDistanceFromStart(positions: Cesium.Cartesian3[]) {
+    message.open({
+      key: 'profileAnalysis',
+      duration: 0,
+      content: '正在进行剖面分析...',
+      type: 'loading',
+    })
     // 1. 将 Cartesian 转成 Cartographic（后面用来查真实高度）
     const cartos = positions.map(p => Cesium.Cartographic.fromCartesian(p))
 
+    this.completed()
+
     // 2. 从地形中获取真实海拔（关键）
     const terrainCartos = await Cesium.sampleTerrainMostDetailed(this.viewer!.terrainProvider, cartos)
+
+    message.destroy('profileAnalysis')
+
+    console.log('terrainCartos', terrainCartos)
 
     // 3. 使用带真实海拔的 cartographic 继续你的逻辑
     const nextPositions = terrainCartos.map((cartographic, index) => {
@@ -483,11 +498,11 @@ class ProfileAnalysis {
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
-  toEnd() {
-    this.state = 'end'
+  toCancel() {
+    this.state = 'cancel'
 
-    if (typeof this.options.onEnd === 'function') {
-      this.options.onEnd()
+    if (typeof this.options.onCancel === 'function') {
+      this.options.onCancel()
     }
 
     this.destroyAll()

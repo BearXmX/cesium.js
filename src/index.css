@@ -41,7 +41,11 @@ body,
 }
 
 .lil-gui .lil-gui .lil-gui > .children {
-  border-left: 2px solid #0978d3;
+  border-left: 0px solid #2fd5c3;
+}
+
+.lil-gui .lil-gui .controller {
+  border-left: 2px solid #2fd5c3;
 }
 
 .ant-notification {

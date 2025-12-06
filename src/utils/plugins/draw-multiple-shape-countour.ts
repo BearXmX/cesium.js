@@ -36,7 +36,8 @@ class MultipleShapeCountour {
 
   options: options = {
     onCompleted: () => {},
-    onEnd: () => {},
+    onCancel: () => {},
+    onShowFinishEntity: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
@@ -67,7 +68,10 @@ class MultipleShapeCountour {
       '#2F0000',
     ]
 
-    this.options = options || {}
+    this.options = {
+      ...this.options,
+      ...options,
+    }
 
     this.start()
   }
@@ -162,6 +166,8 @@ class MultipleShapeCountour {
         })
 
         this.finishButtonEntity = buttonEntity
+
+        this.options.onShowFinishEntity?.()
       } else {
         // @ts-ignore
         this.finishButtonEntity.position = this.fixedPositions[this.fixedPositions.length - 1]
@@ -373,11 +379,11 @@ class MultipleShapeCountour {
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
-  toEnd() {
-    this.state = 'end'
+  toCancel() {
+    this.state = 'cancel'
 
-    if (typeof this.options.onEnd === 'function') {
-      this.options.onEnd()
+    if (typeof this.options.onCancel === 'function') {
+      this.options.onCancel()
     }
 
     this.destroyAll()

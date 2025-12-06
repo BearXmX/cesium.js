@@ -15,7 +15,9 @@ const pointLabelStyle = {
   disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
-type options = {} & EventType
+type options = {
+  color?: string
+} & EventType
 
 class MeasureDistance {
   viewer: Cesium.Viewer | null = null
@@ -32,8 +34,6 @@ class MeasureDistance {
   floatingPointEntity: Cesium.Entity | null = null
   // 完成按钮
   finishButtonEntity: Cesium.Entity | null = null
-  // 颜色
-  color: Cesium.Color = Cesium.Color.CYAN
 
   // 展示长度的label实体
   distanceLabelEntityList: Cesium.Entity[] = []
@@ -46,12 +46,20 @@ class MeasureDistance {
   totalDistanceLabelEntity: Cesium.Entity | null = null
 
   options: options = {
+    color: '#00FFFF',
     onCompleted: () => {},
+    onCancel() {},
+    onShowFinishEntity: () => {},
   }
 
   constructor(viewer: Cesium.Viewer, options?: options) {
     this.viewer = viewer
-    this.options = options! || {}
+
+    this.options = {
+      ...this.options,
+      ...options,
+    }
+
     this.start()
   }
 
@@ -208,6 +216,8 @@ class MeasureDistance {
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
       },
     })
+
+    this.options.onShowFinishEntity?.()
   }
 
   // 更新线段预览（固定点 + 当前鼠标位置）
@@ -227,7 +237,7 @@ class MeasureDistance {
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: this.color.withAlpha(0.8),
+            color: Cesium.Color.fromCssColorString(this.options.color!).withAlpha(0.8),
           }),
           width: 3,
           clampToGround: true,
@@ -245,7 +255,7 @@ class MeasureDistance {
         polyline: {
           positions: dynamicPositions,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: this.color.withAlpha(0.8),
+            color: Cesium.Color.fromCssColorString(this.options.color!).withAlpha(0.8),
           }),
           width: 3,
           clampToGround: true,
@@ -280,10 +290,7 @@ class MeasureDistance {
     const finalLine = this.viewer!.entities.add({
       polyline: {
         positions: this.fixedPositions,
-        material: new Cesium.PolylineGlowMaterialProperty({
-          glowPower: 0.2,
-          color: this.color,
-        }),
+        material: Cesium.Color.fromCssColorString(this.options.color!),
         width: 5,
         clampToGround: true,
       },
@@ -321,11 +328,11 @@ class MeasureDistance {
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
-  toEnd() {
-    this.state = 'end'
+  toCancel() {
+    this.state = 'cancel'
 
-    if (typeof this.options.onEnd === 'function') {
-      this.options.onEnd()
+    if (typeof this.options.onCancel === 'function') {
+      this.options.onCancel()
     }
 
     this.destroyAll()

@@ -39,14 +39,12 @@ import {
   AnzihePandaReserve,
   AbiesFaxoniana,
   VerticalNatureAreaChart,
-  drawGeometry
+  drawGeometry,
 } from './constance'
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 
 const HengduanMountains = () => {
-
   const formatterGroupResearchLineBillboards = () => {
-
     const groups = [] as any[]
 
     researchLineBillboards.forEach(item => {
@@ -59,12 +57,14 @@ const HengduanMountains = () => {
       return {
         title: groupName,
         label: groupName,
-        options: researchLineBillboards.filter(item => item.properties.groupName === groupName).map(item => {
-          return {
-            value: item.properties.name,
-            label: item.properties.name
-          }
-        })
+        options: researchLineBillboards
+          .filter(item => item.properties.groupName === groupName)
+          .map(item => {
+            return {
+              value: item.properties.name,
+              label: item.properties.name,
+            }
+          }),
       }
     })
   }
@@ -213,15 +213,20 @@ const HengduanMountains = () => {
       .add(guiControls, 'drawProvince')
       .name('相关行政区域')
       .onChange((value: boolean) => {
-
         if (value) {
-          cameraFlyTo(98.81428905, 30.26172082, 4200000, {
-            orientation: {
-              heading: 6.283185307179586,
-              pitch: -1.5703325312410912,
-              roll: 0,
+          cameraFlyTo(
+            98.81428905,
+            30.26172082,
+            4200000,
+            {
+              orientation: {
+                heading: 6.283185307179586,
+                pitch: -1.5703325312410912,
+                roll: 0,
+              },
             },
-          }, viewerRef)
+            viewerRef
+          )
         }
 
         const options = {
@@ -230,35 +235,41 @@ const HengduanMountains = () => {
             outlineWidth: 2,
             outlineColor: Cesium.Color.BLACK,
             fillColor: Cesium.Color.WHITE,
-          }
+          },
         }
 
-        drawGeometry(value, provinceRef, '/data/hengduan-mountains/province.geojson', {
-          geoOptions: {
-            stroke: Cesium.Color.PINK,
-            fill: Cesium.Color.PINK.withAlpha(0.5),
-            strokeWidth: 1,
+        drawGeometry(
+          value,
+          provinceRef,
+          '/data/hengduan-mountains/province.geojson',
+          {
+            geoOptions: {
+              stroke: Cesium.Color.PINK,
+              fill: Cesium.Color.PINK.withAlpha(0.5),
+              strokeWidth: 1,
+            },
+            entities: {
+              texts: [
+                {
+                  text: '西藏',
+                  position: Cesium.Cartesian3.fromDegrees(87.80433606069074, 31.28797794125832),
+                  ...options,
+                },
+                {
+                  text: '四川',
+                  position: Cesium.Cartesian3.fromDegrees(105.64506790860854, 31.491911447835545),
+                  ...options,
+                },
+                {
+                  text: '云南',
+                  position: Cesium.Cartesian3.fromDegrees(101.76608100350815, 24.12377274429042),
+                  ...options,
+                },
+              ],
+            },
           },
-          entities: {
-            texts: [
-              {
-                text: '西藏',
-                position: Cesium.Cartesian3.fromDegrees(87.80433606069074, 31.28797794125832),
-                ...options
-              },
-              {
-                text: '四川',
-                position: Cesium.Cartesian3.fromDegrees(105.64506790860854, 31.491911447835545),
-                ...options
-              },
-              {
-                text: '云南',
-                position: Cesium.Cartesian3.fromDegrees(101.76608100350815, 24.12377274429042),
-                ...options
-              },
-            ]
-          }
-        }, viewerRef)
+          viewerRef
+        )
       })
 
     mainAreaControls
@@ -266,27 +277,32 @@ const HengduanMountains = () => {
       .name('横断山区')
       .onChange((value: boolean) => {
         /* 横断山区 */
-        drawGeometry(value, HengduanMountainsDiagramRef, '/data/hengduan-mountains/hengduan-mountains-area.geojson', {
-          geoOptions: {
-            stroke: Cesium.Color.ORANGE,
-            fill: Cesium.Color.ORANGE.withAlpha(0.5),
-            strokeWidth: 2,
+        drawGeometry(
+          value,
+          HengduanMountainsDiagramRef,
+          '/data/hengduan-mountains/hengduan-mountains-area.geojson',
+          {
+            geoOptions: {
+              stroke: Cesium.Color.ORANGE,
+              fill: Cesium.Color.ORANGE.withAlpha(0.5),
+              strokeWidth: 2,
+            },
+            entities: {
+              texts: [
+                {
+                  text: '横断山区',
+                  fontSize: 20,
+                  position: Cesium.Cartesian3.fromDegrees(99.9156783576662, 28.506240020807176),
+                  labelOptions: {
+                    ...labelConfig,
+                    fillColor: Cesium.Color.ORANGE,
+                  },
+                },
+              ],
+            },
           },
-          entities: {
-            texts: [
-              {
-                text: '横断山区',
-                fontSize: 20,
-                position: Cesium.Cartesian3.fromDegrees(99.9156783576662, 28.506240020807176),
-                labelOptions: {
-                  ...labelConfig,
-                  fillColor: Cesium.Color.ORANGE,
-                }
-              }
-            ]
-          }
-        }, viewerRef)
-
+          viewerRef
+        )
       })
 
     mainAreaControls
@@ -300,22 +316,28 @@ const HengduanMountains = () => {
           {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '贡嘎山'),
-            }
-          }, viewerRef
+            },
+          },
+          viewerRef
         )
 
         if (value) {
           setOtherPosition('贡嘎山')
-          cameraFlyTo(101.81087885, 29.52080401, 7599.75, {
-            orientation: {
-              heading: 0.6762693278851586,
-              pitch: -0.042912143092978194,
-              roll: 0.0001878768739276282,
+          cameraFlyTo(
+            101.81087885,
+            29.52080401,
+            7599.75,
+            {
+              orientation: {
+                heading: 0.6762693278851586,
+                pitch: -0.042912143092978194,
+                roll: 0.0001878768739276282,
+              },
             },
-          }, viewerRef)
+            viewerRef
+          )
         } else {
           setOtherPosition(null)
-
         }
       })
 
@@ -382,24 +404,29 @@ const HengduanMountains = () => {
           {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '虎跳峡'),
-            }
-          }, viewerRef
+            },
+          },
+          viewerRef
         )
 
         if (value) {
           setOtherPosition('虎跳峡')
-          cameraFlyTo(100.07018355, 27.14659598, 4882.09, {
-            orientation: {
-              heading: 5.987534848261792,
-              pitch: -0.88159552688695,
-              roll: 0.000014648022920837889
-            }
-          }, viewerRef)
+          cameraFlyTo(
+            100.07018355,
+            27.14659598,
+            4882.09,
+            {
+              orientation: {
+                heading: 5.987534848261792,
+                pitch: -0.88159552688695,
+                roll: 0.000014648022920837889,
+              },
+            },
+            viewerRef
+          )
         } else {
           setOtherPosition(null)
-
         }
-
       })
 
     mainCanyon
@@ -413,22 +440,28 @@ const HengduanMountains = () => {
           {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '碧壤峡谷'),
-            }
-          }, viewerRef
+            },
+          },
+          viewerRef
         )
 
         if (value) {
           setOtherPosition('碧壤峡谷')
-          cameraFlyTo(99.51016045, 28.26774769, 5180.68, {
-            orientation: {
-              heading: 4.899541959295267,
-              pitch: -0.5643747357231286,
-              roll: 0.00001208640318672849,
+          cameraFlyTo(
+            99.51016045,
+            28.26774769,
+            5180.68,
+            {
+              orientation: {
+                heading: 4.899541959295267,
+                pitch: -0.5643747357231286,
+                roll: 0.00001208640318672849,
+              },
             },
-          }, viewerRef)
+            viewerRef
+          )
         } else {
           setOtherPosition(null)
-
         }
       })
 
@@ -537,17 +570,16 @@ const HengduanMountains = () => {
           {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '鞍子河大熊猫自然保护区'),
-            }
-          }, viewerRef
+            },
+          },
+          viewerRef
         )
 
         if (value) {
           setOtherPosition('鞍子河大熊猫自然保护区')
-          cameraFlyTo(103.12073346936057, 31.043327963060108, 300000, {
-          }, viewerRef)
+          cameraFlyTo(103.12073346936057, 31.043327963060108, 300000, {}, viewerRef)
         } else {
           setOtherPosition(null)
-
         }
       })
 
@@ -566,7 +598,6 @@ const HengduanMountains = () => {
       .add(guiControls, 'drawDianlengshan')
       .name('滇冷杉')
       .onChange((value: boolean) => {
-
         drawGeometry(
           value,
           dianlengshanEntityRef,
@@ -574,17 +605,16 @@ const HengduanMountains = () => {
           {
             entities: {
               billboards: otherPositionData.filter(item => item.properties.name === '滇冷杉'),
-            }
-          }, viewerRef
+            },
+          },
+          viewerRef
         )
 
         if (value) {
           setOtherPosition('滇冷杉')
-          cameraFlyTo(99.9101808782321, 27.409176945433586, 300000, {
-          }, viewerRef)
+          cameraFlyTo(99.9101808782321, 27.409176945433586, 300000, {}, viewerRef)
         } else {
           setOtherPosition(null)
-
         }
       })
 
@@ -604,27 +634,32 @@ const HengduanMountains = () => {
               clampToGround: true,
             },
             entities: {
-              billboards: researchLineBillboards
-            }
-          }, viewerRef
+              billboards: researchLineBillboards,
+            },
+          },
+          viewerRef
         )
 
         if (value) {
-          cameraFlyTo(0, 0, 0, {
-            destination: Cesium.Cartesian3.fromDegrees(100.26481423, 26.47924395, 34771.12),
-            orientation: {
-              heading: 6.010600549860722,
-              pitch: -0.3759492281203336,
-              roll: 0.000034991829664932084,
+          cameraFlyTo(
+            0,
+            0,
+            0,
+            {
+              destination: Cesium.Cartesian3.fromDegrees(100.26481423, 26.47924395, 34771.12),
+              orientation: {
+                heading: 6.010600549860722,
+                pitch: -0.3759492281203336,
+                roll: 0.000034991829664932084,
+              },
             },
-          }, viewerRef)
+            viewerRef
+          )
         }
-
       })
   }
 
   const selectAndClickResearchLine = (name: string) => {
-
     const currentSelect = researchLineBillboards.find(item => item.properties.name === name)!
     const position = currentSelect?.imagePosition!
     const cartographic = Cesium.Cartographic.fromCartesian(position)
@@ -641,7 +676,6 @@ const HengduanMountains = () => {
   }
 
   const clickOtherPosition = (name: string) => {
-
     const currentSelect = otherPositionData.find(item => item.properties.name === name)!
 
     const position = currentSelect?.imagePosition!
@@ -666,36 +700,47 @@ const HengduanMountains = () => {
     viewerRef.current.scene.globe.depthTestAgainstTerrain = false
 
     /* 国家边界 */
-    drawGeometry(true, { current: [] }, '/data/china/china-boundary.geojson', {
-      geoOptions: {
-        stroke: Cesium.Color.YELLOW,
-        fill: Cesium.Color.YELLOW.withAlpha(0.2),
-        strokeWidth: 2,
-      }
-    }, viewerRef)
+    drawGeometry(
+      true,
+      { current: [] },
+      '/data/china/china-boundary.geojson',
+      {
+        geoOptions: {
+          stroke: Cesium.Color.YELLOW,
+          fill: Cesium.Color.YELLOW.withAlpha(0.2),
+          strokeWidth: 2,
+        },
+      },
+      viewerRef
+    )
 
     /* 横断山区 */
-    drawGeometry(true, HengduanMountainsDiagramRef, '/data/hengduan-mountains/hengduan-mountains-area.geojson', {
-      geoOptions: {
-        stroke: Cesium.Color.ORANGE,
-        fill: Cesium.Color.ORANGE.withAlpha(0.5),
-        strokeWidth: 2,
+    drawGeometry(
+      true,
+      HengduanMountainsDiagramRef,
+      '/data/hengduan-mountains/hengduan-mountains-area.geojson',
+      {
+        geoOptions: {
+          stroke: Cesium.Color.ORANGE,
+          fill: Cesium.Color.ORANGE.withAlpha(0.5),
+          strokeWidth: 2,
+        },
+        entities: {
+          texts: [
+            {
+              text: '横断山区',
+              fontSize: 20,
+              position: Cesium.Cartesian3.fromDegrees(99.9156783576662, 28.506240020807176),
+              labelOptions: {
+                ...labelConfig,
+                fillColor: Cesium.Color.ORANGE,
+              },
+            },
+          ],
+        },
       },
-      entities: {
-        texts: [
-          {
-            text: '横断山区',
-            fontSize: 20,
-            position: Cesium.Cartesian3.fromDegrees(99.9156783576662, 28.506240020807176),
-            labelOptions: {
-              ...labelConfig,
-              fillColor: Cesium.Color.ORANGE,
-            }
-
-          }
-        ]
-      }
-    }, viewerRef)
+      viewerRef
+    )
 
     initGui()
 
@@ -709,28 +754,20 @@ const HengduanMountains = () => {
           const entity = picked.id as Cesium.Entity
 
           if (typeof entity.properties === 'object') {
-
             if (!!entity.properties!.type) {
-
               if (entity.properties!.type.getValue() === 'researchLine-position' && !!entity.properties!.name) {
-
                 const name = entity.properties!.name.getValue()
 
                 selectAndClickResearchLine(name)
-
               }
 
               if (entity.properties!.type.getValue() === 'other-position' && !!entity.properties!.name) {
-
                 const name = entity.properties!.name.getValue()
 
                 clickOtherPosition(name)
               }
-
             }
           }
-
-
         }
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
@@ -744,14 +781,14 @@ const HengduanMountains = () => {
     <>
       {' '}
       {notificationContextHolder}
-
-
       <CommonMap
         ref={mapInstance}
-        terrainInitCallback={() => {
-          viewerRef.current!.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(106.47433746783226, 35.22179132388041, 8000000),
-          })
+        defaultCameraFlyToParams={{
+          destination: {
+            longitude: 106.47433746783226,
+            latitude: 35.22179132388041,
+            height: 8000000,
+          },
         }}
       ></CommonMap>
       {
@@ -762,48 +799,39 @@ const HengduanMountains = () => {
           maskClosable={false}
           open={!!otherPosition}
           getContainer={false}
-          closeIcon={<></>}
           zIndex={2551}
-          afterOpenChange={(open) => {
+          afterOpenChange={open => {
             if (open) {
               setResearchLinePosition(null)
             }
           }}
           footer={
             <div style={{ textAlign: 'right' }}>
-              <Button type='default' onClick={() => {
-                setOtherPosition(null)
-              }}>关闭</Button>
-            </div>}
-          styles={
-            {
-              body: {
-                padding: 0
-              }
-            }
+              <Button
+                type="default"
+                onClick={() => {
+                  setOtherPosition(null)
+                }}
+              >
+                关闭
+              </Button>
+            </div>
           }
-          onClose={() => setOtherPosition(null)}>
-          {
-            otherPosition === '贡嘎山' && <GonggaMountain></GonggaMountain>
-          }
-          {
-            otherPosition === '虎跳峡' && <TigerLeapingGorge></TigerLeapingGorge>
-          }
-          {
-            otherPosition === '碧壤峡谷' && <BiranGorge></BiranGorge>
-          }
-          {
-            otherPosition === '鞍子河大熊猫自然保护区' && <AnzihePandaReserve></AnzihePandaReserve>
-          }
-          {
-            otherPosition === '滇冷杉' && <AbiesFaxoniana></AbiesFaxoniana>
-          }
-          {
-            otherPosition === 'verticalNatureArea' && <VerticalNatureAreaChart otherPosition={otherPosition}></VerticalNatureAreaChart>
-          }
+          styles={{
+            body: {
+              padding: 0,
+            },
+          }}
+          onClose={() => setOtherPosition(null)}
+        >
+          {otherPosition === '贡嘎山' && <GonggaMountain></GonggaMountain>}
+          {otherPosition === '虎跳峡' && <TigerLeapingGorge></TigerLeapingGorge>}
+          {otherPosition === '碧壤峡谷' && <BiranGorge></BiranGorge>}
+          {otherPosition === '鞍子河大熊猫自然保护区' && <AnzihePandaReserve></AnzihePandaReserve>}
+          {otherPosition === '滇冷杉' && <AbiesFaxoniana></AbiesFaxoniana>}
+          {otherPosition === 'verticalNatureArea' && <VerticalNatureAreaChart otherPosition={otherPosition}></VerticalNatureAreaChart>}
         </Drawer>
       }
-
       {
         <Drawer
           width={400}
@@ -813,50 +841,48 @@ const HengduanMountains = () => {
           open={!!researchLinePosition}
           getContainer={false}
           zIndex={2551}
-          afterOpenChange={(open) => {
-
+          afterOpenChange={open => {
             if (open) {
               setOtherPosition(null)
             }
           }}
-          closeIcon={<></>}
           footer={
             <div style={{ textAlign: 'right' }}>
-              <Button type='default' onClick={() => {
-                setResearchLinePosition(null)
-              }}>关闭</Button>
-            </div>}
-          extra={<>
-            <Select value={researchLinePosition} style={{ width: 180 }} options={formatterGroupResearchLineBillboards()} onChange={(e) => {
-              selectAndClickResearchLine(e)
-            }}></Select>
-          </>}
-          styles={
-            {
-              body: {
-                padding: 0
-              }
-            }
+              <Button
+                type="default"
+                onClick={() => {
+                  setResearchLinePosition(null)
+                }}
+              >
+                关闭
+              </Button>
+            </div>
           }
-          onClose={() => setResearchLinePosition(null)}>
-          {
-            researchLinePosition === '丽江' && <ResearchLinePositionLijiang></ResearchLinePositionLijiang>
+          extra={
+            <>
+              <Select
+                value={researchLinePosition}
+                style={{ width: 100 }}
+                options={formatterGroupResearchLineBillboards()}
+                onChange={e => {
+                  selectAndClickResearchLine(e)
+                }}
+              ></Select>
+            </>
           }
-          {
-            researchLinePosition === '塔城' && <ResearchLinePositionTacheng></ResearchLinePositionTacheng>
-          }
-          {
-            researchLinePosition === '梅里雪山' && <ResearchLinePositionMeiliSnowMountain></ResearchLinePositionMeiliSnowMountain>
-          }
-          {
-            researchLinePosition === '香格里拉' && <ResearchLinePositionShangriLa></ResearchLinePositionShangriLa>
-          }
-          {
-            researchLinePosition === '长江第一湾观景台' && <ResearchLinePositionFirstBend></ResearchLinePositionFirstBend>
-          }
-          {
-            researchLinePosition === '虎跳峡' && <TigerLeapingGorge></TigerLeapingGorge>
-          }
+          styles={{
+            body: {
+              padding: 0,
+            },
+          }}
+          onClose={() => setResearchLinePosition(null)}
+        >
+          {researchLinePosition === '丽江' && <ResearchLinePositionLijiang></ResearchLinePositionLijiang>}
+          {researchLinePosition === '塔城' && <ResearchLinePositionTacheng></ResearchLinePositionTacheng>}
+          {researchLinePosition === '梅里雪山' && <ResearchLinePositionMeiliSnowMountain></ResearchLinePositionMeiliSnowMountain>}
+          {researchLinePosition === '香格里拉' && <ResearchLinePositionShangriLa></ResearchLinePositionShangriLa>}
+          {researchLinePosition === '长江第一湾观景台' && <ResearchLinePositionFirstBend></ResearchLinePositionFirstBend>}
+          {researchLinePosition === '虎跳峡' && <TigerLeapingGorge></TigerLeapingGorge>}
         </Drawer>
       }
     </>

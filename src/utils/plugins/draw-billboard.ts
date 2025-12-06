@@ -4,7 +4,7 @@ import type { EventType } from './type'
 export type BILLBOARD_OPTIONS_TYPE = {
   scale?: number
   content?: string
-} & EventType  & {
+} & EventType & {
     onClick?: (instance: DrawBillboard) => void
   }
 
@@ -27,7 +27,7 @@ class DrawBillboard {
   options: BILLBOARD_OPTIONS_TYPE = {
     ...BILLBOARD_OPTIONS_DEFAULT,
     onCompleted: () => {},
-    onEnd() {},
+    onCancel() {},
     onClick() {},
   }
 
@@ -106,11 +106,11 @@ class DrawBillboard {
     this.completed()
   }
 
-  toEnd() {
-    this.state = 'end'
+  toCancel() {
+    this.state = 'cancel'
 
-    if (typeof this.options.onEnd === 'function') {
-      this.options.onEnd()
+    if (typeof this.options.onCancel === 'function') {
+      this.options.onCancel()
     }
 
     this.completedDestroy()

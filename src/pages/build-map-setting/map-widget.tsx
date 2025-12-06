@@ -3,13 +3,7 @@ import * as Cesium from 'cesium'
 import type { CommonMapInstanceType } from '@/components/common-map'
 import type { billboardWidget, lineWidget, settingType, textWidget } from './constance'
 import { ColorPicker, Form, Input, InputNumber, message, Switch, type InputRef } from 'antd'
-import {
-  AimOutlined,
-  CheckOutlined,
-  CloseOutlined,
-  DeleteOutlined,
-  EditOutlined,
-} from '@ant-design/icons'
+import { AimOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import classNames from 'classnames'
 import SvgIcon from '@/components/svg-icon'
 import DrawLineShapeIcon from '@/assets/svg/draw-line-shape-icon.svg?react' // 第二步写这里！
@@ -35,12 +29,12 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
   const [activeTool, setActiveTool] = useState<{ type?: string; instance?: LineShape | DrawText | DrawBillboard }>({})
 
   // 定义一个 ref，专门存储最新的 setting
-  const settingRef = useRef(setting);
+  const settingRef = useRef(setting)
 
   // 监听 setting 变化，实时更新 ref.current
   useEffect(() => {
-    settingRef.current = setting; // 每次 setting 更新，都把最新值同步到 ref
-  }, [setting]);
+    settingRef.current = setting // 每次 setting 更新，都把最新值同步到 ref
+  }, [setting])
 
   const tools = [
     {
@@ -49,9 +43,9 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
       onClick: () => {
         if (!!activeTool.type) {
           if (activeTool.type === '绘制线段') {
-            activeTool.instance?.toEnd()
+            activeTool.instance?.toCancel()
           } else {
-            message.warning('当前正在绘制' + activeTool.type)
+            message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
             return
           }
         }
@@ -89,7 +83,7 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
             })
             setActiveTool({})
           },
-          onEnd() {
+          onCancel() {
             setActiveTool({})
           },
           onClick(ref) {
@@ -109,9 +103,9 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
       onClick: () => {
         if (!!activeTool.type) {
           if (activeTool.type === '绘制文字') {
-            activeTool.instance?.toEnd()
+            activeTool.instance?.toCancel()
           } else {
-            message.warning('当前正在绘制' + activeTool.type)
+            message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
             return
           }
         }
@@ -127,7 +121,7 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
               return {
                 longitude,
                 latitude,
-                height
+                height,
               }
             })
 
@@ -151,7 +145,7 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
 
             setActiveTool({})
           },
-          onEnd() {
+          onCancel() {
             setActiveTool({})
           },
           onClick(ref) {
@@ -171,9 +165,9 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
       onClick: () => {
         if (!!activeTool.type) {
           if (activeTool.type === '绘制图标') {
-            activeTool.instance?.toEnd()
+            activeTool.instance?.toCancel()
           } else {
-            message.warning('当前正在绘制' + activeTool.type)
+            message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
             return
           }
         }
@@ -189,7 +183,7 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
               return {
                 longitude,
                 latitude,
-                height
+                height,
               }
             })
 
@@ -211,10 +205,9 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
               }
             })
 
-
             setActiveTool({})
           },
-          onEnd() {
+          onCancel() {
             setActiveTool({})
           },
           onClick(ref) {
@@ -226,14 +219,14 @@ export const MapWidgetToolComponent: React.FC<props> = props => {
         })
 
         setActiveTool({ type: '绘制图标', instance: drawer })
-      }
-    }
+      },
+    },
   ]
 
   useEffect(() => {
     return () => {
       if (activeTool.instance) {
-        activeTool.instance?.toEnd()
+        activeTool.instance?.toCancel()
       }
     }
   }, [activeTool])
@@ -382,7 +375,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                   <Form>
                     <Form.Item label="线段颜色">
                       <ColorPicker
-                        size='small'
+                        size="small"
                         value={item.params.color}
                         defaultValue={'#00FFFF'}
                         disabledFormat
@@ -395,7 +388,6 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                           setSetting(prev => ({
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
-
                               if (widgetIndex === index) {
                                 const v = widget as lineWidget
                                 return { ...widget, params: { ...v.params, color: newColor } }
@@ -410,7 +402,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
 
                     <Form.Item label="线段宽度">
                       <InputNumber
-                        size='small'
+                        size="small"
                         min={1}
                         max={10}
                         defaultValue={5}
@@ -432,9 +424,12 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                         }}
                       />
                     </Form.Item>
-                    <Form.Item label="内容介绍" labelCol={{
-                      span: 24
-                    }}>
+                    <Form.Item
+                      label="内容介绍"
+                      labelCol={{
+                        span: 24,
+                      }}
+                    >
                       <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>
                     </Form.Item>
                   </Form>
@@ -466,7 +461,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     </Form.Item>
                     <Form.Item label="高度">
                       <InputNumber
-                        size='small'
+                        size="small"
                         min={0}
                         max={500000}
                         step={1000}
@@ -492,7 +487,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     </Form.Item>
                     <Form.Item label="文本颜色">
                       <ColorPicker
-                        size='small'
+                        size="small"
                         value={item.params.color}
                         disabledFormat
                         format="hex"
@@ -516,7 +511,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     </Form.Item>
                     <Form.Item label="文本大小">
                       <InputNumber
-                        size='small'
+                        size="small"
                         min={1}
                         max={30}
                         value={item.params.fontSize}
@@ -538,7 +533,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     </Form.Item>
                     <Form.Item label="描边颜色">
                       <ColorPicker
-                        size='small'
+                        size="small"
                         value={item.params.outlineColor}
                         disabledFormat
                         format="hex"
@@ -563,7 +558,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
 
                     <Form.Item label="描边宽度">
                       <InputNumber
-                        size='small'
+                        size="small"
                         min={0}
                         max={10}
                         value={item.params.outlineWidth}
@@ -585,7 +580,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
 
                     <Form.Item label="显示背景">
                       <Switch
-                        size='small'
+                        size="small"
                         checked={!!item.params.showBackground}
                         onChange={checked => {
                           item.instance?.updateTextEntityShowBackground(checked)
@@ -598,7 +593,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                                 return { ...widget, params: { ...v.params, showBackground: Number(checked) } }
                               }
                               return widget
-                            })
+                            }),
                           }))
                         }}
                       />
@@ -606,7 +601,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
 
                     <Form.Item label="背景颜色">
                       <ColorPicker
-                        size='small'
+                        size="small"
                         value={item.params.backgroundColor}
                         disabledFormat
                         format="hex"
@@ -630,7 +625,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     </Form.Item>
                     <Form.Item label="背景内边距X">
                       <InputNumber
-                        size='small'
+                        size="small"
                         min={0}
                         max={10}
                         value={item.params.backgroundPaddingX}
@@ -652,7 +647,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                     </Form.Item>
                     <Form.Item label="背景内边距Y">
                       <InputNumber
-                        size='small'
+                        size="small"
                         min={0}
                         max={10}
                         value={item.params.backgroundPaddingY}
@@ -672,75 +667,79 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                         }}
                       />
                     </Form.Item>
-                    <Form.Item label="内容介绍" labelCol={{
-                      span: 24
-                    }}>
+                    <Form.Item
+                      label="内容介绍"
+                      labelCol={{
+                        span: 24,
+                      }}
+                    >
                       <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>
                     </Form.Item>
                   </Form>
                 )}
 
-                {
-                  item.type === 'billboard' && (
-                    <Form>
-                      <Form.Item label='高度'>
-                        <InputNumber
-                          size='small'
-                          min={0}
-                          max={500000}
-                          step={1000}
-                          value={item.position.height}
-                          onChange={value => {
-                            const position = { ...item.position, height: value! }
+                {item.type === 'billboard' && (
+                  <Form>
+                    <Form.Item label="高度">
+                      <InputNumber
+                        size="small"
+                        min={0}
+                        max={500000}
+                        step={1000}
+                        value={item.position.height}
+                        onChange={value => {
+                          const position = { ...item.position, height: value! }
 
-                            const formatterPosition = Cesium.Cartesian3.fromDegrees(position.longitude, position.latitude, position.height)
+                          const formatterPosition = Cesium.Cartesian3.fromDegrees(position.longitude, position.latitude, position.height)
 
-                            item.instance?.updateBillboardEntityHeight(formatterPosition)
-                            setSetting(prev => ({
-                              ...prev,
-                              mapWidget: prev.mapWidget.map((widget, widgetIndex) => {
-                                if (widgetIndex === index) {
-                                  const v = widget as billboardWidget
-                                  return { ...v, position: position }
-                                }
-                                return widget
-                              }),
-                            }))
-                          }}
-                        />
-                      </Form.Item>
+                          item.instance?.updateBillboardEntityHeight(formatterPosition)
+                          setSetting(prev => ({
+                            ...prev,
+                            mapWidget: prev.mapWidget.map((widget, widgetIndex) => {
+                              if (widgetIndex === index) {
+                                const v = widget as billboardWidget
+                                return { ...v, position: position }
+                              }
+                              return widget
+                            }),
+                          }))
+                        }}
+                      />
+                    </Form.Item>
 
-                      <Form.Item label="缩放">
-                        <InputNumber
-                          size='small'
-                          min={0.1}
-                          max={5}
-                          step={0.1}
-                          value={item.params.scale}
-                          onChange={value => {
-                            item.instance?.updateFinalEntityScale(value!)
-                            setSetting(prev => ({
-                              ...prev,
-                              mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
-                                if (widgetIndex === index) {
-                                  const v = widget as billboardWidget
-                                  return { ...widget, params: { ...v.params, scale: value! } }
-                                }
+                    <Form.Item label="缩放">
+                      <InputNumber
+                        size="small"
+                        min={0.1}
+                        max={5}
+                        step={0.1}
+                        value={item.params.scale}
+                        onChange={value => {
+                          item.instance?.updateFinalEntityScale(value!)
+                          setSetting(prev => ({
+                            ...prev,
+                            mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
+                              if (widgetIndex === index) {
+                                const v = widget as billboardWidget
+                                return { ...widget, params: { ...v.params, scale: value! } }
+                              }
 
-                                return widget
-                              }),
-                            }))
-                          }}
-                        />
-                      </Form.Item>
-                      <Form.Item label="内容介绍" labelCol={{
-                        span: 24
-                      }}>
-                        <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>
-                      </Form.Item>
-                    </Form>
-                  )
-                }
+                              return widget
+                            }),
+                          }))
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      label="内容介绍"
+                      labelCol={{
+                        span: 24,
+                      }}
+                    >
+                      <EditorWidget item={item} setSetting={setSetting} index={index} setting={setting}></EditorWidget>
+                    </Form.Item>
+                  </Form>
+                )}
               </div>
             </div>
           )

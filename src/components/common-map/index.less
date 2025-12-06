@@ -1,0 +1,52 @@
+.map-diy-tools-container {
+  position: absolute;
+
+  left: 50%;
+  bottom: 8%;
+  z-index: 2;
+  height: 40px;
+  transform: translateX(-50%);
+  width: 100%;
+
+  .map-diy-tools-container-wrapper {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 6px 0px 16px;
+    border-radius: 8px;
+
+    .map-diy-tools-item-wrapper {
+      margin-right: 10px;
+      margin-bottom: 10px;
+      .map-diy-tools-item {
+        position: relative;
+        height: 26px;
+        width: 26px;
+        border-radius: 6px;
+        background-color: rgba(255, 255, 255, 0);
+        border: 1px solid #fff;
+        line-height: 26px;
+        text-align: center;
+        cursor: pointer;
+
+        .map-diy-tools-item-tipsClycle {
+          position: absolute;
+          top: -5px;
+          right: -5px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background-color: #00b96b;
+          border: 1px solid #fff;
+          cursor: pointer;
+        }
+      }
+    }
+  }
+}
