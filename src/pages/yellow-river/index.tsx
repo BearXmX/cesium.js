@@ -8,6 +8,7 @@ import {
   cangzhoujueheStory,
   dahongshuiStory,
   dayuzhishuiStory,
+  dragEvent,
   duchongzijuehuangheStory,
   handaidiyicijuekouStory,
   huangfanquReason,
@@ -27,6 +28,9 @@ import {
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import './index.less'
 import { debounce } from 'lodash'
+import dragIcon from '@/assets/svg/draw-drag-icon.svg'
+import scrollUpIcon from '@/assets/svg/draw-scroll-up-icon.svg'
+import scrollDownIcon from '@/assets/svg/draw-scroll-down-icon.svg'
 
 const YellowRiver = () => {
   const [notificationApi, notificationContextHolder] = notification.useNotification()
@@ -77,6 +81,8 @@ const YellowRiver = () => {
       }[]
     }[]
   >([])
+
+  const scrollDistance = useRef<number>(0)
 
   const [year, setYear] = useState<number>(-603)
 
@@ -206,7 +212,6 @@ const YellowRiver = () => {
         onCancel() {},
       })
     },
-
     dayuzhishui: () => {
       const visible = pointInstanceList.current
         .find(item => item.type === 'story')
@@ -254,7 +259,6 @@ const YellowRiver = () => {
         cameraFlyTo(116.44621506571357, 36.62260463431871, 500000)
       }
     },
-
     shanghusaojuekou: () => {
       const visible = pointInstanceList.current
         .find(item => item.type === 'story')
@@ -264,7 +268,6 @@ const YellowRiver = () => {
         cameraFlyTo(115.20188832898367, 35.915408206884734, 500000)
       }
     },
-
     cangzhoujuehe: () => {
       const visible = pointInstanceList.current
         .find(item => item.type === 'story')
@@ -283,7 +286,6 @@ const YellowRiver = () => {
         cameraFlyTo(114.56643458617901, 35.22796493474452, 500000)
       }
     },
-
     jialuzhihe: () => {
       const visible = pointInstanceList.current
         .find(item => item.type === 'story')
@@ -322,10 +324,55 @@ const YellowRiver = () => {
     },
   }
 
+  const createExtraDom = (destroy: boolean = false) => {
+    if (destroy) {
+      document.querySelector('.yellow-river-gui-extra-dom')?.remove()
+      return
+    }
+
+    if (!document.querySelector('.yellow-river-gui-extra-dom')) {
+      const extraDom = document.createElement('div')
+      document.querySelector('.lil-gui.root')?.appendChild(extraDom)
+      extraDom.className = 'yellow-river-gui-extra-dom'
+
+      const scrollUp = document.createElement('div')
+      scrollUp.title = '向上滚动'
+      scrollUp.className = 'yellow-river-gui-extra-dom-scroll-up'
+      scrollUp.innerHTML = `<img src=${scrollUpIcon} alt="" />`
+      extraDom.appendChild(scrollUp)
+      scrollUp.addEventListener('click', () => {
+        scrollDistance.current = scrollDistance.current - 100
+        document.querySelector('.lil-gui.root > .children')?.scrollTo({
+          top: scrollDistance.current,
+        })
+      })
+
+      const scrollDown = document.createElement('div')
+      scrollDown.title = '向下滚动'
+      scrollDown.className = 'yellow-river-gui-extra-dom-scroll-down'
+      scrollDown.innerHTML = `<img src=${scrollDownIcon} alt="" />`
+      extraDom.appendChild(scrollDown)
+      scrollDown.addEventListener('click', () => {
+        scrollDistance.current = scrollDistance.current + 100
+        document.querySelector('.lil-gui.root > .children')?.scrollTo({
+          top: scrollDistance.current,
+        })
+      })
+
+      const drag = document.createElement('div')
+      drag.title = '拖拽控制器'
+      drag.className = 'yellow-river-gui-extra-dom-drag'
+      drag.innerHTML = `<img src=${dragIcon} alt="" />`
+      extraDom.appendChild(drag)
+      dragEvent(drag)
+    }
+  }
+
   const initGui = () => {
     if (guiRef.current) {
       guiRef.current.destroy()
       guiRef.current = null
+      createExtraDom(true)
     }
 
     guiRef.current = new gui.GUI({})
@@ -852,6 +899,8 @@ const YellowRiver = () => {
           })
         }
       })
+
+    createExtraDom()
   }
 
   const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000) => {
@@ -1518,6 +1567,8 @@ const YellowRiver = () => {
 
     return () => {
       guiRef.current?.destroy()
+
+      createExtraDom(true)
     }
   }, [])
 
