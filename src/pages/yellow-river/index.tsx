@@ -7,9 +7,7 @@ import ImageText from '@/utils/plugins/image-text'
 import {
   cangzhoujueheStory,
   dahongshuiStory,
-  dayuzhishuiStory,
-  dragEvent,
-  duchongzijuehuangheStory,
+  dayuzhishuiStory, duchongzijuehuangheStory,
   handaidiyicijuekouStory,
   huangfanquReason,
   huayuankoujuediStory,
@@ -28,9 +26,9 @@ import {
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import './index.less'
 import { debounce } from 'lodash'
-import dragIcon from '@/assets/svg/draw-drag-icon.svg'
-import scrollUpIcon from '@/assets/svg/draw-scroll-up-icon.svg'
-import scrollDownIcon from '@/assets/svg/draw-scroll-down-icon.svg'
+import { createExtraDom } from '@/hooks'
+import { drawEntity } from '../build-map-setting/constance'
+import LineProgressMaterialProperty from '@/utils/material/line-progress-material-property'
 
 const YellowRiver = () => {
   const [notificationApi, notificationContextHolder] = notification.useNotification()
@@ -81,8 +79,6 @@ const YellowRiver = () => {
       }[]
     }[]
   >([])
-
-  const scrollDistance = useRef<number>(0)
 
   const [year, setYear] = useState<number>(-603)
 
@@ -208,8 +204,8 @@ const YellowRiver = () => {
         cancelText: '取消',
         width: 800,
         centered: true,
-        onOk() {},
-        onCancel() {},
+        onOk() { },
+        onCancel() { },
       })
     },
     dayuzhishui: () => {
@@ -322,50 +318,6 @@ const YellowRiver = () => {
         cameraFlyTo(113.66065082655547, 34.9151151808567, 500000)
       }
     },
-  }
-
-  const createExtraDom = (destroy: boolean = false) => {
-    if (destroy) {
-      document.querySelector('.yellow-river-gui-extra-dom')?.remove()
-      return
-    }
-
-    if (!document.querySelector('.yellow-river-gui-extra-dom')) {
-      const extraDom = document.createElement('div')
-      document.querySelector('.lil-gui.root')?.appendChild(extraDom)
-      extraDom.className = 'yellow-river-gui-extra-dom'
-
-      const scrollUp = document.createElement('div')
-      scrollUp.title = '向上滚动'
-      scrollUp.className = 'yellow-river-gui-extra-dom-scroll-up'
-      scrollUp.innerHTML = `<img src=${scrollUpIcon} alt="" />`
-      extraDom.appendChild(scrollUp)
-      scrollUp.addEventListener('click', () => {
-        scrollDistance.current = scrollDistance.current - 100
-        document.querySelector('.lil-gui.root > .children')?.scrollTo({
-          top: scrollDistance.current,
-        })
-      })
-
-      const scrollDown = document.createElement('div')
-      scrollDown.title = '向下滚动'
-      scrollDown.className = 'yellow-river-gui-extra-dom-scroll-down'
-      scrollDown.innerHTML = `<img src=${scrollDownIcon} alt="" />`
-      extraDom.appendChild(scrollDown)
-      scrollDown.addEventListener('click', () => {
-        scrollDistance.current = scrollDistance.current + 100
-        document.querySelector('.lil-gui.root > .children')?.scrollTo({
-          top: scrollDistance.current,
-        })
-      })
-
-      const drag = document.createElement('div')
-      drag.title = '拖拽控制器'
-      drag.className = 'yellow-river-gui-extra-dom-drag'
-      drag.innerHTML = `<img src=${dragIcon} alt="" />`
-      extraDom.appendChild(drag)
-      dragEvent(drag)
-    }
   }
 
   const initGui = () => {
@@ -722,7 +674,7 @@ const YellowRiver = () => {
       .name('北宋故道')
       .onChange((value: boolean) => {
         if (value) {
-          cameraFlyTo(...historyChangeFlyTo)
+          cameraFlyTo(...[116.08773953, 37.39878900, 1028028.50])
         }
         drawBeisonggudao(value)
       })
@@ -746,7 +698,7 @@ const YellowRiver = () => {
       .name('南宋、元故道')
       .onChange((value: boolean) => {
         if (value) {
-          cameraFlyTo(...historyChangeFlyTo)
+          cameraFlyTo(...[116.33021947, 35.17013743, 717852.58])
         }
         drawNansonggudao(value)
       })
@@ -779,7 +731,7 @@ const YellowRiver = () => {
       .name('明清故道')
       .onChange((value: boolean) => {
         if (value) {
-          cameraFlyTo(...historyChangeFlyTo)
+          cameraFlyTo(...[118.28806117, 34.40153191, 759064.68])
         }
 
         drawMingqinggudao(value)
@@ -813,7 +765,7 @@ const YellowRiver = () => {
             style: {
               maxHeight: '100%',
             },
-            message: `黄泛区蔓延的地理因素`,
+            message: `黄泛区漫延的地理因素`,
             description: huangfanquReason,
             placement: 'bottomLeft',
             duration: null,
@@ -944,21 +896,56 @@ const YellowRiver = () => {
   const drawYuhegudao = (checked: boolean) => {
     const color = Cesium.Color.VIOLET
 
-    drawGeometry(
+    drawEntity(
       checked,
+      viewerRef,
       yuhegudaoRef,
-      window.$$prefix + '/data/yellow-river/yuhegudao.geojson',
       [
         {
+          type: 'geo',
+          url: '/data/yellow-river/yuhegudao.geojson',
+          geoOptions: {
+            stroke: color,
+            fill: color.withAlpha(0.2),
+            strokeWidth: 4,
+          },
+          callbacks: {
+            useFetchOnlyCallback(data) {
+              data.features.forEach((feature: any) => {
+                const points: number[] = []
+
+                feature.geometry.coordinates.forEach((positions: any) => {
+                  positions.forEach((position: any) => {
+                    points.push(position)
+                  })
+
+                })
+
+                const material = new LineProgressMaterialProperty('line', color, 5000)
+
+                const entity = viewerRef.current!.entities.add({
+                  name: 'line',
+                  polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(points),
+                    material: material as any,
+                    width: 5,
+                  },
+                })
+
+                yuhegudaoRef.current.push(entity)
+              })
+            },
+          },
+        },
+        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(117.34429640994914, 39.59296969230597),
           text: '禹河古道\n前2278-前602',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
-      ],
-      {
-        stroke: color,
-        fill: color.withAlpha(0.2),
-        strokeWidth: 4,
-      }
+      ]
     )
   }
 
@@ -1028,114 +1015,311 @@ const YellowRiver = () => {
   const drawDonghangudao = (checked: boolean) => {
     const color = Cesium.Color.ORANGE
 
-    drawGeometry(
+    drawEntity(
       checked,
+      viewerRef,
       donghangudaoRef,
-      window.$$prefix + '/data/yellow-river/donghangudao.geojson',
       [
         {
+          type: 'geo',
+          url: '/data/yellow-river/donghangudao.geojson',
+          geoOptions: {
+            stroke: color,
+            fill: color.withAlpha(0.2),
+            strokeWidth: 4,
+          },
+          callbacks: {
+            useFetchOnlyCallback(data) {
+              data.features.forEach((feature: any) => {
+                const points: number[] = []
+
+                feature.geometry.coordinates.forEach((positions: any) => {
+                  positions.forEach((position: any) => {
+                    points.push(position)
+                  })
+
+                })
+
+                const material = new LineProgressMaterialProperty('line', color, 5000)
+
+                const entity = viewerRef.current!.entities.add({
+                  name: 'line',
+                  polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(points),
+                    material: material as any,
+                    width: 5,
+                  },
+                })
+
+                donghangudaoRef.current.push(entity)
+              })
+            },
+          },
+        },
+        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(116.76065926984457, 37.96615236929079),
           text: '东汉故道\n11-1048',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
-      ],
-      {
-        stroke: color,
-        fill: color.withAlpha(0.2),
-        strokeWidth: 4,
-      }
+      ]
     )
+
   }
 
   const drawXihangudao = (checked: boolean) => {
     const color = Cesium.Color.BROWN
 
-    drawGeometry(
+    drawEntity(
       checked,
+      viewerRef,
       xihangudaoRef,
-      window.$$prefix + '/data/yellow-river/xihangudao.geojson',
       [
         {
+          type: 'geo',
+          url: '/data/yellow-river/xihangudao.geojson',
+          geoOptions: {
+            stroke: color,
+            fill: color.withAlpha(0.2),
+            strokeWidth: 4,
+          },
+          callbacks: {
+            useFetchOnlyCallback(data) {
+              data.features.forEach((feature: any) => {
+                const points: number[] = []
+
+                feature.geometry.coordinates.forEach((positions: any) => {
+                  positions.forEach((position: any) => {
+                    points.push(position)
+                  })
+
+                })
+
+                const material = new LineProgressMaterialProperty('line', color, 5000)
+
+                const entity = viewerRef.current!.entities.add({
+                  name: 'line',
+                  polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(points),
+                    material: material as any,
+                    width: 5,
+                  },
+                })
+
+                xihangudaoRef.current.push(entity)
+              })
+
+            },
+          },
+        },
+        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(117.16475899411333, 38.87213207639694),
           text: '西汉故道\n前602-11',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
-      ],
-      {
-        stroke: color,
-        fill: color.withAlpha(0.2),
-        strokeWidth: 4,
-      }
+      ]
     )
   }
 
   const drawBeisonggudao = (checked: boolean) => {
     const color = Cesium.Color.THISTLE
 
-    drawGeometry(
+    drawEntity(
       checked,
+      viewerRef,
       beisonggudaoRef,
-      window.$$prefix + '/data/yellow-river/beisonggudao.geojson',
       [
         {
-          position: Cesium.Cartesian3.fromDegrees(115.82154578431262, 38.015631919408),
-          text: '北宋故道（北流）\n1048-1128',
+          type: 'geo',
+          url: '/data/yellow-river/beisonggudao.geojson',
+          geoOptions: {
+            stroke: color,
+            fill: color.withAlpha(0.2),
+            strokeWidth: 4,
+          },
+          callbacks: {
+            useFetchOnlyCallback(data) {
+
+              data.features.forEach((feature: any) => {
+                const points: number[] = []
+
+                feature.geometry.coordinates.forEach((positions: any) => {
+
+
+                  positions.forEach((position: any) => {
+                    points.push(position)
+                  })
+
+                })
+
+
+                const material = new LineProgressMaterialProperty('line', color, 5000)
+
+                const entity = viewerRef.current!.entities.add({
+                  name: 'line',
+                  polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(points),
+                    material: material as any,
+                    width: 5,
+                  },
+                })
+
+                beisonggudaoRef.current.push(entity)
+              })
+
+            },
+          },
         },
         {
+          type: 'text',
+          position: Cesium.Cartesian3.fromDegrees(115.82154578431262, 38.015631919408),
+          text: '北宋故道（北流）\n1048-1128',
+          labelOptions: {
+            outlineColor: color,
+          },
+        },
+        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(117.41979162899403, 38.153555435893274),
           text: '北宋故道（东流）\n1048-1128',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
-      ],
-      {
-        stroke: color,
-        fill: color.withAlpha(0.2),
-        strokeWidth: 4,
-      }
+      ]
     )
   }
   const drawMingqinggudao = (checked: boolean) => {
     const color = Cesium.Color.DARKBLUE
 
-    drawGeometry(
+    drawEntity(
       checked,
+      viewerRef,
       mingqinggudaoRef,
-      window.$$prefix + '/data/yellow-river/mingqinggudao.geojson',
       [
         {
+          type: 'geo',
+          url: '/data/yellow-river/mingqinggudao.geojson',
+          geoOptions: {
+            stroke: color,
+            fill: color.withAlpha(0.2),
+            strokeWidth: 4,
+          },
+          callbacks: {
+            useFetchOnlyCallback(data) {
+              data.features.forEach((feature: any) => {
+                const points: number[] = []
+
+                feature.geometry.coordinates.forEach((positions: any) => {
+
+
+                  positions.forEach((position: any) => {
+                    points.push(position)
+                  })
+
+                })
+
+
+                const material = new LineProgressMaterialProperty('line', color, 5000)
+
+                const entity = viewerRef.current!.entities.add({
+                  name: 'line',
+                  polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(points),
+                    material: material as any,
+                    width: 5,
+                  },
+                })
+
+                mingqinggudaoRef.current.push(entity)
+              })
+            },
+          },
+        },
+        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(116.89789938054952, 34.002151532164426),
           text: '明清故道\n1368-1855',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
-      ],
-      {
-        stroke: color,
-        fill: color.withAlpha(0.2),
-        strokeWidth: 4,
-      }
+      ]
     )
   }
   const drawNansonggudao = (checked: boolean) => {
     const color = Cesium.Color.FUCHSIA
-    drawGeometry(
+
+    drawEntity(
       checked,
+      viewerRef,
       nansonggudaoRef,
-      window.$$prefix + '/data/yellow-river/nansonggudao.geojson',
       [
         {
+          type: 'geo',
+          url: '/data/yellow-river/nansonggudao.geojson',
+          geoOptions: {
+            stroke: color,
+            fill: color.withAlpha(0.2),
+            strokeWidth: 4,
+          },
+          callbacks: {
+            useFetchOnlyCallback(data) {
+              data.features.forEach((feature: any) => {
+                const points: number[] = []
+                feature.geometry.coordinates.forEach((positions: any) => {
+                  positions.forEach((position: any) => {
+                    points.push(position)
+                  })
+
+                })
+
+                const material = new LineProgressMaterialProperty('line', color, 5000)
+
+                const entity = viewerRef.current!.entities.add({
+                  name: 'line',
+                  polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(points),
+                    material: material as any,
+                    width: 5,
+                  },
+                })
+
+                nansonggudaoRef.current.push(entity)
+              })
+            },
+          },
+        },
+        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(115.83909059918128, 34.9316807722699),
           text: '南宋、元故道\n1128-1368',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
         {
-          position: Cesium.Cartesian3.fromDegrees(117.25871558918108, 35.12197753878519),
-          text: '南宋北岔流',
-        },
-        {
+          type: 'text',
           position: Cesium.Cartesian3.fromDegrees(114.97118922424879, 34.2832804070269),
           text: '南宋南岔流',
+          labelOptions: {
+            outlineColor: color,
+          },
         },
-      ],
-      {
-        stroke: color,
-        fill: color.withAlpha(0.2),
-        strokeWidth: 4,
-      }
+        {
+          type: 'text',
+          position: Cesium.Cartesian3.fromDegrees(117.25871558918108, 35.12197753878519),
+          text: '南宋北岔流',
+          labelOptions: {
+            outlineColor: color,
+          },
+        },
+      ]
     )
   }
   const drawDayeze = (checked: boolean) => {
@@ -1462,49 +1646,49 @@ const YellowRiver = () => {
               const instance =
                 v.type === 'SampleLabel'
                   ? new SampleLabel(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.text, {
-                      containerBackgroundUrlType: v.containerBackgroundUrlType,
-                      defaultVisible: v.defaultVisible,
-                      indicationLineColor: v.indicationLineColor,
-                      clickCallback() {
-                        if (item.type === 'story') {
-                          const modalOptions = {
-                            icon: null,
-                            title: v.text,
-                            okText: '关闭',
-                            cancelText: '关闭',
-                            width: 800,
-                            centered: true,
-                            closable: true,
-                          }
-
-                          const modalStory: Record<string, React.ReactNode> = {
-                            dayuzhishui: dayuzhishuiStory,
-
-                            jindi: jindiStory,
-                            handaidiyicijuekou: handaidiyicijuekouStory,
-                            zhihesance: zhihesanceStory,
-                            shanghusaojuekou: shanghusaojuekouStory,
-                            cangzhoujuehe: cangzhoujueheStory,
-                            duchongzijuehuanghe: duchongzijuehuangheStory,
-                            jialuzhihe: jialuzhiheStory,
-                            taihanggudi: taihanggudiStory,
-                            jinfuzhihe: jinfuzhiheStory,
-                            dahongshui: dahongshuiStory,
-                            huayuankoujuedi: huayuankoujuediStory,
-                          }
-
-                          modal.info({
-                            ...modalOptions,
-                            content: modalStory[v.key] || null,
-                          })
+                    containerBackgroundUrlType: v.containerBackgroundUrlType,
+                    defaultVisible: v.defaultVisible,
+                    indicationLineColor: v.indicationLineColor,
+                    clickCallback() {
+                      if (item.type === 'story') {
+                        const modalOptions = {
+                          icon: null,
+                          title: v.text,
+                          okText: '关闭',
+                          cancelText: '关闭',
+                          width: 800,
+                          centered: true,
+                          closable: true,
                         }
-                      },
-                    })
+
+                        const modalStory: Record<string, React.ReactNode> = {
+                          dayuzhishui: dayuzhishuiStory,
+
+                          jindi: jindiStory,
+                          handaidiyicijuekou: handaidiyicijuekouStory,
+                          zhihesance: zhihesanceStory,
+                          shanghusaojuekou: shanghusaojuekouStory,
+                          cangzhoujuehe: cangzhoujueheStory,
+                          duchongzijuehuanghe: duchongzijuehuangheStory,
+                          jialuzhihe: jialuzhiheStory,
+                          taihanggudi: taihanggudiStory,
+                          jinfuzhihe: jinfuzhiheStory,
+                          dahongshui: dahongshuiStory,
+                          huayuankoujuedi: huayuankoujuediStory,
+                        }
+
+                        modal.info({
+                          ...modalOptions,
+                          content: modalStory[v.key] || null,
+                        })
+                      }
+                    },
+                  })
                   : v.type === 'ImageText'
-                  ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.image, v.content, {
+                    ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.image, v.content, {
                       defaultVisible: v.defaultVisible,
                     })
-                  : null
+                    : null
 
               return {
                 ...v,
@@ -1603,33 +1787,25 @@ const YellowRiver = () => {
             onChange={debounce(value => {
               setYear(value)
 
-              if (value >= -602) {
-                yuhegudaoControlRef.current?.setValue(true)
-                yuhegudaoControlRef.current?.updateDisplay()
-              }
+              yuhegudaoControlRef.current?.setValue(value >= -602)
+              yuhegudaoControlRef.current?.updateDisplay()
 
-              if (value >= 11) {
-                console.log(value)
-                xihangudaoControlRef.current?.setValue(true)
-                xihangudaoControlRef.current?.updateDisplay()
-              }
-              if (value >= 69) {
-                donghangudaoControlRef.current?.setValue(true)
-                donghangudaoControlRef.current?.updateDisplay()
-              }
-              if (value >= 1048) {
-                beisonggudaoControlRef.current?.setValue(true)
-                beisonggudaoControlRef.current?.updateDisplay()
-              }
-              if (value >= 1128) {
-                nansonggudaoControlRef.current?.setValue(true)
-                nansonggudaoControlRef.current?.updateDisplay()
-              }
+              xihangudaoControlRef.current?.setValue(value >= 11)
+              xihangudaoControlRef.current?.updateDisplay()
 
-              if (value >= 1855) {
-                mingqinggudaoControlRef.current?.setValue(true)
-                mingqinggudaoControlRef.current?.updateDisplay()
-              }
+
+              donghangudaoControlRef.current?.setValue(value >= 69)
+              donghangudaoControlRef.current?.updateDisplay()
+
+              beisonggudaoControlRef.current?.setValue(value >= 1048)
+              beisonggudaoControlRef.current?.updateDisplay()
+
+
+              nansonggudaoControlRef.current?.setValue(value >= 1128)
+              nansonggudaoControlRef.current?.updateDisplay()
+
+              mingqinggudaoControlRef.current?.setValue(value >= 1855)
+              mingqinggudaoControlRef.current?.updateDisplay()
             }, 300)}
           />
         </div>

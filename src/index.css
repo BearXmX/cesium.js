@@ -48,6 +48,34 @@ body,
   border-left: 2px solid #2fd5c3;
 }
 
+.gui-container-extra-dom {
+  position: absolute;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  top: 0;
+  right: 0;
+  min-width: 100px;
+  height: 40px;
+  z-index: 100;
+}
+
+.gui-container-extra-dom > div {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.gui-container-extra-dom > div.gui-container-extra-dom-drag {
+  cursor: move;
+  touch-action: none; /* 告诉浏览器：该元素不需要触摸滚动/缩放行为 */
+  user-select: none; /* 阻止触摸时选中文字 */
+  -webkit-user-select: none; /* 兼容iOS */
+}
+
 .ant-notification {
   height: 100%;
   top: 1px !important;

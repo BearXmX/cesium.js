@@ -62,13 +62,6 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
 
   const suzhouRiverBoxRef = useRef<Cesium.Entity[]>([])
 
-  const cameraFlyTo = (longitude: number, latitude: number, height: number = 4000000, options: any = {}) => {
-    viewerRef.current!.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
-      ...options,
-    })
-  }
-
   const drawGeometry = (
     show: boolean,
     ref: React.RefObject<Cesium.Entity[]>,
@@ -657,22 +650,22 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
               const instance =
                 v.type === 'SampleLabel'
                   ? new SampleLabel(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), v.text, {
-                      containerBackgroundUrlType: v.containerBackgroundUrlType,
-                      defaultVisible: v.defaultVisible,
-                      indicationLineColor: v.indicationLineColor,
-                      clickCallback() {
-                        const [longitude, latitude, height] = v.position
+                    containerBackgroundUrlType: v.containerBackgroundUrlType,
+                    defaultVisible: v.defaultVisible,
+                    indicationLineColor: v.indicationLineColor,
+                    clickCallback() {
+                      const [longitude, latitude, height] = v.position
 
-                        viewerRef.current?.camera.flyTo({
-                          destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
-                        })
-                      },
-                    })
+                      viewerRef.current?.camera.flyTo({
+                        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height + 1500),
+                      })
+                    },
+                  })
                   : v.type === 'ImageText'
-                  ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), window.$$prefix + v.image, v.content, {
+                    ? new ImageText(viewerRef.current!, Cesium.Cartesian3.fromDegrees(...v.position), window.$$prefix + v.image, v.content, {
                       defaultVisible: v.defaultVisible,
                     })
-                  : null
+                    : null
 
               return {
                 ...v,
