@@ -1,4 +1,9 @@
-import { div } from 'three/tsl'
+import ImageText from '@/utils/plugins/image-text'
+import SampleLabel from '@/utils/plugins/sample-label'
+import { notification } from 'antd'
+import type { NotificationInstance } from 'antd/es/notification/interface'
+import * as Cesium from 'cesium'
+import type React from 'react'
 
 export const dayuzhishuiStory = (
   <div style={{ textIndent: '2em', maxHeight: '600px', overflow: 'auto', lineHeight: '32px' }}>
@@ -535,3 +540,112 @@ export const xingxiuhai = (
 )
 
 
+export const modalStory: Record<string, React.ReactNode> = {
+  dayuzhishui: dayuzhishuiStory,
+  jindi: jindiStory,
+  handaidiyicijuekou: handaidiyicijuekouStory,
+  zhihesance: zhihesanceStory,
+  shanghusaojuekou: shanghusaojuekouStory,
+  cangzhoujuehe: cangzhoujueheStory,
+  duchongzijuehuanghe: duchongzijuehuangheStory,
+  jialuzhihe: jialuzhiheStory,
+  taihanggudi: taihanggudiStory,
+  jinfuzhihe: jinfuzhiheStory,
+  dahongshui: dahongshuiStory,
+  huayuankoujuedi: huayuankoujuediStory,
+}
+
+export const initTextLabels = (viewer: Cesium.Viewer) => {
+  const texts = [
+    { text: '华', position: [111.3262674547979, 38.53333697645296] },
+    { text: '北', position: [113.41137405293155, 38.53333697645296] },
+    { text: '平', position: [115.4602985897172, 38.41332308710166] },
+    { text: '原', position: [117.23490100647336, 38.50714501772409] },
+    { text: '江', position: [113.08432723857378, 32.03840482886292] },
+    { text: '淮', position: [115.3880323330428, 32.03840482886292] },
+    { text: '平', position: [117.77939040052772, 32.03840482886292] },
+    { text: '原', position: [120.02831898723194, 32.03840482886292] },
+  ]
+
+  texts.forEach(item => {
+    viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(...item.position as [number, number]),
+      label: {
+        text: item.text,
+        font: '28px sans-serif',
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        outlineWidth: 2,
+        outlineColor: Cesium.Color.RED,
+        fillColor: Cesium.Color.WHITE,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+    })
+  })
+}
+
+
+export const loadPointData = async (
+  viewer: Cesium.Viewer,
+  onStoryClick?: (key: string, title: string) => void
+) => {
+  const response = await fetch(window.$$prefix + '/data/yellow-river/points.json')
+  const data = await response.json()
+
+  const processedData = data.data.map((item: any) => ({
+    ...item,
+    data: item.data.map((point: any) => {
+      const position = Cesium.Cartesian3.fromDegrees(...point.position as [number, number])
+      let instance = null
+
+      if (point.type === 'SampleLabel') {
+        instance = new SampleLabel(viewer, position, point.text, {
+          containerBackgroundUrlType: point.containerBackgroundUrlType,
+          defaultVisible: point.defaultVisible,
+          indicationLineColor: point.indicationLineColor,
+          clickCallback: () => {
+            if (item.type === 'story' && onStoryClick) {
+              onStoryClick(point.key, point.text)
+            }
+          },
+        })
+      } else if (point.type === 'ImageText') {
+        instance = new ImageText(viewer, position, point.image, point.content, {
+          defaultVisible: point.defaultVisible,
+        })
+      }
+
+      return { ...point, instance }
+    }),
+  }))
+
+  return processedData
+}
+
+export const useNotice = () => {
+  const [notificationApi, contextHolder] = notification.useNotification()
+
+  const notificeMessage = (key: string) => {
+    notificationApi.destroy()
+
+    const messageRecord: Record<string, React.ReactNode> = {
+      '黄河源': yellowRiverOrigin,
+      '黄河终点': yellowRiverEnding,
+      '星宿海': xingxiuhai,
+      '黄泛区漫延的地理因素': huangfanquReason,
+      '小浪底水库': xiaolangdishuiku,
+      '三门峡水库': sanmenxiashuiku,
+    }
+
+    notificationApi.info({
+      style: {
+        maxHeight: '100%',
+      },
+      message: key,
+      description: messageRecord[key],
+      placement: 'bottomLeft',
+      duration: null,
+    })
+  }
+
+  return [notificeMessage, contextHolder] as [(key: string) => void, React.ReactElement<unknown, string | React.JSXElementConstructor<any>>]
+}

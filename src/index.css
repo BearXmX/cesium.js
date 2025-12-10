@@ -21,6 +21,18 @@ body,
   --w-e-toolbar-active-bg-color: #333;
 }
 
+.canvas-container {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.canvas-container .canvas-container-body {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
 .w-e-bar-item {
   padding: 2px !important;
 }
@@ -101,18 +113,6 @@ body,
 
 .ant-notification .ant-notification-notice-wrapper .ant-notification-notice-close {
   top: 20px;
-}
-
-.canvas-container {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-}
-
-.canvas-container .canvas-container-body {
-  position: relative;
-  height: 100%;
-  width: 100%;
 }
 
 #slider {
@@ -405,4 +405,43 @@ body,
 
 .w-e-full-screen-container {
   z-index: 999999;
+}
+
+.arrow-indication-container {
+  height: 25px;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  box-sizing: border-box;
+  transform-origin: left center;
+}
+
+.arrow-indication-container .arrow-indication-arrow-container {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.arrow-indication-container .arrow-indication-arrow-container .arrow-indication-arrow-container-head {
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent; /* 上边透明 */
+  border-bottom: 10px solid transparent; /* 下边透明 */
+  border-right: 20px solid #007bff; /* 左边实色，形成三角形 */
+}
+
+.arrow-indication-container .arrow-indication-arrow-container .arrow-indication-arrow-container-line {
+  /* 三角形 */
+  height: 50%;
+  background-color: #007bff;
+  width: 50px;
+}
+
+.arrow-indication-container .arrow-indication-label-container {
+  height: 100%;
+  border-radius: 4px;
+  padding: 0px 6px;
+  line-height: 25px;
+  text-align: center;
 }
