@@ -4,12 +4,7 @@ import { Modal, notification, Slider } from 'antd'
 import * as gui from 'lil-gui'
 import SampleLabel from '@/utils/plugins/sample-label'
 import ImageText from '@/utils/plugins/image-text'
-import {
-  initTextLabels,
-  loadPointData,
-  modalStory,
-  useNotice,
-} from './constance'
+import { LineShadowMaterialProperty, initTextLabels, loadPointData, modalStory, useNotice } from './constance'
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import './index.less'
 import { debounce } from 'lodash'
@@ -590,7 +585,7 @@ const YellowRiver = () => {
       .name('北宋故道')
       .onChange((value: boolean) => {
         if (value) {
-          cameraFlyTo(...[116.08773953, 37.39878900, 1028028.50])
+          cameraFlyTo(...[116.08773953, 37.398789, 1028028.5])
         }
         drawBeisonggudao(value)
       })
@@ -700,15 +695,15 @@ const YellowRiver = () => {
           ?.data.find(item => item.key === 'xiaolangdishuiku')
           ?.instance?.toggleVisible(value)
 
-
-        !!value && mapInstance.current?.cameraFlyTo({
-          destination: Cesium.Cartesian3.fromDegrees(112.53075748, 34.88594434, 1548.71),
-          orientation: {
-            heading: 5.073720142042852,
-            pitch: -1.2591800141292224,
-            roll: 0.00010255291219962714,
-          },
-        })
+        !!value &&
+          mapInstance.current?.cameraFlyTo({
+            destination: Cesium.Cartesian3.fromDegrees(112.53075748, 34.88594434, 1548.71),
+            orientation: {
+              heading: 5.073720142042852,
+              pitch: -1.2591800141292224,
+              roll: 0.00010255291219962714,
+            },
+          })
 
         !!value && notificeMessage('小浪底水库')
       })
@@ -722,14 +717,15 @@ const YellowRiver = () => {
           ?.data.find(item => item.key === 'sanmenxiashuiku')
           ?.instance?.toggleVisible(value)
 
-        !!value && mapInstance.current?.cameraFlyTo({
-          destination: Cesium.Cartesian3.fromDegrees(111.117005, 34.77034728, 3817.55),
-          orientation: {
-            heading: 1.2687880432952277,
-            pitch: -1.4791303213012164,
-            roll: 0.0014787389090145098,
-          },
-        })
+        !!value &&
+          mapInstance.current?.cameraFlyTo({
+            destination: Cesium.Cartesian3.fromDegrees(111.117005, 34.77034728, 3817.55),
+            orientation: {
+              heading: 1.2687880432952277,
+              pitch: -1.4791303213012164,
+              roll: 0.0014787389090145098,
+            },
+          })
 
         !!value && notificeMessage('三门峡水库')
       })
@@ -752,8 +748,8 @@ const YellowRiver = () => {
           stroke: Cesium.Color.BROWN,
           fill: Cesium.Color.WHITE.withAlpha(0.5),
           strokeWidth: 0.5,
-        }
-      }
+        },
+      },
     ])
   }
 
@@ -766,8 +762,8 @@ const YellowRiver = () => {
           stroke: Cesium.Color.YELLOW,
           fill: Cesium.Color.YELLOW.withAlpha(0.1),
           strokeWidth: 0.5,
-        }
-      }
+        },
+      },
     ])
   }
 
@@ -780,13 +776,12 @@ const YellowRiver = () => {
           stroke: Cesium.Color.PINK,
           fill: Cesium.Color.PINK.withAlpha(0.5),
           strokeWidth: 0.5,
-        }
-      }
+        },
+      },
     ])
   }
 
   const drawLoessPlateauArea = (checked: boolean) => {
-
     drawEntity(checked, viewerRef, loessPlateauAreaRef, [
       {
         type: 'geo',
@@ -795,872 +790,736 @@ const YellowRiver = () => {
           stroke: Cesium.Color.ORANGE,
           fill: Cesium.Color.ORANGE.withAlpha(0.4),
           strokeWidth: 0.5,
-        }
-      }
+        },
+      },
     ])
   }
 
   const drawYuhegudao = (checked: boolean) => {
     const color = Cesium.Color.VIOLET
 
-    drawEntity(
-      checked,
-      viewerRef,
-      yuhegudaoRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/yuhegudao.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
-          callbacks: {
-            useFetchOnlyCallback(data) {
-              data.features.forEach((feature: any) => {
-                const points: number[] = []
+    drawEntity(checked, viewerRef, yuhegudaoRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/yuhegudao.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+        callbacks: {
+          useFetchOnlyCallback(data) {
+            data.features.forEach((feature: any) => {
+              const points: number[] = []
 
-                feature.geometry.coordinates.forEach((positions: any) => {
-                  positions.forEach((position: any) => {
-                    points.push(position)
-                  })
-
+              feature.geometry.coordinates.forEach((positions: any) => {
+                positions.forEach((position: any) => {
+                  points.push(position)
                 })
-
-                const material = new LineProgressMaterialProperty('line', color, 5000)
-
-                const entity = viewerRef.current!.entities.add({
-                  name: 'line',
-                  polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(points),
-                    material: material as any,
-                    width: 5,
-                  },
-                })
-
-                yuhegudaoRef.current.push(entity)
               })
-            },
+
+              const material = new LineProgressMaterialProperty('line', color, 5000)
+
+              const entity = viewerRef.current!.entities.add({
+                name: 'line',
+                polyline: {
+                  positions: Cesium.Cartesian3.fromDegreesArray(points),
+                  material: material as any,
+                  width: 5,
+                },
+              })
+
+              yuhegudaoRef.current.push(entity)
+            })
           },
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(117.34429640994914, 39.59296969230597),
-          text: '禹河古道\n前2278-前602',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(117.34429640994914, 39.59296969230597),
+        text: '禹河古道\n前2278-前602',
+        labelOptions: {
+          outlineColor: color,
         },
-      ]
-    )
+      },
+    ])
   }
 
   const drawDaluze = (checked: boolean) => {
     const color = Cesium.Color.CYAN
 
-    drawEntity(
-      checked,
-      viewerRef,
-      daluzeRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/daluze.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, daluzeRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/daluze.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(115.07323029294682, 37.7187955304704),
-          text: '大陆泽',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(115.07323029294682, 37.7187955304704),
+        text: '大陆泽',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawLuoshui = (checked: boolean) => {
     const color = Cesium.Color.PURPLE
 
-    drawEntity(
-      checked,
-      viewerRef,
-      luoshuiRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/luoshui.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, luoshuiRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/luoshui.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(116.10791182717689, 36.734390277000436),
-          text: '漯水',
-          labelOptions: {
-            outlineColor: color,
-          },
-
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(116.10791182717689, 36.734390277000436),
+        text: '漯水',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawJishui = (checked: boolean) => {
     const color = Cesium.Color.SKYBLUE
 
-    drawEntity(
-      checked,
-      viewerRef,
-      jishuiRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/jishui.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, jishuiRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/jishui.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(118.21759204487076, 37.78853128065295),
-          text: '济水',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(118.21759204487076, 37.78853128065295),
+        text: '济水',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawDonghangudao = (checked: boolean) => {
     const color = Cesium.Color.ORANGE
 
-    drawEntity(
-      checked,
-      viewerRef,
-      donghangudaoRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/donghangudao.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
-          callbacks: {
-            useFetchOnlyCallback(data) {
-              data.features.forEach((feature: any) => {
-                const points: number[] = []
+    drawEntity(checked, viewerRef, donghangudaoRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/donghangudao.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+        callbacks: {
+          useFetchOnlyCallback(data) {
+            data.features.forEach((feature: any) => {
+              const points: number[] = []
 
-                feature.geometry.coordinates.forEach((positions: any) => {
-                  positions.forEach((position: any) => {
-                    points.push(position)
-                  })
-
+              feature.geometry.coordinates.forEach((positions: any) => {
+                positions.forEach((position: any) => {
+                  points.push(position)
                 })
-
-                const material = new LineProgressMaterialProperty('line', color, 5000)
-
-                const entity = viewerRef.current!.entities.add({
-                  name: 'line',
-                  polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(points),
-                    material: material as any,
-                    width: 5,
-                  },
-                })
-
-                donghangudaoRef.current.push(entity)
               })
-            },
-          },
-        },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(116.76065926984457, 37.96615236929079),
-          text: '东汉故道\n11-1048',
-          labelOptions: {
-            outlineColor: color,
-          },
-        },
-      ]
-    )
 
+              const material = new LineProgressMaterialProperty('line', color, 5000)
+
+              const entity = viewerRef.current!.entities.add({
+                name: 'line',
+                polyline: {
+                  positions: Cesium.Cartesian3.fromDegreesArray(points),
+                  material: material as any,
+                  width: 5,
+                },
+              })
+
+              donghangudaoRef.current.push(entity)
+            })
+          },
+        },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(116.76065926984457, 37.96615236929079),
+        text: '东汉故道\n11-1048',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawXihangudao = (checked: boolean) => {
     const color = Cesium.Color.BROWN
 
-    drawEntity(
-      checked,
-      viewerRef,
-      xihangudaoRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/xihangudao.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
-          callbacks: {
-            useFetchOnlyCallback(data) {
-              data.features.forEach((feature: any) => {
-                const points: number[] = []
+    drawEntity(checked, viewerRef, xihangudaoRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/xihangudao.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+        callbacks: {
+          useFetchOnlyCallback(data) {
+            data.features.forEach((feature: any) => {
+              const points: number[] = []
 
-                feature.geometry.coordinates.forEach((positions: any) => {
-                  positions.forEach((position: any) => {
-                    points.push(position)
-                  })
-
+              feature.geometry.coordinates.forEach((positions: any) => {
+                positions.forEach((position: any) => {
+                  points.push(position)
                 })
-
-                const material = new LineProgressMaterialProperty('line', color, 5000)
-
-                const entity = viewerRef.current!.entities.add({
-                  name: 'line',
-                  polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(points),
-                    material: material as any,
-                    width: 5,
-                  },
-                })
-
-                xihangudaoRef.current.push(entity)
               })
 
-            },
+              const material = new LineProgressMaterialProperty('line', color, 5000)
+
+              const entity = viewerRef.current!.entities.add({
+                name: 'line',
+                polyline: {
+                  positions: Cesium.Cartesian3.fromDegreesArray(points),
+                  material: material as any,
+                  width: 5,
+                },
+              })
+
+              xihangudaoRef.current.push(entity)
+            })
           },
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(117.16475899411333, 38.87213207639694),
-          text: '西汉故道\n前602-11',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(117.16475899411333, 38.87213207639694),
+        text: '西汉故道\n前602-11',
+        labelOptions: {
+          outlineColor: color,
         },
-      ]
-    )
+      },
+    ])
   }
 
   const drawBeisonggudao = (checked: boolean) => {
     const color = Cesium.Color.THISTLE
 
-    drawEntity(
-      checked,
-      viewerRef,
-      beisonggudaoRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/beisonggudao.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
-          callbacks: {
-            useFetchOnlyCallback(data) {
+    drawEntity(checked, viewerRef, beisonggudaoRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/beisonggudao.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+        callbacks: {
+          useFetchOnlyCallback(data) {
+            data.features.forEach((feature: any) => {
+              const points: number[] = []
 
-              data.features.forEach((feature: any) => {
-                const points: number[] = []
-
-                feature.geometry.coordinates.forEach((positions: any) => {
-
-
-                  positions.forEach((position: any) => {
-                    points.push(position)
-                  })
-
+              feature.geometry.coordinates.forEach((positions: any) => {
+                positions.forEach((position: any) => {
+                  points.push(position)
                 })
-
-
-                const material = new LineProgressMaterialProperty('line', color, 5000)
-
-                const entity = viewerRef.current!.entities.add({
-                  name: 'line',
-                  polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(points),
-                    material: material as any,
-                    width: 5,
-                  },
-                })
-
-                beisonggudaoRef.current.push(entity)
               })
 
-            },
+              const material = new LineProgressMaterialProperty('line', color, 5000)
+
+              const entity = viewerRef.current!.entities.add({
+                name: 'line',
+                polyline: {
+                  positions: Cesium.Cartesian3.fromDegreesArray(points),
+                  material: material as any,
+                  width: 5,
+                },
+              })
+
+              beisonggudaoRef.current.push(entity)
+            })
           },
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(115.82154578431262, 38.015631919408),
-          text: '北宋故道（北流）\n1048-1128',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(115.82154578431262, 38.015631919408),
+        text: '北宋故道（北流）\n1048-1128',
+        labelOptions: {
+          outlineColor: color,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(117.41979162899403, 38.153555435893274),
-          text: '北宋故道（东流）\n1048-1128',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(117.41979162899403, 38.153555435893274),
+        text: '北宋故道（东流）\n1048-1128',
+        labelOptions: {
+          outlineColor: color,
         },
-      ]
-    )
+      },
+    ])
   }
   const drawMingqinggudao = (checked: boolean) => {
     const color = Cesium.Color.DARKBLUE
 
-    drawEntity(
-      checked,
-      viewerRef,
-      mingqinggudaoRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/mingqinggudao.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
-          callbacks: {
-            useFetchOnlyCallback(data) {
-              data.features.forEach((feature: any) => {
-                const points: number[] = []
+    drawEntity(checked, viewerRef, mingqinggudaoRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/mingqinggudao.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+        callbacks: {
+          useFetchOnlyCallback(data) {
+            data.features.forEach((feature: any) => {
+              const points: number[] = []
 
-                feature.geometry.coordinates.forEach((positions: any) => {
-
-
-                  positions.forEach((position: any) => {
-                    points.push(position)
-                  })
-
+              feature.geometry.coordinates.forEach((positions: any) => {
+                positions.forEach((position: any) => {
+                  points.push(position)
                 })
-
-
-                const material = new LineProgressMaterialProperty('line', color, 5000)
-
-                const entity = viewerRef.current!.entities.add({
-                  name: 'line',
-                  polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(points),
-                    material: material as any,
-                    width: 5,
-                  },
-                })
-
-                mingqinggudaoRef.current.push(entity)
               })
-            },
+
+              const material = new LineProgressMaterialProperty('line', color, 5000)
+
+              const entity = viewerRef.current!.entities.add({
+                name: 'line',
+                polyline: {
+                  positions: Cesium.Cartesian3.fromDegreesArray(points),
+                  material: material as any,
+                  width: 5,
+                },
+              })
+
+              mingqinggudaoRef.current.push(entity)
+            })
           },
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(116.89789938054952, 34.002151532164426),
-          text: '明清故道\n1368-1855',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(116.89789938054952, 34.002151532164426),
+        text: '明清故道\n1368-1855',
+        labelOptions: {
+          outlineColor: color,
         },
-      ]
-    )
+      },
+    ])
   }
   const drawNansonggudao = (checked: boolean) => {
     const color = Cesium.Color.FUCHSIA
 
-    drawEntity(
-      checked,
-      viewerRef,
-      nansonggudaoRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/nansonggudao.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
-          callbacks: {
-            useFetchOnlyCallback(data) {
-              data.features.forEach((feature: any) => {
-                const points: number[] = []
-                feature.geometry.coordinates.forEach((positions: any) => {
-                  positions.forEach((position: any) => {
-                    points.push(position)
-                  })
+    drawEntity(checked, viewerRef, nansonggudaoRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/nansonggudao.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+        callbacks: {
+          useFetchOnlyCallback(data) {
+            data.features.forEach((feature: any) => {
+              const points: number[] = []
+              feature.geometry.coordinates.forEach((positions: any) => {
+                positions.forEach((position: any) => {
+                  points.push(position)
                 })
-                const material = new LineProgressMaterialProperty('line', color, 5000)
-                const entity = viewerRef.current!.entities.add({
-                  name: 'line',
-                  polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(points),
-                    material: material as any,
-                    width: 5,
-                  },
-                })
-                nansonggudaoRef.current.push(entity)
               })
-            },
+              const material = new LineProgressMaterialProperty('line', color, 5000)
+              const entity = viewerRef.current!.entities.add({
+                name: 'line',
+                polyline: {
+                  positions: Cesium.Cartesian3.fromDegreesArray(points),
+                  material: material as any,
+                  width: 5,
+                },
+              })
+              nansonggudaoRef.current.push(entity)
+            })
           },
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(115.83909059918128, 34.9316807722699),
-          text: '南宋、元故道\n1128-1368',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(115.83909059918128, 34.9316807722699),
+        text: '南宋、元故道\n1128-1368',
+        labelOptions: {
+          outlineColor: color,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(114.97118922424879, 34.2832804070269),
-          text: '南宋南岔流',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(114.97118922424879, 34.2832804070269),
+        text: '南宋南岔流',
+        labelOptions: {
+          outlineColor: color,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(117.25871558918108, 35.12197753878519),
-          text: '南宋北岔流',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(117.25871558918108, 35.12197753878519),
+        text: '南宋北岔流',
+        labelOptions: {
+          outlineColor: color,
         },
-      ]
-    )
+      },
+    ])
   }
   const drawDayeze = (checked: boolean) => {
     const color = Cesium.Color.CYAN
 
-    drawEntity(
-      checked,
-      viewerRef,
-      dayezeRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/dayeze.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, dayezeRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/dayeze.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(116.46380530896955, 35.70172754553374),
-          text: '大野泽',
-          labelOptions: {
-            outlineColor: color,
-          },
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(116.46380530896955, 35.70172754553374),
+        text: '大野泽',
+        labelOptions: {
+          outlineColor: color,
         },
-      ]
-    )
+      },
+    ])
   }
   const drawHuaihe = (checked: boolean) => {
     const color = Cesium.Color.TEAL
 
-    drawEntity(
-      checked,
-      viewerRef,
-      huaiheRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/huaihe.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.2),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, huaiheRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/huaihe.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.2),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(118.88638657830545, 33.76783089303769),
-          text: '淮河',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(118.88638657830545, 33.76783089303769),
+        text: '淮河',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawHuangfanqu = (checked: boolean) => {
     const color = Cesium.Color.ORANGE
 
-    drawEntity(
-      checked,
-      viewerRef,
-      huangfanquRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/huangfanqu.geojson',
-          geoOptions: {
-            stroke: Cesium.Color.TRANSPARENT,
-            fill: color.withAlpha(0.8),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, huangfanquRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/huangfanqu.geojson',
+        geoOptions: {
+          stroke: Cesium.Color.TRANSPARENT,
+          fill: color.withAlpha(0.8),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(117.18229966881717, 33.598661423934004),
-          text: '黄泛区',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(117.18229966881717, 33.598661423934004),
+        text: '黄泛区',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawQianhaianxian = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#006eff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      qianhaianxianRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/qian-602-haianxian.geojson',
-          geoOptions: {
-            stroke: color.withAlpha(0.8),
-            fill: color.withAlpha(0.8),
-            strokeWidth: 2,
-          },
+    drawEntity(checked, viewerRef, qianhaianxianRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/qian-602-haianxian.geojson',
+        geoOptions: {
+          stroke: color.withAlpha(0.8),
+          fill: color.withAlpha(0.8),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(116.86843775419166, 39.42381075024779),
-          text: '前602年海岸线',
-          labelOptions: {
-            outlineColor: color.withAlpha(0.8),
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(116.86843775419166, 39.42381075024779),
+        text: '前602年海岸线',
+        labelOptions: {
+          outlineColor: color.withAlpha(0.8),
+        },
+      },
+    ])
   }
 
   const draw11haianxian = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#00ffffff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      haianxian11Ref,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/11-haianxian.geojson',
-          geoOptions: {
-            stroke: color.withAlpha(0.8),
-            fill: color.withAlpha(0.8),
-            strokeWidth: 2,
-          }
+    drawEntity(checked, viewerRef, haianxian11Ref, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/11-haianxian.geojson',
+        geoOptions: {
+          stroke: color.withAlpha(0.8),
+          fill: color.withAlpha(0.8),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(119.21084204606973, 36.79462374587151),
-          text: '11年海岸线',
-          labelOptions: {
-            outlineColor: color.withAlpha(0.8),
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(119.21084204606973, 36.79462374587151),
+        text: '11年海岸线',
+        labelOptions: {
+          outlineColor: color.withAlpha(0.8),
+        },
+      },
+    ])
   }
 
   const draw1048haianxian = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#00ff88ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      haianxian1048Ref,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/1048-haianxian.geojson',
-          geoOptions: {
-            stroke: color.withAlpha(0.8),
-            fill: color.withAlpha(0.8),
-            strokeWidth: 2,
-          }
+    drawEntity(checked, viewerRef, haianxian1048Ref, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/1048-haianxian.geojson',
+        geoOptions: {
+          stroke: color.withAlpha(0.8),
+          fill: color.withAlpha(0.8),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(118.0322329489798, 39.71886717899871),
-          text: '1048年海岸线',
-          labelOptions: {
-            outlineColor: color.withAlpha(0.8),
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(118.0322329489798, 39.71886717899871),
+        text: '1048年海岸线',
+        labelOptions: {
+          outlineColor: color.withAlpha(0.8),
+        },
+      },
+    ])
   }
 
   const draw1128haianxian = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#77f700ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      haianxian1128Ref,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/1128-haianxian.geojson',
-          geoOptions: {
-            stroke: color.withAlpha(0.8),
-            fill: color.withAlpha(0.8),
-            strokeWidth: 2,
-          }
+    drawEntity(checked, viewerRef, haianxian1128Ref, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/1128-haianxian.geojson',
+        geoOptions: {
+          stroke: color.withAlpha(0.8),
+          fill: color.withAlpha(0.8),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(118.07657317356775, 38.06196564614787),
-          text: '1128年海岸线',
-          labelOptions: {
-            outlineColor: color.withAlpha(0.8),
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(118.07657317356775, 38.06196564614787),
+        text: '1128年海岸线',
+        labelOptions: {
+          outlineColor: color.withAlpha(0.8),
+        },
+      },
+    ])
   }
 
   const draw1855haianxian = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#4a00f7ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      haianxian1855Ref,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/1855-haianxian.geojson',
-          geoOptions: {
-            stroke: color.withAlpha(0.8),
-            fill: color.withAlpha(0.8),
-            strokeWidth: 2,
-          }
+    drawEntity(checked, viewerRef, haianxian1855Ref, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/1855-haianxian.geojson',
+        geoOptions: {
+          stroke: color.withAlpha(0.8),
+          fill: color.withAlpha(0.8),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(119.05540293025302, 37.44453910849387),
-          text: '1855年海岸线',
-          labelOptions: {
-            outlineColor: color.withAlpha(0.8),
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(119.05540293025302, 37.44453910849387),
+        text: '1855年海岸线',
+        labelOptions: {
+          outlineColor: color.withAlpha(0.8),
+        },
+      },
+    ])
   }
 
   const drawXingxiuhai = (checked: boolean) => {
     const color = Cesium.Color.CYAN
 
-    drawEntity(
-      checked,
-      viewerRef,
-      xingxiuhaiRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/xingxiuhai.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.4),
-            strokeWidth: 4,
-          },
+    drawEntity(checked, viewerRef, xingxiuhaiRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/xingxiuhai.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.4),
+          strokeWidth: 4,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(96.86575686785437, 35.09537674678664),
-          text: '星宿海',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(96.86575686785437, 35.09537674678664),
+        text: '星宿海',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawYanshan = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#43e479ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      yanshanshanmaiRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/yanshan.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.4),
-            strokeWidth: 2,
-          },
+    drawEntity(checked, viewerRef, yanshanshanmaiRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/yanshan.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.4),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(116.39553953124192, 40.90127913930519),
-          text: '燕山山脉',
-          labelOptions: {
-            outlineColor: color,
-          },
-
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(116.39553953124192, 40.90127913930519),
+        text: '燕山山脉',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawTaihangshan = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#43e479ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      taihangshanmaiRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/taihangshan.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.4),
-            strokeWidth: 2,
-          },
+    drawEntity(checked, viewerRef, taihangshanmaiRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/taihangshan.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.4),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(112.96971001677872, 39.61792177702133),
-          text: '太行山脉',
-          labelOptions: {
-            outlineColor: color,
-          },
-
-        }
-
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(112.96971001677872, 39.61792177702133),
+        text: '太行山脉',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawDabieshan = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#43e479ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      dabieshanRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/dabieshan.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.4),
-            strokeWidth: 2,
-          },
+    drawEntity(checked, viewerRef, dabieshanRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/dabieshan.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.4),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(114.41424974288323, 31.141458547179752),
-          text: '大别山',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
-
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(114.41424974288323, 31.141458547179752),
+        text: '大别山',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawTaishan = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#43e479ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      taishanRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/taishan.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.4),
-            strokeWidth: 2,
-          },
+    drawEntity(checked, viewerRef, taishanRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/taishan.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.4),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(117.48050375009417, 36.71990242407065),
-          text: '泰山',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(117.48050375009417, 36.71990242407065),
+        text: '泰山',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const drawShandongqiuling = (checked: boolean) => {
     const color = Cesium.Color.fromCssColorString('#43e479ff')
 
-    drawEntity(
-      checked,
-      viewerRef,
-      shandongqiulingRef,
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/shandongqiuling.geojson',
-          geoOptions: {
-            stroke: color,
-            fill: color.withAlpha(0.4),
-            strokeWidth: 2,
-          },
+    drawEntity(checked, viewerRef, shandongqiulingRef, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/shandongqiuling.geojson',
+        geoOptions: {
+          stroke: color,
+          fill: color.withAlpha(0.4),
+          strokeWidth: 2,
         },
-        {
-          type: 'text',
-          position: Cesium.Cartesian3.fromDegrees(118.76230518148944, 36.122097885429966),
-          text: '山东丘陵',
-          labelOptions: {
-            outlineColor: color,
-          },
-        }
-      ]
-    )
+      },
+      {
+        type: 'text',
+        position: Cesium.Cartesian3.fromDegrees(118.76230518148944, 36.122097885429966),
+        text: '山东丘陵',
+        labelOptions: {
+          outlineColor: color,
+        },
+      },
+    ])
   }
 
   const initPoint = async () => {
-
     pointInstanceList.current = await loadPointData(viewerRef.current!, (key, title) => {
       const modalOptions = {
         icon: null,
@@ -1682,45 +1541,54 @@ const YellowRiver = () => {
   useEffect(() => {
     viewerRef.current = mapInstance.current?.getViewer()!
 
-    drawEntity(
-      true,
-      viewerRef,
-      { current: [] },
-      [
-        {
-          type: 'geo',
-          url: '/data/china/china-boundary.geojson',
-          geoOptions: {
-            stroke: Cesium.Color.BROWN,
-            fill: Cesium.Color.BROWN.withAlpha(0.2),
-            strokeWidth: 4,
-          }
-        }
-      ]
-    )
+    drawEntity(true, viewerRef, { current: [] }, [
+      {
+        type: 'geo',
+        url: '/data/china/china-boundary.geojson',
+        geoOptions: {
+          stroke: Cesium.Color.BROWN,
+          fill: Cesium.Color.BROWN.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+      },
+    ])
 
-    drawEntity(
-      true,
-      viewerRef,
-      { current: [] },
-      [
-        {
-          type: 'geo',
-          url: '/data/yellow-river/yellow-river.geojson',
-          geoOptions: {
-            stroke: Cesium.Color.YELLOW,
-            fill: Cesium.Color.YELLOW.withAlpha(0.2),
-            strokeWidth: 4,
-          }
-        }
-      ]
-    )
+    drawEntity(true, viewerRef, { current: [] }, [
+      {
+        type: 'geo',
+        url: '/data/yellow-river/yellow-river.geojson',
+        geoOptions: {
+          stroke: Cesium.Color.YELLOW,
+          fill: Cesium.Color.YELLOW.withAlpha(0.2),
+          strokeWidth: 4,
+        },
+      },
+    ])
 
     initGui()
 
     initPoint()
 
     initTextLabels(viewerRef.current)
+
+    // 1. 创建阴影材质
+    const shadowMaterial = new LineShadowMaterialProperty(
+      'MyLineShadow', // 材质名称
+      Cesium.Color.CYAN, // 线段颜色（阴影颜色会自动生成）
+      Cesium.Color.CYAN.withAlpha(0.8),
+      4, // 线段宽度（像素）
+      16, // 阴影扩展宽度（像素）
+      0.8, // 阴影模糊度 0-1
+      'outwards' // 阴影方向：'outwards'（向外）或 'inwards'（向内）
+    )
+
+    const customLine = viewerRef.current.entities.add({
+      polyline: {
+        positions: Cesium.Cartesian3.fromDegreesArray([115, 45, 125, 35, 120, 32]),
+        width: shadowMaterial.calculateTotalWidth(),
+        material: shadowMaterial,
+      },
+    })
 
     /*     new ArrowIndication(viewerRef.current!, Cesium.Cartesian3.fromDegrees(113.0962490526197, 36.266808903178074, 20), '家园被毁', {
           defaultVisible: true,
