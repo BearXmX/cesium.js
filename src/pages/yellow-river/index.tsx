@@ -4,7 +4,7 @@ import { Modal, notification, Slider } from 'antd'
 import * as gui from 'lil-gui'
 import SampleLabel from '@/utils/plugins/sample-label'
 import ImageText from '@/utils/plugins/image-text'
-import { LineShadowMaterialProperty, initTextLabels, loadPointData, modalStory, useNotice } from './constance'
+import { initTextLabels, loadPointData, modalStory, useNotice } from './constance'
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import './index.less'
 import { debounce } from 'lodash'
@@ -1571,24 +1571,24 @@ const YellowRiver = () => {
 
     initTextLabels(viewerRef.current)
 
-    // 1. 创建阴影材质
-    const shadowMaterial = new LineShadowMaterialProperty(
-      'MyLineShadow', // 材质名称
-      Cesium.Color.CYAN, // 线段颜色（阴影颜色会自动生成）
-      Cesium.Color.CYAN.withAlpha(0.8),
-      4, // 线段宽度（像素）
-      16, // 阴影扩展宽度（像素）
-      0.8, // 阴影模糊度 0-1
-      'outwards' // 阴影方向：'outwards'（向外）或 'inwards'（向内）
-    )
-
-    const customLine = viewerRef.current.entities.add({
-      polyline: {
-        positions: Cesium.Cartesian3.fromDegreesArray([115, 45, 125, 35, 120, 32]),
-        width: shadowMaterial.calculateTotalWidth(),
-        material: shadowMaterial,
-      },
-    })
+    /*     // 1. 创建阴影材质
+        const shadowMaterial = new LineShadowMaterialProperty(
+          'MyLineShadow', // 材质名称
+          Cesium.Color.CYAN, // 线段颜色（阴影颜色会自动生成）
+          Cesium.Color.CYAN.withAlpha(0.8),
+          4, // 线段宽度（像素）
+          16, // 阴影扩展宽度（像素）
+          0.8, // 阴影模糊度 0-1
+          'outwards' // 阴影方向：'outwards'（向外）或 'inwards'（向内）
+        )
+    
+        const customLine = viewerRef.current.entities.add({
+          polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([115, 45, 125, 35, 120, 32]),
+            width: shadowMaterial.calculateTotalWidth(),
+            material: shadowMaterial as unknown as Cesium.MaterialProperty,
+          },
+        }) */
 
     /*     new ArrowIndication(viewerRef.current!, Cesium.Cartesian3.fromDegrees(113.0962490526197, 36.266808903178074, 20), '家园被毁', {
           defaultVisible: true,

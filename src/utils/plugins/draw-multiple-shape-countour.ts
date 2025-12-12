@@ -1,6 +1,8 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
 import { featureEach, interpolate, point, rhumbDistance, isolines } from '@turf/turf'
+import { message } from 'antd'
+
 type options = {
   interfaceNum?: number
   colorFill?: string[]
@@ -306,14 +308,14 @@ class MultipleShapeCountour {
 
     const _countorLine = Cesium.GeoJsonDataSource.load(linesJson, { clampToGround: true })
 
-    _countorLine.then(function (dataSource) {
+    _countorLine.then(async dataSource => {
       $this.countorLine = dataSource
       $this.countorLineList.push(dataSource)
       $this.viewer!.dataSources.add(dataSource)
       const entities = dataSource.entities.values
 
-      const heightList = [] as string[]
-
+      // 先同步设置所有等高线的颜色
+      const entityColorMap = new Map()
       for (let index = 0; index < entities.length; index++) {
         const element = entities[index]
         const cur_index = $this.getObjectIndex(breaks, element.properties!.height._value)
@@ -322,46 +324,115 @@ class MultipleShapeCountour {
           // @ts-ignore
           element.polyline!.material = Cesium.Color.fromCssColorString($this.colorFill[cur_index - 1])
 
-          // 只生成一个 label
-          if (element.polyline && element.polyline.positions) {
-            const positions = element.polyline.positions.getValue(Cesium.JulianDate.now()) as any[]
+          // 存储颜色索引供后面使用
+          entityColorMap.set(element, cur_index)
+        }
+      }
 
-            if (positions && positions.length > 0) {
-              const heights = positions.map(p => $this.viewer!.scene.globe.getHeight(Cesium.Cartographic.fromCartesian(p)) || 0)
+      // 然后异步处理标签
+      const heightList = [] as string[]
 
-              const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length
+      const labelPromises: Promise<void>[] = []
 
-              const midPos = positions[Math.floor(positions.length / 2)]
+      message.open({
+        type: 'loading',
+        content: `正在绘制等高线...`,
+        key: 'drawContourLine',
+        duration: 0,
+      })
 
-              const carto = Cesium.Cartographic.fromCartesian(midPos)
+      for (let index = 0; index < entities.length; index++) {
+        const element = entities[index]
+        const cur_index = entityColorMap.get(element)
 
-              const fixedHeight = avgHeight + 2 // 2 米偏
-              const fixedPos = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, fixedHeight)
+        if (cur_index !== undefined && element.polyline && element.polyline.positions) {
+          const positions = element.polyline.positions.getValue(Cesium.JulianDate.now()) as any[]
 
-              const labelHeight = Math.floor(avgHeight).toFixed(0)
-              if (!heightList.includes(labelHeight)) {
-                heightList.push(labelHeight)
+          if (positions && positions.length > 0) {
+            // 取中间点作为标签位置
+            const midPos = positions[Math.floor(positions.length / 2)]
 
-                const labelEntity = $this.viewer!.entities.add({
-                  position: fixedPos,
-                  label: {
-                    text: labelHeight,
-                    font: '16px sans-serif',
-                    fillColor: Cesium.Color.YELLOW,
-                    outlineColor: Cesium.Color.BLACK,
-                    outlineWidth: 2,
-                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                    heightReference: Cesium.HeightReference.NONE, // 关键
-                  },
-                })
+            const carto = Cesium.Cartographic.fromCartesian(midPos)
 
-                $this.countorLineLabelList.push(labelEntity)
+            // 转换为度以打印查看
+            /*             const latDeg = Cesium.Math.toDegrees(carto.latitude)
+            const lngDeg = Cesium.Math.toDegrees(carto.longitude) */
+
+            // 创建标签的异步任务
+            const labelPromise = (async () => {
+              try {
+                // 使用 sampleTerrainMostDetailed 获取精确地形高度
+                const terrainSample = await Cesium.sampleTerrainMostDetailed($this.viewer!.terrainProvider, [carto])
+
+                if (terrainSample && terrainSample.length > 0) {
+                  const preciseHeight = terrainSample[0].height
+                  // 使用精确高度重新创建位置
+                  const fixedPos = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, preciseHeight)
+
+                  const labelHeight = Math.floor(preciseHeight).toFixed(0)
+
+                  if (!heightList.includes(labelHeight)) {
+                    heightList.push(labelHeight)
+
+                    const labelEntity = $this.viewer!.entities.add({
+                      position: fixedPos,
+                      label: {
+                        text: labelHeight,
+                        font: '16px sans-serif',
+                        fillColor: Cesium.Color.YELLOW,
+                        outlineColor: Cesium.Color.BLACK,
+                        outlineWidth: 2,
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        pixelOffset: new Cesium.Cartesian2(0, -5),
+                      },
+                    })
+
+                    $this.countorLineLabelList.push(labelEntity)
+                  }
+                }
+              } catch (error) {
+                console.error('获取地形高度失败:', error)
+                // 降级方案：使用原来的方法
+                const height = $this.viewer!.scene.globe.getHeight(carto) || 0
+                const fixedHeight = height + 2
+                const fixedPos = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, fixedHeight)
+
+                const labelHeight = Math.floor(height).toFixed(0)
+                if (!heightList.includes(labelHeight)) {
+                  heightList.push(labelHeight)
+
+                  const labelEntity = $this.viewer!.entities.add({
+                    position: fixedPos,
+                    label: {
+                      text: labelHeight,
+                      font: '16px sans-serif',
+                      fillColor: Cesium.Color.YELLOW,
+                      outlineColor: Cesium.Color.BLACK,
+                      outlineWidth: 2,
+                      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                      pixelOffset: new Cesium.Cartesian2(0, -5),
+                    },
+                  })
+
+                  $this.countorLineLabelList.push(labelEntity)
+                }
               }
-            }
+            })()
+
+            labelPromises.push(labelPromise)
           }
         }
       }
+
+      // 等待所有标签创建完成
+      await Promise.all(labelPromises)
+
+      message.destroy('drawContourLine')
+      console.log('所有等高线标签创建完成')
     })
   }
 

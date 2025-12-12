@@ -242,7 +242,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     })
 
     viewer.scene.globe.showGroundAtmosphere = false
-    ;(viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
+      ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
     viewerRef.current = viewer
 
