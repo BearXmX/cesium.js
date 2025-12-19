@@ -44,7 +44,7 @@ body,
 .lil-gui.root {
   top: 52px;
   max-height: calc(100% - 100px);
-  z-index: 100;
+  z-index: 1;
 }
 
 .lil-gui.root > button.title {

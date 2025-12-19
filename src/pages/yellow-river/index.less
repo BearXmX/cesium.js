@@ -1,10 +1,23 @@
-.yellow-river-timeline .ant-slider-handle::after {
-  box-shadow: 0 0 0 2px #ffffff;
-  background-color: #00b96b;
-}
+.yellow-river-app-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  .yellow-river-timeline .ant-slider-handle::after {
+    box-shadow: 0 0 0 2px #ffffff;
+    background-color: #00b96b;
+  }
 
-.yellow-river-timeline .ant-slider-mark-text {
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 14px;
+  .yellow-river-timeline .ant-slider-mark-text {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .yello-river-app-cover-container {
+    position: absolute;
+    z-index: 2;
+    height: 100%;
+    width: 100%;
+  }
 }

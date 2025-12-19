@@ -12,6 +12,7 @@ import { createExtraDom } from '@/hooks'
 import { drawEntity } from '../build-map-setting/constance'
 import LineProgressMaterialProperty from '@/utils/material/line-progress-material-property'
 import ArrowIndication from '@/utils/plugins/arrow-indication'
+import DrawingCanvas from '@/components/drawing-canvas'
 
 const YellowRiver = () => {
   const [notificeMessage, notificationContextHolder] = useNotice()
@@ -1602,7 +1603,7 @@ const YellowRiver = () => {
   }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className='yellow-river-app-container'>
       {showTimeLine && (
         <div className="yellow-river-timeline" style={{ height: 50, backgroundColor: '#000', padding: '0 32px' }}>
           <Slider
@@ -1642,7 +1643,6 @@ const YellowRiver = () => {
           />
         </div>
       )}
-
       {notificationContextHolder}
       {modalContext}
       <CommonMap
@@ -1656,6 +1656,7 @@ const YellowRiver = () => {
           },
         }}
       ></CommonMap>
+      {<DrawingCanvas></DrawingCanvas>}
     </div>
   )
 }
