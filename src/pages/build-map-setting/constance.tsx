@@ -10,7 +10,66 @@ import DrawBillboard from '@/utils/plugins/draw-billboard'
 import DrawText from "@/utils/plugins/draw-text";
 import type { cameraFlyParamsType, CommonMapInstanceType } from "@/components/common-map";
 
-export type lineWidget = {
+export type ProfileAnalysisWidget = {
+  type: 'profileAnalysis',
+  title: string,
+  instance?: ProfileAnalysis
+  points: {
+    longitude: number
+    latitude: number
+    height?: number
+  }[]
+  params: {
+    content?: string
+    color?: string
+    width?: number
+  }
+}
+
+export type MeasureDistanceWidget = {
+  type: 'messureDistance',
+  title: string,
+  instance?: MeasureDistance
+  points: {
+    longitude: number
+    latitude: number
+    height?: number
+  }[]
+  params: {
+    content?: string
+    color?: string
+    width?: number
+  }
+}
+
+
+export type MultipleShapeCountourWidget = {
+  type: 'multipleShapeCountour',
+  title: string,
+  instance?: MultipleShapeCountour
+  points: {
+    longitude: number
+    latitude: number
+    height?: number
+  }[]
+  params: {
+  }
+}
+
+export type MultipleShapeWidget = {
+  type: 'multipleShape',
+  title: string,
+  instance?: MultipleShape
+  points: {
+    longitude: number
+    latitude: number
+    height?: number
+  }[]
+  params: {
+  }
+}
+
+export type LineWidget = {
   type: 'line',
   title: string,
   instance?: LineShape
@@ -24,10 +83,9 @@ export type lineWidget = {
     color?: string
     width?: number
   }
-
 }
 
-export type textWidget = {
+export type TextWidget = {
   type: 'text'
   title: string
   position: {
@@ -50,7 +108,7 @@ export type textWidget = {
   }
 }
 
-export type billboardWidget = {
+export type BillboardWidget = {
   type: 'billboard',
   title: string,
   position: {
@@ -86,8 +144,9 @@ export type settingType = {
     }
   }[]
 
-  mapWidget: (lineWidget | textWidget | billboardWidget)[]
+  mapWidget: (LineWidget | TextWidget | BillboardWidget | MultipleShapeCountourWidget | MultipleShapeWidget | MeasureDistanceWidget | ProfileAnalysisWidget)[]
 }
+
 export const setting_default: settingType = {
   mapMetadata: {
     id: 1,

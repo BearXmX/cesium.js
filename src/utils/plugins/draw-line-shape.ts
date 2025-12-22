@@ -358,19 +358,24 @@ class LineShape {
     // 清理所有实体
     if (this.floatingPointEntity) {
       this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
     if (this.activeLineEntity) {
       this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
     if (this.finishButtonEntity) {
       this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
 
     this.fixedPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
+
+    this.fixedPositions = []
 
     console.log('线段绘制工具已销毁')
   }

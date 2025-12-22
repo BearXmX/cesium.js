@@ -5,7 +5,7 @@ import CommonMap, { type cameraFlyParamsType, type CommonMapInstanceType, type C
 import * as gui from 'lil-gui'
 import classNames from "classnames";
 import { DatabaseOutlined, EyeOutlined, GlobalOutlined, } from "@ant-design/icons";
-import { parseMapJson, setting_default, transfromDestination, type billboardWidget, type lineWidget, type settingType, type textWidget } from "./constance";
+import { parseMapJson, setting_default, transfromDestination, type BillboardWidget, type LineWidget, type settingType, type TextWidget } from "./constance";
 import './index.less'
 import { InitialViewSettingComponent, InitialViewToolComponent, } from "./initial-view";
 import { MapWidgetSettingComponent, MapWidgetToolComponent } from "./map-widget";

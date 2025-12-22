@@ -12,13 +12,15 @@ import ZoomOutIcon from '@/assets/svg/zoom-out-icon.svg?react'
 import ZoomToHomeIcon from '@/assets/svg/zoom-to-home.svg?react'
 
 import DrawCountour from '@/utils/plugins/draw-multiple-shape-countour'
-import MultipleShape from '@/utils/plugins/draw-multiple-shape'
-import LineShape from '@/utils/plugins/draw-line-shape'
-import MeasureDistance from '@/utils/plugins/draw-measure-distance'
-import ProfileAnalysis, { type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
+import MultipleShape, { Mutiple_SHAPE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-multiple-shape'
+import LineShape, { LINE_SHAPE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-line-shape'
+import MeasureDistance, { MEASURE_DISTANCE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-measure-distance'
+import ProfileAnalysis, { PROFILE_ANALYSIS_OPTIONS_DEFAULT, type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
 import type MultipleShapeCountour from '@/utils/plugins/draw-multiple-shape-countour'
 import ProfileAnalysisChart from './profile-analysis-chart'
 import './index.less'
+import { getCameraParams, initClickHandler } from './constance'
+import type { settingType } from '@/pages/build-map-setting/constance'
 
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
@@ -58,15 +60,14 @@ export type CommonMapInstanceType = {
   getViewer: () => Cesium.Viewer
   cameraFlyTo: (params: cameraFlyParamsType) => void
   getCameraParams: () => cameraParamsType
-
   executeFlySequence: (flySequence: cameraFlyParamsType[]) => void
-
   flyToBoundingSphere: (positions: Cesium.Cartesian3[]) => void
 }
 
 const pick_tools_List_default = ['默认视角', '视角放大', '视角缩小', '区域等高线', '绘制多边形', '绘制线段', '测距工具', '剖面分析']
 
 const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((props, instance) => {
+
   const {
     terrainInitCallback,
     model = 'build',
@@ -94,6 +95,8 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
 
   const [placement, setPlacement] = useState<DrawerProps['placement']>('bottom')
 
+  const [mapWidget, setMapWidget] = useState<settingType['mapWidget']>([])
+
   useImperativeHandle(instance, () => {
     return {
       getViewer() {
@@ -105,7 +108,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         })
       },
       getCameraParams() {
-        return getCameraParams(viewerRef)
+        return getCameraParams(viewerRef.current)
       },
       executeFlySequence(flySequence: cameraFlyParamsType[]) {
         // 边界检查：地图实例不存在或序列为空，直接返回
@@ -141,79 +144,6 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       },
     }
   })
-
-  /** @description 获取当前相机参数 */
-  const getCameraParams = (viewerRef: React.RefObject<Cesium.Viewer | null>) => {
-    const camera = viewerRef.current!.camera
-
-    // 获取相机位置（笛卡尔坐标）
-    const position = camera.position
-
-    // 获取方向参数
-    const heading = camera.heading
-    const pitch = camera.pitch
-    const roll = camera.roll
-
-    // 转换为经纬度
-    const cartographic = Cesium.Cartographic.fromCartesian(position)
-    const lon = Cesium.Math.toDegrees(cartographic.longitude)
-    const lat = Cesium.Math.toDegrees(cartographic.latitude)
-    const height = cartographic.height
-
-    // 生成flyTo代码
-    const code = `viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(${lon.toFixed(8)}, ${lat.toFixed(8)}, ${height.toFixed(2)}),
-        orientation: {
-            heading: ${heading},
-            pitch: ${pitch},
-            roll: ${roll}
-        }
-    });`
-
-    console.log(code)
-
-    return {
-      destination: {
-        longitude: lon,
-        latitude: lat,
-        height: height,
-      },
-      orientation: {
-        heading: heading,
-        pitch: pitch,
-        roll: roll,
-      },
-    }
-  }
-
-  const initClickHandler = (viewer: Cesium.Viewer) => {
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
-
-    handler.setInputAction(async (movement: { position: Cesium.Cartesian2 }) => {
-      // 拾取椭球面上的点
-      const cartesian = viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid)
-      if (!cartesian) return
-
-      const terrainCartos = await Cesium.sampleTerrainMostDetailed(viewer!.terrainProvider, [Cesium.Cartographic.fromCartesian(cartesian)])
-
-      const cartographic = terrainCartos[0]
-
-      const lon = Cesium.Math.toDegrees(cartographic.longitude)
-      const lat = Cesium.Math.toDegrees(cartographic.latitude)
-      const height = cartographic.height
-
-      // 获取当前相机大致层级
-      const zoom = Math.round(Math.log2((2 * Math.PI * 6378137) / viewer.camera.getMagnitude()))
-
-      // 经纬度 → XYZ 瓦片坐标
-      const x = Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))
-      const y = Math.floor(((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * Math.pow(2, zoom))
-
-      console.log(`lon=${lon}, lat=${lat}, height=${height} zoom=${zoom}, x=${x}, y=${y}`)
-
-      getCameraParams(viewerRef)
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-  }
 
   const defaultCameraFlyTo = () => {
     if (defaultCameraFlyToParams?.destination) {
@@ -286,7 +216,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         if (model !== 'build') {
           return
         }
-        viewerRef.current!.camera.zoomIn(300000)
+        viewerRef.current!.camera.zoomIn(100000)
       },
     },
     {
@@ -296,7 +226,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         if (model !== 'build') {
           return
         }
-        viewerRef.current!.camera.zoomOut(300000)
+        viewerRef.current!.camera.zoomOut(100000)
       },
     },
   ]
@@ -316,9 +246,34 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         const drawer = new DrawCountour(viewerRef.current!, {
-          onCompleted() {
+          onCompleted(fixedPositions) {
             setActiveTool({})
             setAllowActiveToolToCompleted(false)
+
+            const coordinates = fixedPositions!.map(position => {
+              const cartographic = Cesium.Cartographic.fromCartesian(position)
+              const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+              const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+              /*               const height = cartographic.height */
+              return {
+                longitude,
+                latitude,
+                /*                 height, */
+              }
+            })
+
+            setMapWidget(pre => [
+              ...pre,
+              {
+                type: 'multipleShapeCountour',
+                title: '区域等高线实例',
+                points: coordinates,
+                instance: drawer,
+                params: {
+
+                },
+              },
+            ])
           },
           onCancel() {
             setActiveTool({})
@@ -346,9 +301,34 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         const drawer = new MultipleShape(viewerRef.current!, {
-          onCompleted() {
+          onCompleted(fixedPositions) {
             setActiveTool({})
             setAllowActiveToolToCompleted(false)
+
+            const coordinates = fixedPositions!.map(position => {
+              const cartographic = Cesium.Cartographic.fromCartesian(position)
+              const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+              const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+              /*               const height = cartographic.height */
+              return {
+                longitude,
+                latitude,
+                /*                 height, */
+              }
+            })
+
+            setMapWidget(pre => [
+              ...pre,
+              {
+                type: 'multipleShape',
+                title: '多边形实例',
+                points: coordinates,
+                instance: drawer,
+                params: {
+                  ...Mutiple_SHAPE_OPTIONS_DEFAULT,
+                },
+              },
+            ])
           },
           onCancel() {
             setActiveTool({})
@@ -376,9 +356,34 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         const drawer = new LineShape(viewerRef.current!, {
-          onCompleted() {
+          onCompleted(fixedPositions) {
             setActiveTool({})
             setAllowActiveToolToCompleted(false)
+
+            const coordinates = fixedPositions!.map(position => {
+              const cartographic = Cesium.Cartographic.fromCartesian(position)
+              const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+              const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+              /*               const height = cartographic.height */
+              return {
+                longitude,
+                latitude,
+                /*                 height, */
+              }
+            })
+
+            setMapWidget(pre => [
+              ...pre,
+              {
+                type: 'line',
+                title: '线段实例',
+                points: coordinates,
+                instance: drawer,
+                params: {
+                  ...LINE_SHAPE_OPTIONS_DEFAULT,
+                },
+              },
+            ])
           },
           onCancel() {
             setActiveTool({})
@@ -406,9 +411,34 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         const drawer = new MeasureDistance(viewerRef.current!, {
-          onCompleted() {
+          onCompleted(fixedPositions) {
             setActiveTool({})
             setAllowActiveToolToCompleted(false)
+
+            const coordinates = fixedPositions!.map(position => {
+              const cartographic = Cesium.Cartographic.fromCartesian(position)
+              const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+              const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+              /*               const height = cartographic.height */
+              return {
+                longitude,
+                latitude,
+                /*                 height, */
+              }
+            })
+
+            setMapWidget(pre => [
+              ...pre,
+              {
+                type: 'messureDistance',
+                title: '测距工具实例',
+                points: coordinates,
+                instance: drawer,
+                params: {
+                  ...MEASURE_DISTANCE_OPTIONS_DEFAULT,
+                },
+              },
+            ])
           },
           onCancel() {
             setActiveTool({})
@@ -445,9 +475,34 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
             setOpen(true)
             setProfileAnalysisMetaData([...profileAnalysisMetaData, { data: data, instance: drawer, type: '剖面分析' }])
           },
-          onCompleted() {
+          onCompleted(fixedPositions) {
             setActiveTool({})
             setAllowActiveToolToCompleted(false)
+
+            const coordinates = fixedPositions!.map(position => {
+              const cartographic = Cesium.Cartographic.fromCartesian(position)
+              const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+              const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+              /*               const height = cartographic.height */
+              return {
+                longitude,
+                latitude,
+                /*                 height, */
+              }
+            })
+
+            setMapWidget(pre => [
+              ...pre,
+              {
+                type: 'profileAnalysis',
+                title: '剖面分析实例',
+                points: coordinates,
+                instance: drawer,
+                params: {
+                  ...PROFILE_ANALYSIS_OPTIONS_DEFAULT,
+                },
+              },
+            ])
           },
           onCancel() {
             setActiveTool({})
@@ -463,9 +518,13 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     },
   ]
 
+  useEffect(() => {
+    console.log(mapWidget)
+  }, [mapWidget])
+
   const finalTools = useMemo(() => {
     return [...commonTools, ...useMouseTools].filter(item => pickToolsList.includes(item.title))
-  }, [pickToolsList, profileAnalysisMetaData])
+  }, [pickToolsList, profileAnalysisMetaData, activeTool])
 
   useEffect(() => {
     init()
@@ -554,7 +613,6 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         )}
         {props.children}
       </div>
-
       <Drawer
         title="剖面分析"
         placement={placement}

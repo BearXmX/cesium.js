@@ -440,7 +440,7 @@ class MultipleShapeCountour {
     this.state = 'completed'
 
     if (typeof this.options.onCompleted === 'function') {
-      this.options.onCompleted()
+      this.options.onCompleted(this.fixedPositions)
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)

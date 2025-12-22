@@ -1,11 +1,11 @@
 import { Editor, Toolbar } from '@wangeditor/editor-for-react'
-import type { billboardWidget, lineWidget, settingType, textWidget } from "./constance"
+import type { BillboardWidget, LineWidget, settingType, TextWidget } from "./constance"
 import type { IDomEditor, IToolbarConfig } from '@wangeditor/editor'
 import { useEffect, useState } from 'react'
 
 type EditorPropsType = {
   setting: settingType
-  item: billboardWidget | textWidget | lineWidget
+  item: BillboardWidget | TextWidget | LineWidget
   index: number
   setSetting: React.Dispatch<React.SetStateAction<settingType>>
 }
@@ -52,7 +52,7 @@ const EditorWidget: React.FC<EditorPropsType> = (props) => {
         ...prev,
         mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
           if (widgetIndex === index) {
-            const v = widget as billboardWidget
+            const v = widget as BillboardWidget
             return { ...widget, params: { ...v.params, content: editor.getHtml()! } }
           }
 

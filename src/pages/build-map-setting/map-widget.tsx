@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as Cesium from 'cesium'
 import type { CommonMapInstanceType } from '@/components/common-map'
-import type { billboardWidget, lineWidget, settingType, textWidget } from './constance'
+import type { BillboardWidget, LineWidget, settingType, TextWidget } from './constance'
 import { ColorPicker, Form, Input, InputNumber, message, Switch, type InputRef } from 'antd'
 import { AimOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import classNames from 'classnames'
@@ -389,7 +389,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as lineWidget
+                                const v = widget as LineWidget
                                 return { ...widget, params: { ...v.params, color: newColor } }
                               }
 
@@ -414,7 +414,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as lineWidget
+                                const v = widget as LineWidget
                                 return { ...widget, params: { ...v.params, width: value! } }
                               }
 
@@ -449,7 +449,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, label: text } }
                               }
 
@@ -476,7 +476,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...v, position: position }
                               }
                               return widget
@@ -499,7 +499,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, color: newColor } }
                               }
 
@@ -521,7 +521,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, fontSize: value! } }
                               }
 
@@ -545,7 +545,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, outlineColor: newColor } }
                               }
 
@@ -568,7 +568,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, outlineWidth: value! } }
                               }
                               return widget
@@ -589,7 +589,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, showBackground: Number(checked) } }
                               }
                               return widget
@@ -613,7 +613,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, backgroundColor: newColor } }
                               }
 
@@ -635,7 +635,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, backgroundPaddingX: value! } }
                               }
 
@@ -657,7 +657,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as textWidget
+                                const v = widget as TextWidget
                                 return { ...widget, params: { ...v.params, backgroundPaddingY: value! } }
                               }
 
@@ -697,7 +697,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as billboardWidget
+                                const v = widget as BillboardWidget
                                 return { ...v, position: position }
                               }
                               return widget
@@ -720,7 +720,7 @@ export const MapWidgetSettingComponent: React.FC<props> = props => {
                             ...prev,
                             mapWidget: prev.mapWidget.map((widget: any, widgetIndex) => {
                               if (widgetIndex === index) {
-                                const v = widget as billboardWidget
+                                const v = widget as BillboardWidget
                                 return { ...widget, params: { ...v.params, scale: value! } }
                               }
 

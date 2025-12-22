@@ -1,7 +1,16 @@
 import * as Cesium from 'cesium'
 import type { EventType } from './type'
 
-type options = {} & EventType
+export type Mutiple_SHAPE_OPTIONS_TYPE = {
+  color?: string
+} & EventType & {
+    onClick?: (instance: MultipleShape) => void
+  }
+
+export const Mutiple_SHAPE_OPTIONS_DEFAULT = {
+  content: '',
+  color: '#00FFFF',
+} as Mutiple_SHAPE_OPTIONS_TYPE
 
 class MultipleShape {
   viewer: Cesium.Viewer | null = null
@@ -21,13 +30,14 @@ class MultipleShape {
 
   finalShapeEntity: Cesium.Entity | null = null
 
-  options: options = {
+  options: Mutiple_SHAPE_OPTIONS_TYPE = {
+    ...Mutiple_SHAPE_OPTIONS_DEFAULT,
     onCompleted: () => {},
     onCancel: () => {},
     onShowFinishEntity: () => {},
   }
 
-  constructor(viewer: Cesium.Viewer, options?: options) {
+  constructor(viewer: Cesium.Viewer, options?: Mutiple_SHAPE_OPTIONS_TYPE) {
     this.viewer = viewer
 
     this.options = {
@@ -180,11 +190,21 @@ class MultipleShape {
       return
     }
 
+    this.creatFinalShape(this.fixedPositions)
+    // 生成并打印 GeoJSON
+    /*     this.printGeoJSON() */
+  }
+
+  creatFinalShape(fixedPositions: Cesium.Cartesian3[]) {
+    if (this.fixedPositions !== fixedPositions) {
+      this.fixedPositions = fixedPositions
+    }
+
     // 添加最终的多边形实体
     const finalShape = this.viewer!.entities.add({
       polygon: {
         hierarchy: this.fixedPositions,
-        material: Cesium.Color.CYAN.withAlpha(0.3),
+        material: Cesium.Color.fromCssColorString(this.options.color!).withAlpha(0.3),
         outline: true,
         outlineColor: Cesium.Color.BLACK,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
@@ -196,9 +216,6 @@ class MultipleShape {
     console.log(`多边形绘制完成，共 ${this.fixedPositions.length} 个点`)
 
     this.completed()
-
-    // 生成并打印 GeoJSON
-    /*     this.printGeoJSON() */
   }
 
   // 生成并打印 GeoJSON
@@ -256,13 +273,25 @@ class MultipleShape {
     this.state = 'completed'
 
     if (typeof this.options.onCompleted === 'function') {
-      this.options.onCompleted()
+      this.options.onCompleted(this.fixedPositions)
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+
     this.completedDestroy()
+
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer!.canvas)
+
+    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      // 检查是否点击了完成按钮
+      const pickedObject = this.viewer!.scene.pick(event.position)
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finalShapeEntity) {
+        this.options.onClick && this.options.onClick(this)
+        return
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */

@@ -27,11 +27,19 @@ export type pointMetaType = {
   distanceFromStartTostring: string
 }
 
-type options = {
-  // 颜色
+export type PROFILE_ANALYSIS_OPTIONS_TYPE = {
+  width?: number
   color?: string
   onLoadData?: (data: pointMetaType[]) => void
-} & EventType
+} & EventType & {
+    onClick?: (instance: ProfileAnalysis) => void
+  }
+
+export const PROFILE_ANALYSIS_OPTIONS_DEFAULT = {
+  content: '',
+  color: '#00FFFF',
+  width: 5,
+} as PROFILE_ANALYSIS_OPTIONS_TYPE
 
 class ProfileAnalysis {
   viewer: Cesium.Viewer | null = null
@@ -67,15 +75,15 @@ class ProfileAnalysis {
 
   finalLineEntity: Cesium.Entity | null = null
 
-  options: options = {
-    color: '#00FFFF',
+  options: PROFILE_ANALYSIS_OPTIONS_TYPE = {
+    ...PROFILE_ANALYSIS_OPTIONS_DEFAULT,
     onLoadData: (data: pointMetaType[]) => {},
     onCompleted: () => {},
     onCancel() {},
     onShowFinishEntity: () => {},
   }
 
-  constructor(viewer: Cesium.Viewer, options?: options) {
+  constructor(viewer: Cesium.Viewer, options?: PROFILE_ANALYSIS_OPTIONS_TYPE) {
     this.viewer = viewer
 
     this.options = {
@@ -306,12 +314,20 @@ class ProfileAnalysis {
       this.finishButtonEntity = null
     }
 
+    this.creatFinalShape(this.fixedPositions)
+  }
+
+  creatFinalShape(fixedPositions: Cesium.Cartesian3[]) {
+    if (this.fixedPositions !== fixedPositions) {
+      this.fixedPositions = fixedPositions
+    }
+
     // 添加最终的线段实体
     const finalLine = this.viewer!.entities.add({
       polyline: {
         positions: this.fixedPositions,
         material: Cesium.Color.fromCssColorString(this.options.color!),
-        width: 5,
+        width: this.options.width,
         clampToGround: true,
       },
     })
@@ -376,8 +392,6 @@ class ProfileAnalysis {
     const terrainCartos = await Cesium.sampleTerrainMostDetailed(this.viewer!.terrainProvider, cartos)
 
     message.destroy('profileAnalysis')
-
-    console.log('terrainCartos', terrainCartos)
 
     // 3. 使用带真实海拔的 cartographic 继续你的逻辑
     const nextPositions = terrainCartos.map((cartographic, index) => {
@@ -488,13 +502,24 @@ class ProfileAnalysis {
     this.state = 'completed'
 
     if (typeof this.options.onCompleted === 'function') {
-      this.options.onCompleted()
+      this.options.onCompleted(this.fixedPositions)
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.completedDestroy()
+
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer!.canvas)
+
+    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      // 检查是否点击了完成按钮
+      const pickedObject = this.viewer!.scene.pick(event.position)
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finalLineEntity) {
+        this.options.onClick && this.options.onClick(this)
+        return
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
@@ -518,36 +543,48 @@ class ProfileAnalysis {
       this.viewer!.entities.remove(entity)
     })
 
+    this.fixedPointEntityList = []
+
     if (this.activeLineEntity) {
       this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
     // 清理所有实体
     if (this.floatingPointEntity) {
       this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
     if (this.finishButtonEntity) {
       this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
+
     this.distanceLabelEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
 
+    this.distanceLabelEntityList = []
+
     this.insertPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
+    this.insertPointEntityList = []
 
     if (this.totalDistanceLabelEntity) {
       this.viewer!.entities.remove(this.totalDistanceLabelEntity)
+      this.totalDistanceLabelEntity = null
     }
 
     if (this.slideEntity) {
       this.viewer!.entities.remove(this.slideEntity)
+      this.slideEntity = null
     }
 
     if (this.finalLineEntity) {
       this.viewer!.entities.remove(this.finalLineEntity)
+      this.finalLineEntity = null
     }
   }
 
@@ -561,26 +598,35 @@ class ProfileAnalysis {
       this.viewer!.entities.remove(entity)
     })
 
+    this.fixedPointEntityList = []
+
     if (this.activeLineEntity) {
       this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
     // 清理所有实体
     if (this.floatingPointEntity) {
       this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
     if (this.finishButtonEntity) {
       this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
 
     this.distanceLabelEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
 
+    this.distanceLabelEntityList = []
+
     this.insertPointEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
+
+    this.insertPointEntityList = []
   }
 }
 

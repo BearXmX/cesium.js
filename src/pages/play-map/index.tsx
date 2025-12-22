@@ -38,73 +38,6 @@ const PlayMap: React.FC<PlayMapPropsType> = (props) => {
       // 获取 Cesium Viewer 实例（非空断言，确保地图已初始化）
       viewerRef.current = mapInstance.current?.getViewer()!;
 
-      viewerRef.current.scene.globe.depthTestAgainstTerrain = false; // 关键：禁用地形深度测试
-      viewerRef.current.scene.screenSpaceCameraController.minimumZoomDistance = 100; // 最小缩放距离
-      viewerRef.current.scene.screenSpaceCameraController.maximumZoomDistance = 10000000; // 最大缩放距离
-
-      // 初始化管理器
-      const animManager = new PathAnimationManager(viewerRef.current);
-
-      // 示例1：两点直线移动（完全兼容之前用法）
-      const box1 = viewerRef.current.entities.add({
-        id: '直线移动Box',
-        position: Cesium.Cartesian3.fromDegrees(121.67498064898889, 31.111979444895365, 0),
-        box: {
-          dimensions: new Cesium.Cartesian3(50000, 50000, 30000),
-          material: Cesium.Color.RED,
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-          outline: true,
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 3,
-        },
-
-      });
-
-      animManager.addMoveAnimation(
-        box1,
-        [ // 两点数组
-          [121.67498064898889, 31.111979444895365, 0],    // 起点
-          [114.32655563101586, 37.357925769512725, 0],
-          [110.32655563101586, 37.357925769512725, 0] // 终点
-        ],
-        20, // 4秒完成
-        // @ts-ignore
-        PathAnimationManager.Easing.linear,
-      );
-
-      const div = document.createElement('div')
-
-      div.style.position = 'absolute'
-      div.style.left = '50%'
-      div.style.top = '50%'
-      div.style.transform = 'translate(-50%, -50%)'
-      div.innerHTML = `<div style="text-align: center;">暂停</div>`
-      div.style.width = '100px'
-      div.style.backgroundColor = 'rgba(255, 255, 255, 0.5)'
-
-      document.body.appendChild(div)
-
-      div.addEventListener('click', () => {
-        animManager.pauseAll()
-      })
-
-
-      const div2 = document.createElement('div')
-      div2.style.position = 'absolute'
-      div2.style.left = '65%'
-      div2.style.top = '50%'
-      div2.style.transform = 'translate(-50%, -50%)'
-      div2.innerHTML = `<div style="text-align: center;">开始</div>`
-      div2.style.width = '100px'
-      div2.style.backgroundColor = 'rgba(255, 255, 255, 0.5)'
-
-      document.body.appendChild(div2)
-
-      div2.addEventListener('click', () => {
-        animManager.resumeAll()
-      })
-
-      return
       // ===================== 1. 定义路径线段的坐标点 =====================
       // 定义由两个经纬度点组成的线段（北京区域）
       var positions = [
@@ -251,3 +184,71 @@ const PlayMap: React.FC<PlayMapPropsType> = (props) => {
 }
 
 export default PlayMap
+
+
+
+/* 
+      // 初始化管理器
+      const animManager = new PathAnimationManager(viewerRef.current);
+
+      // 示例1：两点直线移动（完全兼容之前用法）
+      const box1 = viewerRef.current.entities.add({
+        id: '直线移动Box',
+        position: Cesium.Cartesian3.fromDegrees(121.67498064898889, 31.111979444895365, 0),
+        box: {
+          dimensions: new Cesium.Cartesian3(50000, 50000, 30000),
+          material: Cesium.Color.RED,
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          outline: true,
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 3,
+        },
+
+      });
+
+      animManager.addMoveAnimation(
+        box1,
+        [ // 两点数组
+          [121.67498064898889, 31.111979444895365, 0],    // 起点
+          [114.32655563101586, 37.357925769512725, 0],
+          [110.32655563101586, 37.357925769512725, 0] // 终点
+        ],
+        20, // 4秒完成
+        // @ts-ignore
+        PathAnimationManager.Easing.linear,
+      );
+
+      const div = document.createElement('div')
+
+      div.style.position = 'absolute'
+      div.style.left = '50%'
+      div.style.top = '50%'
+      div.style.transform = 'translate(-50%, -50%)'
+      div.innerHTML = `<div style="text-align: center;">暂停</div>`
+      div.style.width = '100px'
+      div.style.backgroundColor = 'rgba(255, 255, 255, 0.5)'
+
+      document.body.appendChild(div)
+
+      div.addEventListener('click', () => {
+        animManager.pauseAll()
+      })
+
+
+      const div2 = document.createElement('div')
+      div2.style.position = 'absolute'
+      div2.style.left = '65%'
+      div2.style.top = '50%'
+      div2.style.transform = 'translate(-50%, -50%)'
+      div2.innerHTML = `<div style="text-align: center;">开始</div>`
+      div2.style.width = '100px'
+      div2.style.backgroundColor = 'rgba(255, 255, 255, 0.5)'
+
+      document.body.appendChild(div2)
+
+      div2.addEventListener('click', () => {
+        animManager.resumeAll()
+      })
+
+      return
+*/

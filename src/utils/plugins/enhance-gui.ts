@@ -1,4 +1,3 @@
-
 // 导入图标资源
 import dragIcon from '@/assets/svg/draw-drag-icon.svg'
 import scrollUpIcon from '@/assets/svg/draw-scroll-up-icon.svg'
@@ -119,7 +118,7 @@ const dragEvent = (dragHandle: HTMLDivElement) => {
     try {
       e.preventDefault()
       e.stopPropagation()
-    } catch (err) { }
+    } catch (err) {}
   }
 
   // ===== 核心优化4：拖拽手柄事件绑定优化 =====
@@ -186,7 +185,7 @@ export const createExtraDom = (destroy: boolean = false) => {
       scrollTop = Math.max(0, currentScrollTop - 100) // 极值限制：最小为0
       scrollTarget.scrollTo({
         top: scrollTop,
-        behavior: 'smooth' // 可选：平滑滚动，提升体验
+        behavior: 'smooth', // 可选：平滑滚动，提升体验
       })
     })
     extraDom.appendChild(scrollUp)
@@ -204,7 +203,7 @@ export const createExtraDom = (destroy: boolean = false) => {
       scrollTop = Math.min(maxScrollTop, currentScrollTop + 100) // 极值限制：最大为maxScrollTop
       scrollTarget.scrollTo({
         top: scrollTop,
-        behavior: 'smooth' // 可选：平滑滚动
+        behavior: 'smooth', // 可选：平滑滚动
       })
     })
     extraDom.appendChild(scrollDown)

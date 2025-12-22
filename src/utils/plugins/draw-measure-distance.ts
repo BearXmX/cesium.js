@@ -15,9 +15,18 @@ const pointLabelStyle = {
   disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
-type options = {
+export type MEASURE_DISTANCE_OPTIONS_TYPE = {
   color?: string
-} & EventType
+  width?: number
+} & EventType & {
+    onClick?: (instance: MeasureDistance) => void
+  }
+
+export const MEASURE_DISTANCE_OPTIONS_DEFAULT = {
+  content: '',
+  color: '#00FFFF',
+  width: 5,
+} as MEASURE_DISTANCE_OPTIONS_TYPE
 
 class MeasureDistance {
   viewer: Cesium.Viewer | null = null
@@ -45,14 +54,14 @@ class MeasureDistance {
 
   totalDistanceLabelEntity: Cesium.Entity | null = null
 
-  options: options = {
-    color: '#00FFFF',
+  options: MEASURE_DISTANCE_OPTIONS_TYPE = {
+    ...MEASURE_DISTANCE_OPTIONS_DEFAULT,
     onCompleted: () => {},
     onCancel() {},
     onShowFinishEntity: () => {},
   }
 
-  constructor(viewer: Cesium.Viewer, options?: options) {
+  constructor(viewer: Cesium.Viewer, options?: MEASURE_DISTANCE_OPTIONS_TYPE) {
     this.viewer = viewer
 
     this.options = {
@@ -286,21 +295,29 @@ class MeasureDistance {
       this.finishButtonEntity = null
     }
 
+    this.creatFinalShape(this.fixedPositions)
+  }
+
+  creatFinalShape(fixedPositions: Cesium.Cartesian3[]) {
+    if (this.fixedPositions !== fixedPositions) {
+      this.fixedPositions = fixedPositions
+    }
+
     // 添加最终的线段实体
     const finalLine = this.viewer!.entities.add({
       polyline: {
-        positions: this.fixedPositions,
-        material: Cesium.Color.fromCssColorString(this.options.color!),
-        width: 5,
+        positions: fixedPositions,
+        material: Cesium.Color.fromCssColorString(this.options.color!)!,
+        width: this.options.width,
         clampToGround: true,
       },
     })
 
     this.finalLineEntity = finalLine
 
-    console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
-
     this.completed()
+
+    console.log(`线段绘制完成，共 ${this.fixedPositions.length} 个点`)
   }
 
   // 计算线段长度（近似值）
@@ -318,13 +335,34 @@ class MeasureDistance {
     this.state = 'completed'
 
     if (typeof this.options.onCompleted === 'function') {
-      this.options.onCompleted()
+      this.options.onCompleted(this.fixedPositions)
     }
 
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.handler?.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.completedDestroy()
+
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer!.canvas)
+
+    handler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      // 检查是否点击了完成按钮
+      const pickedObject = this.viewer!.scene.pick(event.position)
+      if (Cesium.defined(pickedObject) && pickedObject.id === this.finalLineEntity) {
+        this.options.onClick && this.options.onClick(this)
+        return
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+  }
+
+  updateFinalEntityColor(color: string) {
+    // @ts-ignore
+    this.finalLineEntity!.polyline.material = Cesium.Color.fromCssColorString(color)
+  }
+
+  updateFinalEntityWidth(width: number = 5) {
+    // @ts-ignore
+    this.finalLineEntity!.polyline.width = width
   }
 
   /* 在点击绘制完成前，不想绘制了，则调用此方法 */
@@ -348,28 +386,38 @@ class MeasureDistance {
       this.viewer!.entities.remove(entity)
     })
 
+    this.fixedPointEntityList = []
+
     if (this.activeLineEntity) {
       this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
     // 清理所有实体
     if (this.floatingPointEntity) {
       this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
     if (this.finishButtonEntity) {
       this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
+
     this.distanceLabelEntityList.forEach(entity => {
       this.viewer!.entities.remove(entity)
     })
 
+    this.distanceLabelEntityList = []
+
     if (this.totalDistanceLabelEntity) {
       this.viewer!.entities.remove(this.totalDistanceLabelEntity)
+      this.totalDistanceLabelEntity = null
     }
 
     if (this.finalLineEntity) {
       this.viewer!.entities.remove(this.finalLineEntity)
+      this.finalLineEntity = null
     }
   }
 
@@ -382,14 +430,17 @@ class MeasureDistance {
     // 清理所有实体
     if (this.floatingPointEntity) {
       this.viewer!.entities.remove(this.floatingPointEntity)
+      this.floatingPointEntity = null
     }
 
     if (this.activeLineEntity) {
       this.viewer!.entities.remove(this.activeLineEntity)
+      this.activeLineEntity = null
     }
 
     if (this.finishButtonEntity) {
       this.viewer!.entities.remove(this.finishButtonEntity)
+      this.finishButtonEntity = null
     }
 
     console.log('线段绘制工具已销毁')

@@ -8,7 +8,7 @@ import { initTextLabels, loadPointData, modalStory, useNotice } from './constanc
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import './index.less'
 import { debounce } from 'lodash'
-import { createExtraDom } from '@/hooks'
+import { createExtraDom } from '@/utils/plugins/enhance-gui'
 import { drawEntity } from '../build-map-setting/constance'
 import LineProgressMaterialProperty from '@/utils/material/line-progress-material-property'
 import ArrowIndication from '@/utils/plugins/arrow-indication'
@@ -1656,7 +1656,7 @@ const YellowRiver = () => {
           },
         }}
       ></CommonMap>
-      {<DrawingCanvas></DrawingCanvas>}
+      {/*       {<DrawingCanvas></DrawingCanvas>} */}
     </div>
   )
 }
