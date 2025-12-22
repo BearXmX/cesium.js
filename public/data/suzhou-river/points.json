@@ -265,7 +265,7 @@
         {
           "position": [121.47713148258339, 31.245028653547394, 20],
           "type": "ImageText",
-          "image": "/image/suzhou-river/suzhou-river/industrialHeritage-2.jpg",
+          "image": "/image/suzhou-river/industrialHeritage-2.jpg",
           "content": "<div><div><label for=''>地址：</label><span>北苏州路470号</span></div><div><label for=''>名称：</label><span>上海总商会</span></div><div><label for=''>建成年代：</label><span>1916</span></div><div><label for=''>原建筑类型：</label><span>办公</span></div><div><label for=''>曾用途：</label><span>上海电子管厂、联合灯泡厂、上海市电子元件研究所</span></div><div><label for=''>现用途：</label><span>上海宝格丽酒店宴会厅</span></div></div>",
           "defaultVisible": false,
           "key": "shanghaizongshanghui",
