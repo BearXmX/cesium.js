@@ -241,7 +241,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
+          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
           return
         }
 
@@ -296,7 +296,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
+          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
           return
         }
 
@@ -351,7 +351,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
+          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
           return
         }
 
@@ -406,7 +406,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
+          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
           return
         }
 
@@ -466,7 +466,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '工具，请先结束当前工具')
+          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
           return
         }
 
