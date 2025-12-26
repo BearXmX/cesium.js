@@ -6,6 +6,7 @@ import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import Radiant from './radiant'
 import { tangshanEarthquake, wenchuangEarthquake } from './constance'
 import WavesCharts from './wenchuan-earthquake-waves-charts'
+import { createFencePattern } from '@/utils/plugins/fill-grid-to-polygon'
 const Earthquake = () => {
   const mapInstance = useRef<CommonMapInstanceType>(null)
 
@@ -66,6 +67,8 @@ const Earthquake = () => {
       loadedDataCallback?: (data: any, dataSource: Cesium.GeoJsonDataSource) => void
     }
   ) => {
+    if (!viewerRef.current) return
+
     if (show) {
       if (ref.current?.length) {
         ref.current.forEach(item => {
@@ -146,8 +149,8 @@ const Earthquake = () => {
         cancelText: '取消',
         width: 800,
         centered: true,
-        onOk() {},
-        onCancel() {},
+        onOk() { },
+        onCancel() { },
       })
     },
 
@@ -175,7 +178,7 @@ const Earthquake = () => {
         closable: true,
         centered: true,
         zIndex: 2551,
-        onOk() {},
+        onOk() { },
       })
     },
     playEarthConstruction: () => {
@@ -202,7 +205,7 @@ const Earthquake = () => {
         closable: true,
         centered: true,
         zIndex: 2551,
-        onOk() {},
+        onOk() { },
       })
     },
   }
@@ -813,24 +816,6 @@ const Earthquake = () => {
     drawChinaBoundary()
 
     initGui()
-
-    const earthquakeEvents = [
-      {
-        name: 'wenchuangCircleWave',
-        params: [[103.48591676223856, 31.061249796531172, 10], 'red', 1000, 3000],
-      },
-      {
-        name: 'tangshanCircleWave',
-        params: [[118.07407423045544, 39.575412540709294, 10], 'red', 1000, 3000],
-      },
-    ]
-
-    earthquakeEvents.forEach(item => {
-      const circleWave = new Radiant(viewerRef.current, item.name)
-      const circleWaveEntity = circleWave.add(...(item.params as [Cesium.Cartesian3, string, number, number]))
-      circleWaveEntity.show = false
-      earthquakeCircleWaveRef.current.push(circleWaveEntity)
-    })
 
     return () => {
       guiRef.current?.destroy()

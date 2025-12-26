@@ -15,6 +15,7 @@ export default defineConfig({
   // @ts-ignore
   base: process.env.NODE_ENV === 'production' ? './' : '/',
   server: {
+    port: 8089,
     proxy: {
       '/api': {
         target: 'https://edu.21atcloud.com.cn/',
