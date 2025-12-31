@@ -1,6 +1,7 @@
 {
   "type": "FeatureCollection",
   "name": "全球地震点分布",
+  "properties": {},
   "features": [
     {
       "type": "Feature",
@@ -21784,20 +21785,7 @@
     {
       "type": "Feature",
       "properties": {
-        "size": "25",
-        "LabelFamil": "黑体",
-        "LabelWeigh": "normal",
-        "LabelStyle": "normal",
-        "PicWidth": null,
-        "PicHeight": null,
-        "PicMes": null,
-        "LabelColor": "#FFFFFF",
-        "MarkFarDis": 20000000,
-        "MarkNearDis": 1500000,
-        "LabelOutlineColor": "#000000",
-        "LabelOutlineWidth": null,
-        "offsetY": 17.5,
-        "offsetX": -17.5
+        "size": "25"
       },
       "geometry": {
         "type": "Point",
