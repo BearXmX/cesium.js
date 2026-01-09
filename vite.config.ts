@@ -18,7 +18,12 @@ export default defineConfig({
     port: 8089,
     proxy: {
       '/api': {
-        target: 'https://edu.21atcloud.com.cn/',
+        target: 'http://localhost:8090/',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api/, ''),
+      },
+      '/debug-geojson': {
+        target: 'http://localhost:8090',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, ''),
       },

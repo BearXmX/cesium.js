@@ -156,7 +156,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
     }
   }
 
-  const init = () => {
+  const init = async () => {
     Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN
 
     const viewer = new Cesium.Viewer(containerRef.current!, {
@@ -169,12 +169,30 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       animation: false,
       timeline: false,
       fullscreenButton: false,
+      baseLayer: import.meta.env.DEV ? Cesium.ImageryLayer.fromProviderAsync(
+        Cesium.ArcGisMapServerImageryProvider.fromBasemapType(
+          Cesium.ArcGisBaseMapType.SATELLITE,
+          // other supported styles include:
+          // Cesium.ArcGisMapServerImageryProvider.HILLSHADE
+          // Cesium.ArcGisMapServerImageryProvider.OCEANS
+        ),
+      ) : undefined,
     })
 
     viewer.scene.globe.showGroundAtmosphere = false
       ; (viewer.cesiumWidget.creditContainer as HTMLDivElement).style.display = 'none'
 
     viewerRef.current = viewer
+
+
+    /*     const esri = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+          'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer', {
+    
+        }
+        )
+    
+        const index = 1
+        viewer.imageryLayers.addImageryProvider(esri, index) */
 
     Cesium.createWorldTerrainAsync({ requestVertexNormals: true, requestWaterMask: true })
       .then(async terrain => {

@@ -18,6 +18,7 @@ import BuildMapShow from './pages/build-map-show/index.tsx'
 import './index.css'
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
 import PlayMap from './pages/play-map/index.tsx'
+import DebugGeojson from './pages/debug-geojson/index.tsx'
 
 export const links = [
   {
@@ -161,7 +162,17 @@ export const links = [
         <PlayMap></PlayMap>
       </Enhance>
     ),
-  }
+  },
+  {
+    name: '调试地图',
+    path: '/debug-geojson',
+    content: '',
+    element: (
+      <Enhance>
+        <DebugGeojson></DebugGeojson>
+      </Enhance>
+    ),
+  },
 ] : [])
 
 
@@ -183,23 +194,13 @@ const Config = () => {
       },
     }}
   >
-    {import.meta.env.PROD ? (
-      <HashRouter>
-        <Routes>
-          {links.map(route => (
-            <Route key={route.path} path={route.path} element={route.element} />
-          ))}
-        </Routes>
-      </HashRouter>
-    ) : (
-      <BrowserRouter>
-        <Routes>
-          {links.map(route => (
-            <Route key={route.path} path={route.path} element={route.element} />
-          ))}
-        </Routes>
-      </BrowserRouter>
-    )}
+    <HashRouter>
+      <Routes>
+        {links.map(route => (
+          <Route key={route.path} path={route.path} element={route.element} />
+        ))}
+      </Routes>
+    </HashRouter>
   </ConfigProvider>
 }
 

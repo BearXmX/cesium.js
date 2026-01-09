@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal, notification } from 'antd'
 import * as gui from 'lil-gui'
 import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
-import Radiant from './radiant'
 import { tangshanEarthquake, wenchuangEarthquake } from './constance'
 import WavesCharts from './wenchuan-earthquake-waves-charts'
 import { createFencePattern } from '@/utils/plugins/fill-grid-to-polygon'
+import GeoJsonLoader from '@/utils/plugins/geojson-loader'
+
 const Earthquake = () => {
   const mapInstance = useRef<CommonMapInstanceType>(null)
 
@@ -56,6 +57,39 @@ const Earthquake = () => {
   const earthquakeCircleWaveRef = useRef<Cesium.Entity[]>([])
 
   const [showWenchuanEarthquakeWavesCharts, setShowWenchuanEarthquakeWavesCharts] = useState(false)
+
+  const loaderGeojson = (params: {
+    show: boolean,
+    ref: React.RefObject<Cesium.Entity[]>,
+    url: string,
+  }) => {
+
+    if (params.show && !params.ref.current?.length) {
+      fetch(params.url).then(res => res.json()).then(data => {
+
+        const loader = new GeoJsonLoader(viewerRef.current!)
+
+        loader.render(data).then(entities => {
+          params.ref.current = entities
+        })
+      })
+
+      return
+    }
+
+    if (!params.show && params.ref.current?.length) {
+      params.ref.current.forEach(item => {
+        item.show = false
+      })
+    }
+
+    if (params.show && params.ref.current?.length) {
+      params.ref.current.forEach(item => {
+        item.show = true
+      })
+    }
+
+  }
 
   const drawGeometry = (
     show: boolean,
@@ -387,6 +421,23 @@ const Earthquake = () => {
   }
 
   const drawChinaEarthquakeArea = (checked: boolean) => {
+
+    /*     loaderGeojson({
+          show: checked,
+          url: window.$$prefix + '/data/earthquake/china-earthquake-area.geojson',
+          ref: chinaEarthquakeRef,
+        }) */
+
+    /*     fetch(window.$$prefix + '/data/earthquake/china-earthquake-area.geojson').then(res => res.json()).then(data => {
+    
+          const loader = new NewGeoJsonLoader(viewerRef.current!)
+    
+          loader.render(data).then(entities => {
+            chinaEarthquakeRef.current = entities
+          })
+        })
+     */
+
     drawGeometry(checked, chinaEarthquakeRef, window.$$prefix + '/data/earthquake/china-earthquake-area.geojson', [], {
       stroke: Cesium.Color.BROWN,
       fill: Cesium.Color.BROWN.withAlpha(0.5),
@@ -816,6 +867,12 @@ const Earthquake = () => {
     drawChinaBoundary()
 
     initGui()
+
+    /*     loaderGeojson({
+          show: true,
+          ref: { current: [] },
+          url: '/澳大利亚1月气温面.geojson',
+        }) */
 
     return () => {
       guiRef.current?.destroy()

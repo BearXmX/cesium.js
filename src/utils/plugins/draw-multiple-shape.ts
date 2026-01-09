@@ -190,6 +190,8 @@ class MultipleShape {
       return
     }
 
+    this.fixedPositions.push(this.fixedPositions[0])
+
     this.creatFinalShape(this.fixedPositions)
     // 生成并打印 GeoJSON
     /*     this.printGeoJSON() */
