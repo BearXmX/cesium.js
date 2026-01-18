@@ -13,6 +13,7 @@ const DebugGeojson: React.FC<DebugGeojsonPropsType> = (props) => {
 
   const viewerRef = useRef<Cesium.Viewer | null>(null)
 
+  // #8b2106
   const loaderGeojson = (params: {
     show: boolean,
     ref: React.RefObject<Cesium.Entity[]>,
@@ -64,7 +65,7 @@ const DebugGeojson: React.FC<DebugGeojsonPropsType> = (props) => {
         const myTileLayer = viewerRef.current.imageryLayers.addImageryProvider(customTileset); */
   }, [])
 
-  return <CommonMap ref={mapInstance}
+  return <CommonMap pickToolsList={['上传文件']} ref={mapInstance}
     defaultCameraFlyToParams={{
       destination: {
         longitude: 113.067491328234,

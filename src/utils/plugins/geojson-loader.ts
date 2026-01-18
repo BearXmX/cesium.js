@@ -34,8 +34,12 @@ interface TopLevelProperties {
   outlineColor?: string
   outlineOpacity?: number
   outlineWidth?: number
-  pixelSize?: number
-  clampToGround?: boolean
+  polylineClampToGround?: boolean
+
+  pointOutlineColor?: string
+  pointOutlineOpacity?: number
+  pointOutlineWidth?: number
+  pointSize?: number
 
   // 标签样式配置
   labelText?: string
@@ -128,6 +132,7 @@ class GeoJsonLoader {
     const labelEntities = this._processGeometriesAndCreateLabels(geoJsonData)
 
     const geometryEntities = this._currentDataSource.entities.values.slice()
+
     this._allEntities = [...geometryEntities, ...labelEntities]
 
     // 返回所有实体
@@ -157,6 +162,14 @@ class GeoJsonLoader {
     this._featureRandomFillColors = []
   }
 
+  toggleVisibility(): void {
+    this._allEntities.forEach(entity => {
+      entity.show = !entity.show
+    })
+  }
+
+  updateEntitiesOpacity(): void {}
+
   /**
    * 分离获取：所有实体（只读）
    */
@@ -180,8 +193,12 @@ class GeoJsonLoader {
         outlineColor: geoJsonData.properties.outlineColor || undefined,
         outlineOpacity: geoJsonData.properties.outlineOpacity || 1.0,
         outlineWidth: geoJsonData.properties.outlineWidth || 0,
-        pixelSize: geoJsonData.properties.pixelSize || 10,
-        clampToGround: geoJsonData.properties.clampToGround || false,
+        polylineClampToGround: geoJsonData.properties.polylineClampToGround || false,
+
+        pointOutlineColor: geoJsonData.properties.pointOutlineColor || '#fff',
+        pointOutlineOpacity: geoJsonData.properties.pointOutlineOpacity || 1.0,
+        pointOutlineWidth: geoJsonData.properties.pointOutlineWidth === 0 ? 0 : geoJsonData.properties.pointOutlineWidth || 1,
+        pointSize: geoJsonData.properties.pointSize || 10,
 
         // 标签样式配置（核心：提取全局 labelPosition）
         labelText: '',
@@ -206,8 +223,12 @@ class GeoJsonLoader {
         outlineColor: undefined,
         outlineOpacity: 1.0,
         outlineWidth: 0,
-        pixelSize: 10,
-        clampToGround: false,
+        polylineClampToGround: false,
+
+        pointOutlineColor: '#fff',
+        pointOutlineOpacity: 1.0,
+        pointOutlineWidth: 1,
+        pointSize: 10,
 
         // 标签样式配置（核心：提取全局 labelPosition）
         labelText: '',
@@ -265,8 +286,6 @@ class GeoJsonLoader {
         }
       }
 
-      mergedProperties.pixelSize = mergedProperties.pixelSize || featureProperties.pixelSize || 10
-
       this._processGeometryStyle(geometryEntity, mergedProperties)
     })
 
@@ -281,7 +300,6 @@ class GeoJsonLoader {
   private _processGeometryStyle(geometryEntity: Cesium.Entity, mergedProperties: MergedProperties): void {
     // 移除原生标签，确保几何实体纯净
     if (geometryEntity.label) {
-      geometryEntity.billboard = undefined
       geometryEntity.label = undefined
     }
 
@@ -295,7 +313,7 @@ class GeoJsonLoader {
 
       if (lineColor) geometryEntity.polyline.material = lineColor as unknown as Cesium.MaterialProperty
       geometryEntity.polyline.width = this._clampValue(mergedProperties.outlineWidth, 0.5, 20, 3) as unknown as Cesium.Property
-      geometryEntity.polyline.clampToGround = (Boolean(mergedProperties.clampToGround) ?? false) as unknown as Cesium.Property
+      geometryEntity.polyline.clampToGround = (Boolean(mergedProperties.polylineClampToGround) ?? false) as unknown as Cesium.Property
     }
 
     // 处理点实体
@@ -305,9 +323,9 @@ class GeoJsonLoader {
 
       if (fillColor) geometryEntity.point.color = fillColor as unknown as Cesium.Property
 
-      const outlineColor = this._convertToCesiumColor(mergedProperties.outlineColor, mergedProperties.outlineOpacity, Cesium.Color.WHITE)
+      const outlineColor = this._convertToCesiumColor(mergedProperties.pointOutlineColor, mergedProperties.pointOutlineOpacity, Cesium.Color.WHITE)
 
-      const outlineWidth = this._clampValue(mergedProperties.outlineWidth, 1, 10, 3)
+      const outlineWidth = this._clampValue(mergedProperties.pointOutlineWidth, 0, 10, 1)
 
       if (outlineColor && outlineWidth) {
         geometryEntity.point.outlineColor = outlineColor as unknown as Cesium.Property
@@ -319,7 +337,7 @@ class GeoJsonLoader {
 
       geometryEntity.point.disableDepthTestDistance = 0 as unknown as Cesium.Property
       geometryEntity.point.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND as unknown as Cesium.Property
-      geometryEntity.point.pixelSize = this._clampValue(mergedProperties.pixelSize, 1, 10, 10) as unknown as Cesium.Property
+      geometryEntity.point.pixelSize = this._clampValue(mergedProperties.pointSize, 1, 20, 10) as unknown as Cesium.Property
     }
 
     if (geometryEntity.point && !!mergedProperties.pointToLabel && !mergedProperties.pointWithLabel) {
@@ -329,7 +347,10 @@ class GeoJsonLoader {
 
     if (geometryEntity.point && !!mergedProperties.pointWithLabel) {
       geometryEntity.label = (this._createLabelGraphics(mergedProperties)?.label as Cesium.LabelGraphics) ?? undefined
-      geometryEntity.label.pixelOffset = new Cesium.Cartesian2(0, -15) as unknown as Cesium.Property
+
+      if (geometryEntity.label) {
+        geometryEntity.label.pixelOffset = new Cesium.Cartesian2(0, -20) as unknown as Cesium.Property
+      }
     }
 
     // 处理多边形实体
@@ -374,7 +395,6 @@ class GeoJsonLoader {
     // 无有效文字直接返回，不创建无效标签
 
     if (!labelText || typeof labelText !== 'string') {
-      message.error('标签文字为空或无效，跳过标签创建')
       return null
     }
 
@@ -401,7 +421,7 @@ class GeoJsonLoader {
       position: labelCartesian3,
       label: new Cesium.LabelGraphics({
         text: labelText, // 赋值处理后的纯文字（无前后空格）
-        show: mergedProperties.labelShow ?? true,
+        show: !!mergedProperties.labelShow,
         scale: mergedProperties.labelScale ?? 1,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,

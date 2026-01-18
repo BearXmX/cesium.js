@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import * as echarts from 'echarts'
-import { Button, Modal, Select, Tooltip, type DrawerProps } from 'antd'
+import { type DrawerProps } from 'antd'
 import type { pointMetaType } from '@/utils/plugins/draw-profile-analysis';
 import type ProfileAnalysis from '@/utils/plugins/draw-profile-analysis';
 
@@ -9,20 +9,18 @@ type ProfileAnalysisChartPropsType = {
   data: pointMetaType[]
   instance: ProfileAnalysis
   placement: DrawerProps['placement']
+  profileAnalysisMetaData: { data: pointMetaType[]; type: string; instance: ProfileAnalysis }[]
 }
 
 const ProfileAnalysisChart: React.FC<ProfileAnalysisChartPropsType> = (props) => {
-  const [modal, modalContext] = Modal.useModal();
 
-  const { data, index, instance, placement } = props
-
-  console.log(data, index);
-
+  const { data, index, instance, placement, profileAnalysisMetaData } = props
 
   const domInstance = useRef<HTMLDivElement>(null)
 
   const chartInstance = useRef<echarts.ECharts>(null)
-
+  // 保存resize回调的引用，方便后续移除
+  const resizeHandler = useRef<() => void>(() => { })
   const initCharts = () => {
     const chartDom = domInstance.current
 
@@ -31,7 +29,11 @@ const ProfileAnalysisChart: React.FC<ProfileAnalysisChartPropsType> = (props) =>
     }
 
     chartInstance.current!.resize()
+    chartInstance.current.resize()
 
+    // 2. 先移除旧的事件监听，避免重复绑定
+    chartInstance.current.off('showtip')
+    chartInstance.current.off('hidetip')
 
     const option = {
       color: ['#80FFA5'],
@@ -118,20 +120,34 @@ const ProfileAnalysisChart: React.FC<ProfileAnalysisChartPropsType> = (props) =>
       instance.updateSlideEntityPostion(false)
     });
 
-    window.addEventListener('resize', () => {
-      chartInstance.current!.resize()
-    })
+    // 5. 处理resize事件：先移除旧的，再添加新的
+    window.removeEventListener('resize', resizeHandler.current)
+    resizeHandler.current = () => {
+      chartInstance.current?.resize()
+    }
   }
 
   useEffect(() => {
     initCharts()
-  }, [data, placement])
+
+    // 6. 组件卸载/依赖变化时的清理函数
+    return () => {
+      // 移除resize监听
+      window.removeEventListener('resize', resizeHandler.current)
+      // 销毁ECharts实例，移除所有事件监听
+      if (chartInstance.current) {
+        chartInstance.current.off('showtip')
+        chartInstance.current.off('hidetip')
+        chartInstance.current.dispose()
+        chartInstance.current = null
+      }
+    }
+  }, [data, placement, index])
 
   return <>
-    {modalContext}
-    <h4>第{index + 1}次分析结果</h4>
+    <h4>第{profileAnalysisMetaData.length - index}次分析结果</h4>
     <br />
-    <div style={{ width: '100%', height: 'calc(100% - 20px)', minHeight: 250, maxHeight: 400 }} ref={domInstance}></div>
+    <div key={index} style={{ width: '100%', height: 'calc(100% - 20px)', minHeight: 250, maxHeight: 400 }} ref={domInstance}></div>
     <br />
   </>
 
