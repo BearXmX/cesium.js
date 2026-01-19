@@ -1,9 +1,9 @@
 
 
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import * as Cesium from 'cesium'
-import { Button, Drawer, Dropdown, message, Select, Tooltip, Upload, type DrawerProps } from 'antd'
+import { Button, Drawer, Dropdown, InputNumber, message, Radio, Select, Slider, Switch, Tooltip, Upload, type DrawerProps } from 'antd'
 import DrawAreaCountourIcon from '@/assets/svg/draw-area-countour-icon.svg?react'
 import DrawMultipleShapeIcon from '@/assets/svg/draw-multiple-shape-icon.svg?react'
 import DrawLineShapeIcon from '@/assets/svg/draw-line-shape-icon.svg?react'
@@ -60,9 +60,13 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
   const [, setMapWidget] = useState<settingType['mapWidget']>([])
 
-  const [geojsonLoaderInstanceList, setGeojsonLoaderInstanceList] = useState<{ name: string; instance: GeoJsonLoader }[]>([])
+  const [geojsonLoaderInstanceList, setGeojsonLoaderInstanceList] = useState<{ name: string; direction: 'left' | 'right'; opacity: number, instance: GeoJsonLoader }[]>([])
 
   const [openGeojsonLoaderDrawer, setOpenGeojsonLoaderDrawer] = useState<boolean>(false)
+
+  const [openSplitCompare, setOpenSplitCompare] = useState<boolean>(false)
+
+  const splitCompareHandler = useRef<boolean>(false)
 
   const defaultCameraFlyTo = () => {
     if (defaultCameraFlyToParams?.destination) {
@@ -75,6 +79,21 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       })
     }
   }
+
+  /* const coffeeBeltRectangle = Cesium.Rectangle.fromDegrees(
+    120.0,
+    21.744441967016826,
+    122.0,
+    25.457622543131478,
+  );
+  
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(
+      120.90960542899757,
+      23.73598606130257,
+      55000,
+    ),
+  }); */
 
   const commonTools: CommonToolsType[] = [
     {
@@ -135,6 +154,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
             message.success(`正在读取${file.name}`)
 
+            setPlacement('right')
             const reader = new FileReader()
 
             reader.onload = (e) => {
@@ -149,7 +169,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
                 })
               })
 
-              setGeojsonLoaderInstanceList([{ name: file.name.replace('.geojson', '') || '未命名geojson', instance: loader }, ...geojsonLoaderInstanceList])
+              setGeojsonLoaderInstanceList([{ name: file.name.replace('.geojson', '') || '未命名geojson', instance: loader, direction: 'left', opacity: 0.8 }, ...geojsonLoaderInstanceList])
             }
 
             reader.readAsText(file.originFileObj as Blob)
@@ -412,6 +432,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
         const drawer = new ProfileAnalysis(viewer!, {
           onLoadData: (data: pointMetaType[]) => {
+            setPlacement('bottom')
             setOpenProfileAnalysisDrawer(true)
             setProfileAnalysisMetaData([{ data: data, instance: drawer, type: '剖面分析' }, ...profileAnalysisMetaData])
           },
@@ -463,9 +484,35 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
   }, [pickToolsList, activeTool, geojsonLoaderInstanceList, profileAnalysisMetaData,])
 
   useEffect(() => {
+    const slider = document.getElementById('slider')
+
+    viewer!.scene.splitPosition = 0.5 // 默认中间分割
+
+    const mousedown = () => (splitCompareHandler.current = true)
+    const mouseup = () => (splitCompareHandler.current = false)
+
+    const mousemove = (e: MouseEvent) => {
+      if (!splitCompareHandler.current) return
+      const splitPos = e.clientX / window.innerWidth
+      slider!.style.left = splitPos * 100 + '%'
+      viewer!.scene.splitPosition = splitPos
+    }
+
+    slider!.addEventListener('mousedown', mousedown)
+    window.addEventListener('mouseup', mouseup)
+    window.addEventListener('mousemove', mousemove)
+
+    return () => {
+      slider!.removeEventListener('mousedown', mousedown)
+      window.removeEventListener('mouseup', mouseup)
+      window.removeEventListener('mousemove', mousemove)
+    }
   }, [])
 
   return <>
+    {
+      <div id="slider" style={{ display: openSplitCompare ? 'block' : 'none' }}></div>
+    }
     <div className="map-diy-tools-container">
       <div className="map-diy-tools-container-wrapper">
         {finalTools.map(item => (
@@ -519,8 +566,8 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
         ))}
       </div>
     </div>
-
     <Drawer
+      getContainer={false}
       title="剖面分析"
       placement={placement}
       onClose={() => {
@@ -569,8 +616,9 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     </Drawer>
 
     <Drawer
+      getContainer={false}
       className='map-upload-tool-drawer'
-      title="上传文件"
+      title="geojson"
       placement={placement}
       onClose={() => {
         setOpenGeojsonLoaderDrawer(false)
@@ -612,6 +660,22 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
         </>
       }
     >
+      {/*       <div style={{ display: 'flex', marginBottom: 16, maxWidth: 400 }}>
+        <span>卷帘对比</span>&nbsp;&nbsp;
+        <Switch checked={openSplitCompare} onChange={(checked) => {
+          setOpenSplitCompare(checked)
+
+          if (!checked) {
+            setGeojsonLoaderInstanceList(prev => (
+              prev.map(item => ({
+                ...item,
+                direction: 'left'
+              }))
+            ))
+          }
+
+        }} />
+      </div> */}
       <div className='upload-geojson-list-container'>
         {
           geojsonLoaderInstanceList.map((item, index) => {
@@ -623,24 +687,73 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
                     items: [
                       {
                         key: '1',
-                        label: <Button type='default' onClick={() => {
+                        label: <Button type='text' onClick={() => {
                           item.instance.toggleVisibility()
                         }}>展示/隐藏</Button>,
                       },
                       {
                         key: '2',
-                        label: <Button danger type='default' onClick={() => {
+                        label: <Button danger type='text' onClick={() => {
                           setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.filter((v, i) => i !== index))
                           item.instance.clear()
                         }}>删除</Button>,
                       },
                     ]
                   }} placement="bottomRight">
-                    <Button icon={<EllipsisOutlined />} />
+                    <EllipsisOutlined />
                   </Dropdown>
                 </div>
               </div>
-              <div className='upload-geojson-item-name-content'></div>
+              <div className='upload-geojson-item-content'>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+                  {/*                   <span>渲染方向</span>&nbsp;&nbsp;
+                  <Radio.Group
+                    disabled={!openSplitCompare}
+                    value={item.direction}
+                    onChange={(e) => {
+                      setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.map((v, i) => {
+                        if (i === index) {
+                          v.direction = e.target.value
+                        }
+                        return v
+                      }))
+
+                      item.instance.toggleEntitiesSplitDirection(e.target.value)
+                    }}
+                    options={[
+                      {
+                        label: '左',
+                        value: 'left',
+                      },
+                      {
+                        label: '右',
+                        value: 'right',
+                      }
+                    ]}
+                  /> */}
+                  <span>透明度</span>&nbsp;&nbsp;
+                  <InputNumber
+                    style={{
+                      width: 100
+                    }}
+                    max={1}
+                    min={0}
+                    step={0.1}
+                    value={item.opacity}
+                    onChange={(value) => {
+                      setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.map((v, i) => {
+                        if (i === index) {
+                          v.opacity = value!
+                        }
+                        return v
+                      }))
+
+                      item.instance.updateEntitiesOpacity(value!)
+
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           })
         }

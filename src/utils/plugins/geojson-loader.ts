@@ -1,5 +1,4 @@
 import * as Cesium from 'cesium'
-import { message } from 'antd'
 
 const distanceDisplayCondition = new Cesium.DistanceDisplayCondition(50000, 20000000)
 
@@ -25,8 +24,12 @@ interface GeoJsonData {
  * 顶层全局配置接口（GeoJSON根节点properties）
  */
 interface TopLevelProperties {
-  pointToLabel?: boolean
-  pointWithLabel?: boolean
+  pointToLabel?: number
+  pointWithLabel?: number
+  pointToIcon?: number
+  iconUrl?: string
+  iconWithLabel?: number
+  iconScale?: number
 
   // 几何样式配置
   fillColor?: string
@@ -34,7 +37,7 @@ interface TopLevelProperties {
   outlineColor?: string
   outlineOpacity?: number
   outlineWidth?: number
-  polylineClampToGround?: boolean
+  polylineClampToGround?: number
 
   pointOutlineColor?: string
   pointOutlineOpacity?: number
@@ -50,7 +53,7 @@ interface TopLevelProperties {
   labelOutlineWidth?: number
   labelScale?: number
   labelOpacity?: number
-  labelShow?: boolean
+  labelShow?: number
   labelTextZIndex?: number
 }
 
@@ -105,7 +108,7 @@ class GeoJsonLoader {
   async render(geoJsonData: GeoJsonData): Promise<Cesium.Entity[]> {
     // 前置校验
     if (!geoJsonData || typeof geoJsonData !== 'object') {
-      message.error('请传入有效的GeoJSON格式数据')
+      console.error('请传入有效的GeoJSON格式数据')
       throw new Error('请传入有效的GeoJSON格式数据')
     }
 
@@ -168,7 +171,88 @@ class GeoJsonLoader {
     })
   }
 
-  updateEntitiesOpacity(): void {}
+  updateEntitiesOpacity(value: number): void {
+    this._allEntities.forEach(entity => {
+      if (entity.polyline) {
+        entity.polyline.material = new Cesium.Color(
+          entity.polyline.material.getValue().color.red,
+          entity.polyline.material.getValue().color.green,
+          entity.polyline.material.getValue().color.blue,
+          value
+        ) as unknown as Cesium.MaterialProperty
+      }
+
+      if (entity.polygon) {
+        // 获取其颜色
+        entity.polygon.material = new Cesium.Color(
+          entity.polygon.material.getValue().color.red,
+          entity.polygon.material.getValue().color.green,
+          entity.polygon.material.getValue().color.blue,
+          value
+        ) as unknown as Cesium.MaterialProperty
+      }
+
+      if (entity.point) {
+        entity.point.color = new Cesium.Color(
+          entity.point.color!.getValue().red,
+          entity.point.color!.getValue().green,
+          entity.point.color!.getValue().blue,
+          value
+        ) as unknown as Cesium.MaterialProperty
+
+        entity.point.outlineColor = new Cesium.Color(
+          entity.point.outlineColor!.getValue().red,
+          entity.point.outlineColor!.getValue().green,
+          entity.point.outlineColor!.getValue().blue,
+          value
+        ) as unknown as Cesium.MaterialProperty
+      }
+
+      if (entity.label) {
+        entity.label.fillColor = new Cesium.Color(
+          entity.label.fillColor!.getValue().red,
+          entity.label.fillColor!.getValue().green,
+          entity.label.fillColor!.getValue().blue,
+          value
+        ) as unknown as Cesium.MaterialProperty
+
+        entity.label.outlineColor = new Cesium.Color(
+          entity.label.outlineColor!.getValue().red,
+          entity.label.outlineColor!.getValue().green,
+          entity.label.outlineColor!.getValue().blue,
+          value
+        ) as unknown as Cesium.MaterialProperty
+      }
+    })
+  }
+
+  toggleEntitiesSplitDirection(splitDirection: 'left' | 'right'): void {
+    /*     this._allEntities.forEach(entity => {
+      if (entity.polygon) {
+        console.log('entity.polygon', entity.polygon)
+        entity.polygon.splitDirection = splitDirection === 'left' ? Cesium.SplitDirection.LEFT : Cesium.SplitDirection.RIGHT
+      }
+
+      if (entity.polyline) {
+        entity.polyline.splitDirection = splitDirection === 'left' ? Cesium.SplitDirection.LEFT : Cesium.SplitDirection.RIGHT
+      }
+
+
+
+      if (entity.label) {
+        entity.label.splitDirection = splitDirection === 'left' ? Cesium.SplitDirection.LEFT : Cesium.SplitDirection.RIGHT
+      }
+
+            if (entity.point) {
+        entity.point.splitDirection = splitDirection === 'left' ? Cesium.SplitDirection.LEFT : Cesium.SplitDirection.RIGHT
+      }
+
+      if (entity.billboard) {
+
+        entity.billboard.splitDirection = splitDirection === 'left' ? Cesium.SplitDirection.LEFT : Cesium.SplitDirection.RIGHT
+      }
+    }) */
+  }
 
   /**
    * 分离获取：所有实体（只读）
@@ -184,8 +268,12 @@ class GeoJsonLoader {
   private _extractTopLevelProperties(geoJsonData: GeoJsonData): void {
     if (geoJsonData.properties && typeof geoJsonData.properties === 'object') {
       this._topLevelProperties = {
-        pointToLabel: geoJsonData.properties.pointToLabel || false,
-        pointWithLabel: geoJsonData.properties.pointWithLabel || false,
+        pointToLabel: Number(geoJsonData.properties.pointToLabel) || 0,
+        pointWithLabel: Number(geoJsonData.properties.pointWithLabel) || 0,
+        pointToIcon: Number(geoJsonData.properties.pointToIcon) || 0,
+        iconUrl: geoJsonData.properties.iconUrl || '',
+        iconWithLabel: Number(geoJsonData.properties.iconWithLabel) || 0,
+        iconScale: geoJsonData.properties.iconScale || 0.8,
 
         // 几何样式配置（完全保留你的原始逻辑）
         fillColor: geoJsonData.properties.fillColor || undefined,
@@ -193,7 +281,7 @@ class GeoJsonLoader {
         outlineColor: geoJsonData.properties.outlineColor || undefined,
         outlineOpacity: geoJsonData.properties.outlineOpacity || 1.0,
         outlineWidth: geoJsonData.properties.outlineWidth || 0,
-        polylineClampToGround: geoJsonData.properties.polylineClampToGround || false,
+        polylineClampToGround: Number(geoJsonData.properties.polylineClampToGround) || 0,
 
         pointOutlineColor: geoJsonData.properties.pointOutlineColor || '#fff',
         pointOutlineOpacity: geoJsonData.properties.pointOutlineOpacity || 1.0,
@@ -209,13 +297,17 @@ class GeoJsonLoader {
         labelOutlineWidth: geoJsonData.properties.labelOutlineWidth || 4,
         labelScale: geoJsonData.properties.labelScale || 1.0,
         labelOpacity: geoJsonData.properties.labelOpacity || 1.0,
-        labelShow: geoJsonData.properties.labelShow || true, // 新增：提取全局标签显示开关
+        labelShow: Number(geoJsonData.properties.labelShow) || 1, // 新增：提取全局标签显示开关
         labelTextZIndex: [0, 1].includes(geoJsonData.properties.labelTextZIndex as number) ? (geoJsonData.properties.labelTextZIndex as number) : 0,
       }
     } else {
       this._topLevelProperties = {
-        pointToLabel: false,
-        pointWithLabel: false,
+        pointToLabel: 0,
+        pointWithLabel: 0,
+        pointToIcon: 0,
+        iconUrl: '',
+        iconWithLabel: 0,
+        iconScale: 0.8,
 
         // 几何样式配置（完全保留你的原始逻辑）
         fillColor: undefined,
@@ -223,7 +315,7 @@ class GeoJsonLoader {
         outlineColor: undefined,
         outlineOpacity: 1.0,
         outlineWidth: 0,
-        polylineClampToGround: false,
+        polylineClampToGround: 0,
 
         pointOutlineColor: '#fff',
         pointOutlineOpacity: 1.0,
@@ -239,7 +331,7 @@ class GeoJsonLoader {
         labelOutlineWidth: 4,
         labelScale: 1.0,
         labelOpacity: 1.0,
-        labelShow: true, // 新增：提取全局标签显示开关
+        labelShow: 1, // 新增：提取全局标签显示开关
         labelTextZIndex: 0,
       }
     }
@@ -298,6 +390,10 @@ class GeoJsonLoader {
    * @param mergedProperties 合并后的配置
    */
   private _processGeometryStyle(geometryEntity: Cesium.Entity, mergedProperties: MergedProperties): void {
+    geometryEntity.properties?.addProperty('mergedProperties', mergedProperties)
+
+    console.log('_processGeometryStyle', geometryEntity.properties?.getValue(Cesium.JulianDate.now()), mergedProperties)
+
     // 移除原生标签，确保几何实体纯净
     if (geometryEntity.label) {
       geometryEntity.label = undefined
@@ -314,43 +410,6 @@ class GeoJsonLoader {
       if (lineColor) geometryEntity.polyline.material = lineColor as unknown as Cesium.MaterialProperty
       geometryEntity.polyline.width = this._clampValue(mergedProperties.outlineWidth, 0.5, 20, 3) as unknown as Cesium.Property
       geometryEntity.polyline.clampToGround = (Boolean(mergedProperties.polylineClampToGround) ?? false) as unknown as Cesium.Property
-    }
-
-    // 处理点实体
-    if (geometryEntity.point) {
-      geometryEntity.point.distanceDisplayCondition = distanceDisplayCondition as unknown as Cesium.Property
-      const fillColor = this._convertToCesiumColor(mergedProperties.fillColor, mergedProperties.fillOpacity, Cesium.Color.RED)
-
-      if (fillColor) geometryEntity.point.color = fillColor as unknown as Cesium.Property
-
-      const outlineColor = this._convertToCesiumColor(mergedProperties.pointOutlineColor, mergedProperties.pointOutlineOpacity, Cesium.Color.WHITE)
-
-      const outlineWidth = this._clampValue(mergedProperties.pointOutlineWidth, 0, 10, 1)
-
-      if (outlineColor && outlineWidth) {
-        geometryEntity.point.outlineColor = outlineColor as unknown as Cesium.Property
-        geometryEntity.point.outlineWidth = outlineWidth as unknown as Cesium.Property
-      } else {
-        geometryEntity.point.outlineColor = Cesium.Color.TRANSPARENT as unknown as Cesium.Property
-        geometryEntity.point.outlineWidth = 0 as unknown as Cesium.Property
-      }
-
-      geometryEntity.point.disableDepthTestDistance = 0 as unknown as Cesium.Property
-      geometryEntity.point.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND as unknown as Cesium.Property
-      geometryEntity.point.pixelSize = this._clampValue(mergedProperties.pointSize, 1, 20, 10) as unknown as Cesium.Property
-    }
-
-    if (geometryEntity.point && !!mergedProperties.pointToLabel && !mergedProperties.pointWithLabel) {
-      geometryEntity.point = undefined
-      geometryEntity.label = (this._createLabelGraphics(mergedProperties)?.label as Cesium.LabelGraphics) ?? undefined
-    }
-
-    if (geometryEntity.point && !!mergedProperties.pointWithLabel) {
-      geometryEntity.label = (this._createLabelGraphics(mergedProperties)?.label as Cesium.LabelGraphics) ?? undefined
-
-      if (geometryEntity.label) {
-        geometryEntity.label.pixelOffset = new Cesium.Cartesian2(0, -20) as unknown as Cesium.Property
-      }
     }
 
     // 处理多边形实体
@@ -381,6 +440,67 @@ class GeoJsonLoader {
         geometryEntity.polygon.outline = false as unknown as Cesium.Property
       }
     }
+
+    // 处理点实体
+    if (geometryEntity.point) {
+      geometryEntity.point.splitDirection = Cesium.SplitDirection.NONE as unknown as Cesium.Property
+
+      geometryEntity.point.distanceDisplayCondition = distanceDisplayCondition as unknown as Cesium.Property
+      const fillColor = this._convertToCesiumColor(mergedProperties.fillColor, mergedProperties.fillOpacity, Cesium.Color.RED)
+
+      if (fillColor) geometryEntity.point.color = fillColor as unknown as Cesium.Property
+
+      const outlineColor = this._convertToCesiumColor(mergedProperties.pointOutlineColor, mergedProperties.pointOutlineOpacity, Cesium.Color.WHITE)
+
+      const outlineWidth = this._clampValue(mergedProperties.pointOutlineWidth, 0, 10, 1)
+
+      if (outlineColor && outlineWidth) {
+        geometryEntity.point.outlineColor = outlineColor as unknown as Cesium.Property
+        geometryEntity.point.outlineWidth = outlineWidth as unknown as Cesium.Property
+      } else {
+        geometryEntity.point.outlineColor = Cesium.Color.TRANSPARENT as unknown as Cesium.Property
+        geometryEntity.point.outlineWidth = 0 as unknown as Cesium.Property
+      }
+
+      geometryEntity.point.disableDepthTestDistance = 0 as unknown as Cesium.Property
+      geometryEntity.point.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND as unknown as Cesium.Property
+      geometryEntity.point.pixelSize = this._clampValue(mergedProperties.pointSize, 1, 20, 10) as unknown as Cesium.Property
+    }
+
+    if (geometryEntity.point && (!!mergedProperties.pointToLabel || !!mergedProperties.pointWithLabel || !!mergedProperties.iconWithLabel)) {
+      geometryEntity.label = (this._createLabelGraphics(mergedProperties)?.label as Cesium.LabelGraphics) ?? undefined
+
+      if ((!!mergedProperties.pointWithLabel || !!mergedProperties.iconWithLabel) && geometryEntity.label) {
+        geometryEntity.label.pixelOffset = new Cesium.Cartesian2(0, -25) as unknown as Cesium.Property
+      }
+    }
+
+    /* pointWithLabel优先级高 */
+    if (geometryEntity.point && !mergedProperties.pointWithLabel && (!!mergedProperties.pointToIcon || !!mergedProperties.iconWithLabel)) {
+      const prefix = 'https://jingan-deploy-test.oss-cn-shanghai.aliyuncs.com/img'
+      geometryEntity.point = undefined
+
+      geometryEntity.billboard = new Cesium.BillboardGraphics({
+        show: true,
+
+        image:
+          typeof mergedProperties.iconUrl === 'string' && mergedProperties.iconUrl.length > 0
+            ? mergedProperties.iconUrl.startsWith('/')
+              ? prefix + mergedProperties.iconUrl
+              : mergedProperties.iconUrl.startsWith('http')
+              ? mergedProperties.iconUrl
+              : window.$$prefix + '/position-icon-landmark.svg'
+            : window.$$prefix + '/position-icon-landmark.svg',
+        scale: this._clampValue(mergedProperties.iconScale, 0.1, 2, 0.8) as unknown as Cesium.Property,
+        distanceDisplayCondition: distanceDisplayCondition as unknown as Cesium.Property,
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND as unknown as Cesium.Property,
+        disableDepthTestDistance: 0 as unknown as Cesium.Property,
+      })
+    }
+
+    if (geometryEntity.point && !!mergedProperties.pointToLabel) {
+      geometryEntity.point = undefined
+    }
   }
 
   private _createLabelGraphics(mergedProperties: MergedProperties): {
@@ -399,9 +519,11 @@ class GeoJsonLoader {
     }
 
     // 原有：labelPosition 配置校验
-    const labelPositionConfig = mergedProperties.labelPosition
+    const labelPositionConfig =
+      typeof mergedProperties.labelPosition === 'string' ? JSON.parse(mergedProperties.labelPosition) : mergedProperties.labelPosition
+
     if (!labelPositionConfig || !Array.isArray(labelPositionConfig) || labelPositionConfig.length < 2) {
-      message.error('labelPosition配置参数有误，跳过标签创建')
+      console.error('labelPosition配置参数有误，跳过标签创建')
       return null
     }
 
@@ -417,12 +539,14 @@ class GeoJsonLoader {
 
     const labelFontSize = this._clampValue(mergedProperties.labelFontSize, 16, 40, 16)
 
+    const labelScale = this._clampValue(mergedProperties.labelScale, 0.1, 1, 1)
+
     const labelConfig = {
       position: labelCartesian3,
       label: new Cesium.LabelGraphics({
         text: labelText, // 赋值处理后的纯文字（无前后空格）
         show: !!mergedProperties.labelShow,
-        scale: mergedProperties.labelScale ?? 1,
+        scale: labelScale,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
 
@@ -480,25 +604,25 @@ class GeoJsonLoader {
       // 转换为 Cesium 笛卡尔坐标（直接转换，不做其他处理）
       return Cesium.Cartesian3.fromDegrees(lon, lat, height)
     } catch (e) {
-      message.error('labelPosition坐标转换失败')
+      console.error('labelPosition坐标转换失败')
       return null
     }
   }
 
   private _convertToCesiumColor(colorStr?: string, opacity?: number, defaultColor?: Cesium.Color): Cesium.Color | undefined {
     if (!colorStr) {
-      return defaultColor ? Cesium.Color.fromAlpha(defaultColor!, opacity ?? 1.0) : undefined
+      return defaultColor ? Cesium.Color.fromAlpha(defaultColor!, Number(opacity) ?? 1.0) : undefined
     }
 
     try {
       if (colorStr.startsWith('#') || colorStr.startsWith('rgb') || colorStr.startsWith('rgba')) {
         const color = Cesium.Color.fromCssColorString(colorStr)
-        return Cesium.Color.fromAlpha(color, opacity ?? color.alpha)
+        return Cesium.Color.fromAlpha(color, Number(opacity) ?? color.alpha)
       }
 
-      return defaultColor ? Cesium.Color.fromAlpha(defaultColor!, opacity ?? 1.0) : undefined
+      return defaultColor ? Cesium.Color.fromAlpha(defaultColor!, Number(opacity) ?? 1.0) : undefined
     } catch (e) {
-      return defaultColor ? Cesium.Color.fromAlpha(defaultColor!, opacity ?? 1.0) : undefined
+      return defaultColor ? Cesium.Color.fromAlpha(defaultColor!, Number(opacity) ?? 1.0) : undefined
     }
   }
 

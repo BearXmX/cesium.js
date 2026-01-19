@@ -112,12 +112,34 @@ export const links = [
     ),
   },
   {
+    name: '调试地图',
+    path: '/debug-geojson',
+    content: '',
+    element: (
+      <Enhance>
+        <DebugGeojson></DebugGeojson>
+      </Enhance>
+    ),
+  },
+
+].concat(import.meta.env.DEV ? [
+  {
     name: '太阳',
     path: '/solar',
     content: '',
     element: (
       <Enhance>
         <Solar></Solar>
+      </Enhance>
+    ),
+  },
+  {
+    name: '玩转地图',
+    path: '/play-map',
+    content: '',
+    element: (
+      <Enhance>
+        <PlayMap></PlayMap>
       </Enhance>
     ),
   },
@@ -152,27 +174,6 @@ export const links = [
     ),
   },
 
-].concat(import.meta.env.DEV ? [
-  {
-    name: '玩转地图',
-    path: '/play-map',
-    content: '',
-    element: (
-      <Enhance>
-        <PlayMap></PlayMap>
-      </Enhance>
-    ),
-  },
-  {
-    name: '调试地图',
-    path: '/debug-geojson',
-    content: '',
-    element: (
-      <Enhance>
-        <DebugGeojson></DebugGeojson>
-      </Enhance>
-    ),
-  },
 ] : [])
 
 

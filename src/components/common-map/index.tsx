@@ -192,10 +192,11 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
   return (
     <>
       <div className="canvas-container" style={props.containerStyle}>
-        <div className="canvas-container-body" ref={containerRef} />
-        {
-          !!viewerInstance && <MapTools model={model} defaultCameraFlyToParams={defaultCameraFlyToParams} viewer={viewerInstance!} pickToolsList={pickToolsList}></MapTools>
-        }
+        <div className="canvas-container-body" ref={containerRef} >
+          {
+            !!viewerInstance && <MapTools model={model} defaultCameraFlyToParams={defaultCameraFlyToParams} viewer={viewerInstance!} pickToolsList={pickToolsList}></MapTools>
+          }
+        </div>
         {loading && (
           <div
             className="canvas-container-loading"

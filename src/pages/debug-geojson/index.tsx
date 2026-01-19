@@ -16,31 +16,31 @@ const DebugGeojson: React.FC<DebugGeojsonPropsType> = (props) => {
   // #8b2106
   const loaderGeojson = (params: {
     show: boolean,
-    ref: React.RefObject<Cesium.Entity[]>,
+    store: any[],
     url: string,
   }) => {
 
-    if (params.show && !params.ref.current?.length) {
+    if (params.show && !params.store?.length) {
       fetch(params.url).then(res => res.json()).then(data => {
 
         const loader = new GeoJsonLoader(viewerRef.current!)
 
         loader.render(data).then(entities => {
-          params.ref.current = entities
+          params.store = entities
         })
       })
 
       return
     }
 
-    if (!params.show && params.ref.current?.length) {
-      params.ref.current.forEach(item => {
+    if (!params.show && params.store?.length) {
+      params.store.forEach(item => {
         item.show = false
       })
     }
 
-    if (params.show && params.ref.current?.length) {
-      params.ref.current.forEach(item => {
+    if (params.show && params.store?.length) {
+      params.store.forEach(item => {
         item.show = true
       })
     }
