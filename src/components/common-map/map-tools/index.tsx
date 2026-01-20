@@ -1,9 +1,9 @@
 
 
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as Cesium from 'cesium'
-import { Button, Drawer, Dropdown, InputNumber, message, Radio, Select, Slider, Switch, Tooltip, Upload, type DrawerProps } from 'antd'
+import { Button, Drawer, Dropdown, InputNumber, message, Popover, Radio, Select, Slider, Switch, Tooltip, Upload, type DrawerProps } from 'antd'
 import DrawAreaCountourIcon from '@/assets/svg/draw-area-countour-icon.svg?react'
 import DrawMultipleShapeIcon from '@/assets/svg/draw-multiple-shape-icon.svg?react'
 import DrawLineShapeIcon from '@/assets/svg/draw-line-shape-icon.svg?react'
@@ -13,6 +13,7 @@ import ZoomInIcon from '@/assets/svg/zoom-in-icon.svg?react'
 import ZoomOutIcon from '@/assets/svg/zoom-out-icon.svg?react'
 import ZoomToHomeIcon from '@/assets/svg/zoom-to-home.svg?react'
 import UploadFileIcon from '@/assets/svg/upload-icon.svg?react'
+import AiIcon from '@/assets/svg/ai-icon.svg?react'
 
 import DrawCountour from '@/utils/plugins/draw-multiple-shape-countour'
 import MultipleShape, { Mutiple_SHAPE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-multiple-shape'
@@ -25,6 +26,7 @@ import type { settingType } from '@/pages/build-map-setting/constance'
 import GeoJsonLoader from '@/utils/plugins/geojson-loader'
 import ProfileAnalysisChart from './profile-analysis-chart'
 import { EllipsisOutlined } from '@ant-design/icons'
+import AIChatBox from '../ai-tool'
 
 type MapToolsPropsType = {
   model: CommonMapPropsType['model']
@@ -95,6 +97,74 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     ),
   }); */
 
+  const MouseToolWithTips = (title: string, icon: React.ReactNode) => {
+
+    return <Tooltip
+      open={title === activeTool.type}
+      styles={{
+        body: {
+          padding: 0,
+          paddingTop: 3,
+        },
+      }}
+      title={
+        <>
+          {!!allowActiveToolToCompleted && (
+            <>
+              <Button
+                type="link"
+                size="small"
+                style={{ color: 'var(--primary-active-color)' }}
+                disabled={!allowActiveToolToCompleted}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  activeTool.instance!.terminateShape()
+                }}
+              >
+                完成绘制
+              </Button>
+              <br />
+            </>
+          )}
+
+          <Button
+            type="link"
+            style={{ color: '#fff' }}
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation()
+              activeTool.instance!.toCancel()
+            }}
+          >
+            取消绘制
+          </Button>
+        </>
+      }
+    >
+      {icon}
+    </Tooltip>
+  }
+
+  const handleSetGeojson = (data: string[]) => {
+    data.forEach(item => {
+      fetch(`/api/${item}`).then(res => res.json()).then(data => {
+
+        const loader = new GeoJsonLoader(viewer!)
+
+        setGeojsonLoaderInstanceList((prev) => {
+          return [
+            ...prev,
+            { name: item, instance: loader, direction: 'left', opacity: 0.8 },
+          ]
+        })
+
+        loader.render(data).then(entities => {
+
+        })
+      })
+    })
+  }
+
   const commonTools: CommonToolsType[] = [
     {
       icon: <ZoomToHomeIcon></ZoomToHomeIcon>,
@@ -124,6 +194,20 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           return
         }
         viewer!.camera.zoomOut(100000)
+      },
+    },
+    {
+      icon: <Popover
+        content={<AIChatBox viewer={viewer} handleSetGeojson={handleSetGeojson} />}
+        trigger="click"
+        placement="top">
+        <AiIcon></AiIcon>
+      </Popover>,
+      title: 'AI工具',
+      onClick: () => {
+        if (model !== 'build') {
+          return
+        }
       },
     },
     {
@@ -193,7 +277,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
   const useMouseTools = [
     {
-      icon: <DrawAreaCountourIcon></DrawAreaCountourIcon>,
+      icon: MouseToolWithTips('区域等高线', <DrawAreaCountourIcon />),
       title: '区域等高线',
       onClick: () => {
         if (model !== 'build') {
@@ -248,7 +332,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       },
     },
     {
-      icon: <DrawMultipleShapeIcon></DrawMultipleShapeIcon>,
+      icon: MouseToolWithTips('绘制多边形', <DrawMultipleShapeIcon />),
       title: '绘制多边形',
       onClick: () => {
         if (model !== 'build') {
@@ -303,7 +387,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       },
     },
     {
-      icon: <DrawLineShapeIcon></DrawLineShapeIcon>,
+      icon: MouseToolWithTips('绘制线段', <DrawLineShapeIcon />),
       title: '绘制线段',
       onClick: () => {
         if (model !== 'build') {
@@ -358,7 +442,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       },
     },
     {
-      icon: <DrawMeasureDistanceIcon></DrawMeasureDistanceIcon>,
+      icon: MouseToolWithTips('测距工具', <DrawMeasureDistanceIcon />),
       title: '测距工具',
       onClick: () => {
         if (model !== 'build') {
@@ -413,7 +497,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       },
     },
     {
-      icon: <DrawProfileAnalysisIcon></DrawProfileAnalysisIcon>,
+      icon: MouseToolWithTips('剖面分析', <DrawProfileAnalysisIcon />),
       title: '剖面分析',
       showTipsClycle: !!profileAnalysisMetaData.length,
       onClickTips: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -481,7 +565,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
   const finalTools = useMemo(() => {
     return [...commonTools, ...useMouseTools].filter(item => pickToolsList?.includes(item.title))
-  }, [pickToolsList, activeTool, geojsonLoaderInstanceList, profileAnalysisMetaData,])
+  }, [pickToolsList, activeTool, allowActiveToolToCompleted, geojsonLoaderInstanceList, profileAnalysisMetaData,])
 
   useEffect(() => {
     const slider = document.getElementById('slider')
@@ -516,52 +600,11 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     <div className="map-diy-tools-container">
       <div className="map-diy-tools-container-wrapper">
         {finalTools.map(item => (
-          <div className="map-diy-tools-item-wrapper" key={item.title}>
-            <Tooltip
-              open={item.title === activeTool.type}
-              styles={{
-                body: {
-                  padding: 0,
-                  paddingTop: 3,
-                },
-              }}
-              title={
-                <>
-                  {!!allowActiveToolToCompleted && (
-                    <>
-                      <Button
-                        type="link"
-                        size="small"
-                        style={{ color: 'var(--primary-active-color)' }}
-                        disabled={!allowActiveToolToCompleted}
-                        onClick={() => {
-                          activeTool.instance!.terminateShape()
-                        }}
-                      >
-                        完成绘制
-                      </Button>
-                      <br />
-                    </>
-                  )}
-
-                  <Button
-                    type="link"
-                    style={{ color: '#fff' }}
-                    size="small"
-                    onClick={() => {
-                      activeTool.instance!.toCancel()
-                    }}
-                  >
-                    取消绘制
-                  </Button>
-                </>
-              }
-            >
-              <div className="map-diy-tools-item" onClick={item.onClick} title={item.title}>
-                {item.icon}
-                {item.showTipsClycle && <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>}
-              </div>
-            </Tooltip>
+          <div className="map-diy-tools-item-wrapper" key={item.title} >
+            <div className="map-diy-tools-item" onClick={item.onClick} title={item.title} style={{ borderColor: item.title === 'AI工具' ? "#00ffff" : undefined }}>
+              {item.icon}
+              {item.showTipsClycle && <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>}
+            </div>
           </div>
         ))}
       </div>

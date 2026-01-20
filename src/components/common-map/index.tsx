@@ -40,7 +40,7 @@ export type CommonMapInstanceType = {
   flyToBoundingSphere: (positions: Cesium.Cartesian3[]) => void
 }
 
-const pick_tools_List_default = ['默认视角', '视角放大', '视角缩小', '区域等高线', '绘制多边形', '绘制线段', '测距工具', '剖面分析', '上传文件']
+const pick_tools_List_default = ['默认视角', '视角放大', '视角缩小', 'AI工具', '区域等高线', '绘制多边形', '绘制线段', '测距工具', '剖面分析', '上传文件']
 
 const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((props, instance) => {
 
@@ -118,7 +118,7 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
   }
 
   const init = async () => {
-    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_TOKEN
+    Cesium.Ion.defaultAccessToken = import.meta.env.VITE_APP_GITHUB_PROJECT_CESIUM_DEFAULT_TOKEN
 
     const viewer = new Cesium.Viewer(containerRef.current!, {
       infoBox: false,
@@ -130,14 +130,6 @@ const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((p
       animation: false,
       timeline: false,
       fullscreenButton: false,
-      baseLayer: import.meta.env.DEV ? Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.ArcGisMapServerImageryProvider.fromBasemapType(
-          Cesium.ArcGisBaseMapType.SATELLITE,
-          // other supported styles include:
-          // Cesium.ArcGisMapServerImageryProvider.HILLSHADE
-          // Cesium.ArcGisMapServerImageryProvider.OCEANS
-        ),
-      ) : undefined,
     })
 
     viewer.scene.globe.showGroundAtmosphere = false

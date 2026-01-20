@@ -17,13 +17,13 @@ export default defineConfig({
   server: {
     port: 8089,
     proxy: {
+      '/ai-geojson-server': {
+        target: 'https://airesearch.ai-study.net/',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/ai-geojson-server/, ''),
+      },
       '/api': {
         target: 'http://localhost:8090/',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, ''),
-      },
-      '/debug-geojson': {
-        target: 'http://localhost:8090',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, ''),
       },
