@@ -1,8 +1,8 @@
+import { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, HashRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Button, ConfigProvider, Space, theme } from 'antd'
 import Enhance from './enhance.tsx'
-import SheshanMountain from './pages/sheshan-mountain/index.tsx'
 import YellowRiver from './pages/yellow-river/index.tsx'
 import Earthquake from './pages/earthquake/index.tsx'
 import SuzhouRiver from './pages/suzhou-river/index.tsx'
@@ -12,13 +12,13 @@ import SimpleSeismograph from './pages/simple-seismograph/index.tsx'
 import EarthConstruction from './pages/earth-construction/index.tsx'
 import Solar from './pages/solar-system2/index.tsx'
 import BuildMapSetting from './pages/build-map-setting/index.tsx'
-import { useEffect } from 'react'
 import BuildMapList from './pages/build-map-list/index.tsx'
 import BuildMapShow from './pages/build-map-show/index.tsx'
+import PlayMap from './pages/play-map/index.tsx'
+import RealEarth from './pages/real-earth/index.tsx'
 import './index.css'
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
-import PlayMap from './pages/play-map/index.tsx'
-import DebugGeojson from './pages/debug-geojson/index.tsx'
+
 
 export const links = [
   {
@@ -27,17 +27,7 @@ export const links = [
     content: '',
     element: (
       <Enhance>
-        <Navigate to={'/sheshan-mountain'}></Navigate>
-      </Enhance>
-    ),
-  },
-  {
-    name: '佘山',
-    path: '/sheshan-mountain',
-    content: '',
-    element: (
-      <Enhance>
-        <SheshanMountain></SheshanMountain>
+        <Navigate to={'/earthquake'}></Navigate>
       </Enhance>
     ),
   },
@@ -111,18 +101,19 @@ export const links = [
       </Enhance>
     ),
   },
+
+
+].concat(import.meta.env.DEV ? [
   {
-    name: '调试地图',
-    path: '/debug-geojson',
+    name: '实景地球',
+    path: '/real-earth',
     content: '',
     element: (
       <Enhance>
-        <DebugGeojson></DebugGeojson>
+        <RealEarth></RealEarth>
       </Enhance>
     ),
   },
-
-].concat(import.meta.env.DEV ? [
   {
     name: '太阳',
     path: '/solar',

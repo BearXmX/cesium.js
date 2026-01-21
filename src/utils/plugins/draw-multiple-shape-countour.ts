@@ -97,7 +97,7 @@ class MultipleShapeCountour {
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
             pixelSize: 5,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
           },
         })
       } else {
@@ -136,7 +136,7 @@ class MultipleShapeCountour {
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 2,
         pixelSize: 10,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        heightReference: Cesium.HeightReference.NONE,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     })
@@ -157,12 +157,12 @@ class MultipleShapeCountour {
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 3,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
             pixelOffset: new Cesium.Cartesian2(0, -30), // 稍微向上偏移一点
             showBackground: true,
             backgroundColor: Cesium.Color.WHITE,
             backgroundPadding: new Cesium.Cartesian2(6, 4),
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
             disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
           },
         })
@@ -383,8 +383,8 @@ class MultipleShapeCountour {
                         outlineColor: Cesium.Color.BLACK,
                         outlineWidth: 2,
                         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                        heightReference: Cesium.HeightReference.NONE,
                         pixelOffset: new Cesium.Cartesian2(0, -5),
                       },
                     })
@@ -412,8 +412,8 @@ class MultipleShapeCountour {
                       outlineColor: Cesium.Color.BLACK,
                       outlineWidth: 2,
                       style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                      verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                      heightReference: Cesium.HeightReference.NONE,
                       pixelOffset: new Cesium.Cartesian2(0, -5),
                     },
                   })

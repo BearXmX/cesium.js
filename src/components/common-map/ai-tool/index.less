@@ -24,16 +24,18 @@
   box-shadow: @ai-box-shadow;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 
   /* 头部样式 */
   .chat-header {
+    position: relative;
     padding: 16px 20px;
     background: @ai-primary-gradient;
     color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 
     .header-left {
       display: flex;
@@ -83,6 +85,15 @@
         background-color: @ai-status-online;
         border-radius: 50%;
       }
+    }
+
+    .chat-close {
+      position: absolute;
+      right: -5px;
+      top: -10px;
+      cursor: pointer;
+      color: white;
+      font-size: 16px;
     }
   }
 

@@ -6,12 +6,14 @@ import './index.less'
 import { getCameraParams, initClickHandler } from './constance'
 import MapTools from './map-tools'
 
+export type pick_tools_type = 'default_perspective' | 'zoom_out' | 'dimension' | 'zoom_in' | 'AI' | 'area_contour' | 'draw_polygon' | 'draw_line' | 'measure_distance' | 'profile_analysis' | 'upload_file'
+
 export type CommonMapPropsType = {
   /** @description 地形加载完的回调 */
   terrainInitCallback?: () => void
   containerStyle?: React.CSSProperties
   model?: 'build-edit' | 'build-preview' | 'build'
-  pickToolsList?: string[]
+  pickToolsList?: pick_tools_type[]
   children?: React.ReactNode
   depthTestAgainstTerrain?: boolean
   defaultCameraFlyToParams?: cameraParamsType
@@ -40,14 +42,26 @@ export type CommonMapInstanceType = {
   flyToBoundingSphere: (positions: Cesium.Cartesian3[]) => void
 }
 
-const pick_tools_List_default = ['默认视角', '视角放大', '视角缩小', 'AI工具', '区域等高线', '绘制多边形', '绘制线段', '测距工具', '剖面分析', '上传文件']
+export const pick_tools_List: { key: pick_tools_type, title: string }[] = [
+  { key: 'default_perspective', title: '默认视角' },
+  { key: 'zoom_out', title: '视图缩小' },
+  { key: 'zoom_in', title: '视图放大' },
+  { key: 'dimension', title: '2d/3d' },
+  { key: 'AI', title: 'AI工具' },
+  { key: 'area_contour', title: '区域等高线' },
+  { key: 'draw_polygon', title: '绘制多边形' },
+  { key: 'draw_line', title: '绘制线段' },
+  { key: 'measure_distance', title: '测距工具' },
+  { key: 'profile_analysis', title: '剖面分析' },
+  { key: 'upload_file', title: '上传文件' }
+]
 
 const CommonMap = React.forwardRef<CommonMapInstanceType, CommonMapPropsType>((props, instance) => {
 
   const {
     terrainInitCallback,
     model = 'build',
-    pickToolsList = pick_tools_List_default,
+    pickToolsList = pick_tools_List.map(item => item.key),
     depthTestAgainstTerrain = false,
     defaultCameraFlyToParams,
   } = props

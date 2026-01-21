@@ -731,6 +731,7 @@ const SuzhouRiver: React.FC<SuzhouRiverPropsType> = props => {
         </div>
       )}
       <CommonMap
+        pickToolsList={['default_perspective', 'zoom_out', 'zoom_in', 'area_contour', 'draw_polygon', 'draw_line', 'measure_distance', 'profile_analysis']}
         ref={mapInstance}
         defaultCameraFlyToParams={{
           destination: {

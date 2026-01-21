@@ -8,11 +8,11 @@ const pointLabelStyle = {
   outlineWidth: 3,
   style: Cesium.LabelStyle.FILL_AND_OUTLINE,
   verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-  pixelOffset: new Cesium.Cartesian2(0, -10),
+  pixelOffset: new Cesium.Cartesian2(0, -15),
   showBackground: true,
   backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
   backgroundPadding: new Cesium.Cartesian2(3, 2),
-  heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+  heightReference: Cesium.HeightReference.NONE,
   disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
@@ -113,7 +113,7 @@ class ProfileAnalysis {
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
             pixelSize: 5,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
           },
         })
       } else {
@@ -152,7 +152,7 @@ class ProfileAnalysis {
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 2,
         pixelSize: 10,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        heightReference: Cesium.HeightReference.NONE,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     })
@@ -243,6 +243,7 @@ class ProfileAnalysis {
         fillColor: Cesium.Color.BLACK,
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 3,
+        heightReference: Cesium.HeightReference.NONE,
       },
     })
 
@@ -431,7 +432,7 @@ class ProfileAnalysis {
       billboard: {
         image: window.$$prefix + '/position-icon-landmark.svg',
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        heightReference: Cesium.HeightReference.NONE,
         pixelOffset: new Cesium.Cartesian2(0, -20),
       },
     })

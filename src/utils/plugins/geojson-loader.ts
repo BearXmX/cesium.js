@@ -1,6 +1,6 @@
 import * as Cesium from 'cesium'
 
-const distanceDisplayCondition = new Cesium.DistanceDisplayCondition(50000, 20000000)
+const distanceDisplayCondition = new Cesium.DistanceDisplayCondition(25000, 20000000)
 
 /**
  * GeoJSON 单个要素接口（包含自定义标签配置）
@@ -37,6 +37,7 @@ interface TopLevelProperties {
   outlineColor?: string
   outlineOpacity?: number
   outlineWidth?: number
+  polygonClampToGround?: number
   polylineClampToGround?: number
 
   pointOutlineColor?: string
@@ -55,6 +56,7 @@ interface TopLevelProperties {
   labelOpacity?: number
   labelShow?: number
   labelTextZIndex?: number
+  labelClampToGround?: number
 }
 
 /**
@@ -178,7 +180,7 @@ class GeoJsonLoader {
           entity.polyline.material.getValue().color.red,
           entity.polyline.material.getValue().color.green,
           entity.polyline.material.getValue().color.blue,
-          value
+          value,
         ) as unknown as Cesium.MaterialProperty
       }
 
@@ -188,7 +190,7 @@ class GeoJsonLoader {
           entity.polygon.material.getValue().color.red,
           entity.polygon.material.getValue().color.green,
           entity.polygon.material.getValue().color.blue,
-          value
+          value,
         ) as unknown as Cesium.MaterialProperty
       }
 
@@ -197,14 +199,14 @@ class GeoJsonLoader {
           entity.point.color!.getValue().red,
           entity.point.color!.getValue().green,
           entity.point.color!.getValue().blue,
-          value
+          value,
         ) as unknown as Cesium.MaterialProperty
 
         entity.point.outlineColor = new Cesium.Color(
           entity.point.outlineColor!.getValue().red,
           entity.point.outlineColor!.getValue().green,
           entity.point.outlineColor!.getValue().blue,
-          value
+          value,
         ) as unknown as Cesium.MaterialProperty
       }
 
@@ -213,14 +215,14 @@ class GeoJsonLoader {
           entity.label.fillColor!.getValue().red,
           entity.label.fillColor!.getValue().green,
           entity.label.fillColor!.getValue().blue,
-          value
+          value,
         ) as unknown as Cesium.MaterialProperty
 
         entity.label.outlineColor = new Cesium.Color(
           entity.label.outlineColor!.getValue().red,
           entity.label.outlineColor!.getValue().green,
           entity.label.outlineColor!.getValue().blue,
-          value
+          value,
         ) as unknown as Cesium.MaterialProperty
       }
     })
@@ -257,8 +259,8 @@ class GeoJsonLoader {
   /**
    * 分离获取：所有实体（只读）
    */
-  get allEntities(): Readonly<Cesium.Entity[]> {
-    return Object.freeze([...this._allEntities])
+  get allEntities(): Cesium.Entity[] {
+    return [...this._allEntities]
   }
 
   /**
@@ -282,7 +284,7 @@ class GeoJsonLoader {
         outlineOpacity: geoJsonData.properties.outlineOpacity || 1.0,
         outlineWidth: geoJsonData.properties.outlineWidth || 0,
         polylineClampToGround: Number(geoJsonData.properties.polylineClampToGround) || 0,
-
+        polygonClampToGround: Number(geoJsonData.properties.polygonClampToGround) || 0,
         pointOutlineColor: geoJsonData.properties.pointOutlineColor || '#fff',
         pointOutlineOpacity: geoJsonData.properties.pointOutlineOpacity || 1.0,
         pointOutlineWidth: geoJsonData.properties.pointOutlineWidth === 0 ? 0 : geoJsonData.properties.pointOutlineWidth || 1,
@@ -299,6 +301,7 @@ class GeoJsonLoader {
         labelOpacity: geoJsonData.properties.labelOpacity || 1.0,
         labelShow: Number(geoJsonData.properties.labelShow) || 1, // 新增：提取全局标签显示开关
         labelTextZIndex: [0, 1].includes(geoJsonData.properties.labelTextZIndex as number) ? (geoJsonData.properties.labelTextZIndex as number) : 0,
+        labelClampToGround: Number(geoJsonData.properties.labelClampToGround) || 0,
       }
     } else {
       this._topLevelProperties = {
@@ -316,6 +319,7 @@ class GeoJsonLoader {
         outlineOpacity: 1.0,
         outlineWidth: 0,
         polylineClampToGround: 0,
+        polygonClampToGround: 0,
 
         pointOutlineColor: '#fff',
         pointOutlineOpacity: 1.0,
@@ -333,6 +337,7 @@ class GeoJsonLoader {
         labelOpacity: 1.0,
         labelShow: 1, // 新增：提取全局标签显示开关
         labelTextZIndex: 0,
+        labelClampToGround: 0,
       }
     }
   }
@@ -392,8 +397,6 @@ class GeoJsonLoader {
   private _processGeometryStyle(geometryEntity: Cesium.Entity, mergedProperties: MergedProperties): void {
     geometryEntity.properties?.addProperty('mergedProperties', mergedProperties)
 
-    console.log('_processGeometryStyle', geometryEntity.properties?.getValue(Cesium.JulianDate.now()), mergedProperties)
-
     // 移除原生标签，确保几何实体纯净
     if (geometryEntity.label) {
       geometryEntity.label = undefined
@@ -404,7 +407,7 @@ class GeoJsonLoader {
       const lineColor = this._convertToCesiumColor(
         mergedProperties.fillColor,
         mergedProperties.fillOpacity,
-        Cesium.Color.fromCssColorString(this._featureRandomFillColors[mergedProperties.featureIndex])
+        Cesium.Color.fromCssColorString(this._featureRandomFillColors[mergedProperties.featureIndex]),
       )
 
       if (lineColor) geometryEntity.polyline.material = lineColor as unknown as Cesium.MaterialProperty
@@ -417,12 +420,15 @@ class GeoJsonLoader {
       const fillColor = this._convertToCesiumColor(
         mergedProperties.fillColor,
         mergedProperties.fillOpacity,
-        Cesium.Color.fromCssColorString(this._featureRandomFillColors[mergedProperties.featureIndex])
+        Cesium.Color.fromCssColorString(this._featureRandomFillColors[mergedProperties.featureIndex]),
       )
 
       if (fillColor) {
         geometryEntity.polygon.material = fillColor as unknown as Cesium.MaterialProperty
       }
+      geometryEntity.polygon.heightReference = Boolean(mergedProperties.polygonClampToGround)
+        ? (Cesium.HeightReference.CLAMP_TO_GROUND as unknown as Cesium.Property)
+        : (Cesium.HeightReference.NONE as unknown as Cesium.Property)
 
       const outlineColor = this._convertToCesiumColor(mergedProperties.outlineColor, mergedProperties.outlineOpacity)
 
@@ -488,8 +494,8 @@ class GeoJsonLoader {
             ? mergedProperties.iconUrl.startsWith('/')
               ? prefix + mergedProperties.iconUrl
               : mergedProperties.iconUrl.startsWith('http')
-              ? mergedProperties.iconUrl
-              : window.$$prefix + '/position-icon-landmark.svg'
+                ? mergedProperties.iconUrl
+                : window.$$prefix + '/position-icon-landmark.svg'
             : window.$$prefix + '/position-icon-landmark.svg',
         scale: this._clampValue(mergedProperties.iconScale, 0.1, 2, 0.8) as unknown as Cesium.Property,
         distanceDisplayCondition: distanceDisplayCondition as unknown as Cesium.Property,
@@ -549,7 +555,7 @@ class GeoJsonLoader {
         scale: labelScale,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-
+        heightReference: !!mergedProperties.labelClampToGround ? Cesium.HeightReference.CLAMP_TO_GROUND : Cesium.HeightReference.NONE,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         fillColor: labelFillColor,
         outlineColor: labelOutlineColor,

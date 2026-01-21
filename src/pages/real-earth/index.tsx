@@ -2,14 +2,12 @@ import CommonMap, { type CommonMapInstanceType } from '@/components/common-map'
 import React, { useState, useEffect, useRef } from 'react'
 import * as Cesium from 'cesium'
 import GeoJsonLoader from '@/utils/plugins/geojson-loader'
-import axios from 'axios'
-import fetchSSE from '../../api/fetchSSE'
 
-type DebugGeojsonPropsType = {
+type RealEarthPropsType = {
 
 }
 
-const DebugGeojson: React.FC<DebugGeojsonPropsType> = (props) => {
+const RealEarth: React.FC<RealEarthPropsType> = (props) => {
 
   const { } = props
   const mapInstance = useRef<CommonMapInstanceType>(null)
@@ -68,7 +66,7 @@ const DebugGeojson: React.FC<DebugGeojsonPropsType> = (props) => {
         const myTileLayer = viewerRef.current.imageryLayers.addImageryProvider(customTileset); */
   }, [])
 
-  return <CommonMap pickToolsList={['上传文件', 'AI工具']} ref={mapInstance}
+  return <CommonMap ref={mapInstance}
     defaultCameraFlyToParams={{
       destination: {
         longitude: 113.067491328234,
@@ -79,4 +77,4 @@ const DebugGeojson: React.FC<DebugGeojsonPropsType> = (props) => {
 
 }
 
-export default DebugGeojson
+export default RealEarth

@@ -17,15 +17,20 @@ export default defineConfig({
   server: {
     port: 8089,
     proxy: {
+      '/ali-geo': {
+        target: 'https://jingan-deploy-test.oss-cn-shanghai.aliyuncs.com/',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/ali-geo/, ''),
+      },
       '/ai-geojson-server': {
         target: 'https://airesearch.ai-study.net/',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/ai-geojson-server/, ''),
       },
-      '/api': {
+      '/dev-geo': {
         target: 'http://localhost:8090/',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, ''),
+        rewrite: path => path.replace(/^\/dev-geo/, ''),
       },
     },
   },

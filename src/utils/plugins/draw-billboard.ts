@@ -61,7 +61,7 @@ class DrawBillboard {
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
             pixelSize: 5,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
           },
         })
       } else {
@@ -99,7 +99,7 @@ class DrawBillboard {
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
-        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        heightReference: Cesium.HeightReference.NONE,
       },
     })
 

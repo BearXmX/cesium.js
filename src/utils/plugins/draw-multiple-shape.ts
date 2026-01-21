@@ -67,7 +67,7 @@ class MultipleShape {
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
             pixelSize: 5,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
           },
         })
       } else {
@@ -106,7 +106,7 @@ class MultipleShape {
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 2,
         pixelSize: 10,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        heightReference: Cesium.HeightReference.NONE,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     })
@@ -132,7 +132,7 @@ class MultipleShape {
             showBackground: true,
             backgroundColor: Cesium.Color.WHITE,
             backgroundPadding: new Cesium.Cartesian2(6, 4),
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
             disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
           },
         })

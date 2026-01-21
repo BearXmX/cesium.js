@@ -75,7 +75,7 @@ class DrawText {
           point: {
             color: Cesium.Color.RED.withAlpha(0.8),
             pixelSize: 5,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            heightReference: Cesium.HeightReference.NONE,
           },
         })
       } else {
@@ -120,7 +120,7 @@ class DrawText {
         backgroundColor: Cesium.Color.fromCssColorString(this.options.backgroundColor!),
         backgroundPadding: new Cesium.Cartesian2(this.options.backgroundPaddingX!, this.options.backgroundPaddingY!),
         disableDepthTestDistance: Number.POSITIVE_INFINITY, // 添加这一行，使标签始终在最前
-        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        heightReference: Cesium.HeightReference.NONE,
       },
     })
 

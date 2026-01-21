@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, type ChangeEvent, type KeyboardEvent } from 'react';
 import { Button } from 'antd';
-import { SearchOutlined, SendOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, OpenAIOutlined, SendOutlined, UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import * as Cesium from 'cesium'
 import './index.less';
-import GeoJsonLoader from '@/utils/plugins/geojson-loader';
+import GeoIcon from '@/assets/geo-icon.png'
 
 // 消息类型定义
 export interface Message {
@@ -25,11 +24,9 @@ export interface AIChatBoxProps {
   initialMessages?: Message[];
   typingSpeed?: number;
   thinkingTime?: number;
-  viewer?: Cesium.Viewer;
-  handleSetGeojson?: (fileList: string[]) => void;
+  handleSetGeojson: (fileList: string[]) => void;
+  handlePopoverOpen: (show: boolean) => void;
 }
-
-
 
 const AIChatBox: React.FC<AIChatBoxProps> = ({
   width = 500,
@@ -39,8 +36,8 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
   initialMessages = [],
   typingSpeed = 40,
   thinkingTime = 1000,
-  viewer,
-  handleSetGeojson
+  handleSetGeojson,
+  handlePopoverOpen
 }) => {
   // 默认的AI回复库（包含段落）
 
@@ -121,6 +118,8 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
         conversation_id: "",
         user: "abc-123"
       }, {
+        timeout: 60000,
+        responseType: 'json',
         headers: {
           'Authorization': 'Bearer app-7riRxu6Wxu5YyWNpFsmqKAk6'
         },
@@ -140,19 +139,18 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
           sender: 'ai',
           time: getCurrentTime(),
           isTypingEffect: true,
-          fullText: !answerList.length ? '未找到对应结果' : '找到以下结果\n\n' + answerList.join('\n'), // 存储完整文本
+          fullText: !answerList.length ? '未找到对应结果' : '找到以下结果\n' + answerList.join('\n'), // 存储完整文本
         };
 
-        if (answerList.length) {
-
-          handleSetGeojson!(answerList)
-        }
 
 
         setMessages(prev => [...prev, aiMessage]);
 
         setIsAiTypingMessage(true); // 开始逐字显示
 
+        if (answerList.length) {
+          handleSetGeojson!(answerList)
+        }
       }).catch(error => {
         setIsTyping(false);
         // 添加AI消息（初始为空，后面逐步显示）
@@ -207,26 +205,37 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
       const fullText = lastTypingMessage.fullText;
       let currentIndex = lastTypingMessage.text.length;
 
+      // 如果当前文本已经等于完整文本，直接完成
+      if (currentIndex === fullText.length) {
+        setIsAiTypingMessage(false);
+        return;
+      }
+
       typingTimerRef.current = setInterval(() => {
-        if (currentIndex < fullText.length) {
-          const newText = fullText.substring(0, currentIndex + 1);
+        // 增加索引（准备显示下一个字符）
+        currentIndex++;
 
-          setMessages(prev => prev.map(msg =>
-            msg.id === lastTypingMessage.id
-              ? { ...msg, text: newText, isTypingEffect: currentIndex + 1 < fullText.length }
-              : msg
-          ));
+        // 截取到当前索引的位置
+        const newText = fullText.substring(0, currentIndex);
 
-          currentIndex++;
-          scrollToBottom();
-        } else {
-          // 打字完成，清除定时器
+        setMessages(prev => prev.map(msg =>
+          msg.id === lastTypingMessage.id
+            ? {
+              ...msg,
+              text: newText,
+              isTypingEffect: currentIndex < fullText.length // 如果还有字符要显示，保持打字效果
+            }
+            : msg
+        ));
+
+        scrollToBottom();
+
+        // 如果已经显示完所有字符，清除定时器
+        if (currentIndex >= fullText.length) {
           if (typingTimerRef.current) {
             clearInterval(typingTimerRef.current);
             typingTimerRef.current = null;
           }
-
-          // 打字完成后更新状态
           setIsAiTypingMessage(false);
         }
       }, typingSpeed);
@@ -296,7 +305,7 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
       <div className="chat-header">
         <div className="header-left">
           <div className="ai-icon">
-            <i className="fas fa-robot"></i>
+            <img src={GeoIcon} style={{ width: 32, height: 32, borderRadius: '50%' }} alt="" />
           </div>
           <div className="header-title">
             <h2>{title}</h2>
@@ -306,6 +315,11 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
         <div className="chat-status">
           <span className="status-dot"></span>
           <span>在线</span>
+        </div>
+        <div className='chat-close' onClick={() => {
+          handlePopoverOpen(false)
+        }}>
+          <CloseCircleOutlined />
         </div>
       </div>
 
@@ -318,7 +332,7 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
           >
             {message.sender === 'ai' && (
               <div className="ai-avatar">
-                <i className="fas fa-robot"></i>
+                <img src={GeoIcon} style={{ width: 32, height: 32, borderRadius: '50%' }} alt="" />
               </div>
             )}
 
@@ -334,7 +348,7 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
 
             {message.sender === 'user' && (
               <div className="user-avatar">
-                <i className="fas fa-user"></i>
+                <UserOutlined />
               </div>
             )}
           </div>

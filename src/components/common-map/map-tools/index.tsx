@@ -1,9 +1,9 @@
 
 
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import * as Cesium from 'cesium'
-import { Button, Drawer, Dropdown, InputNumber, message, Popover, Radio, Select, Slider, Switch, Tooltip, Upload, type DrawerProps } from 'antd'
+import { Button, Drawer, InputNumber, message, Popover, Select, Tooltip, Upload, type DrawerProps } from 'antd'
 import DrawAreaCountourIcon from '@/assets/svg/draw-area-countour-icon.svg?react'
 import DrawMultipleShapeIcon from '@/assets/svg/draw-multiple-shape-icon.svg?react'
 import DrawLineShapeIcon from '@/assets/svg/draw-line-shape-icon.svg?react'
@@ -14,6 +14,9 @@ import ZoomOutIcon from '@/assets/svg/zoom-out-icon.svg?react'
 import ZoomToHomeIcon from '@/assets/svg/zoom-to-home.svg?react'
 import UploadFileIcon from '@/assets/svg/upload-icon.svg?react'
 import AiIcon from '@/assets/svg/ai-icon.svg?react'
+import D2Icon from '@/assets/svg/2d.svg?react'
+import D3Icon from '@/assets/svg/3d.svg?react'
+
 
 import DrawCountour from '@/utils/plugins/draw-multiple-shape-countour'
 import MultipleShape, { Mutiple_SHAPE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-multiple-shape'
@@ -21,12 +24,16 @@ import LineShape, { LINE_SHAPE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-line
 import MeasureDistance, { MEASURE_DISTANCE_OPTIONS_DEFAULT } from '@/utils/plugins/draw-measure-distance'
 import ProfileAnalysis, { PROFILE_ANALYSIS_OPTIONS_DEFAULT, type pointMetaType } from '@/utils/plugins/draw-profile-analysis'
 import type MultipleShapeCountour from '@/utils/plugins/draw-multiple-shape-countour'
-import type { CommonMapPropsType } from '..'
+import type { CommonMapPropsType, pick_tools_type, } from '..'
+import { pick_tools_List } from '..'
 import type { settingType } from '@/pages/build-map-setting/constance'
 import GeoJsonLoader from '@/utils/plugins/geojson-loader'
 import ProfileAnalysisChart from './profile-analysis-chart'
-import { EllipsisOutlined } from '@ant-design/icons'
+import { AimOutlined, DeleteOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
 import AIChatBox from '../ai-tool'
+import { debounce } from 'lodash'
+import GeoIcon from '@/assets/geo-icon.png'
+import classNames from 'classnames'
 
 type MapToolsPropsType = {
   model: CommonMapPropsType['model']
@@ -36,11 +43,20 @@ type MapToolsPropsType = {
 }
 
 type CommonToolsType = {
+  key: pick_tools_type
   icon: React.ReactNode
   title: string
   onClick: () => void
-  showTipsClycle?: Boolean
-  onClickTips?: (e: React.MouseEvent<HTMLDivElement>) => void
+  badge?: React.ReactNode
+}
+
+interface GeoJsonLoaderInstance {
+  name: string;
+  instance: GeoJsonLoader;
+  direction: 'left' | 'right';
+  opacity: number;
+  show: boolean;
+  origin: 'ai' | 'upload'
 }
 
 const MapTools: React.FC<MapToolsPropsType> = (props) => {
@@ -52,7 +68,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
   const [profileAnalysisMetaData, setProfileAnalysisMetaData] = useState<{ data: pointMetaType[]; type: string; instance: ProfileAnalysis }[]>([])
 
   const [activeTool, setActiveTool] = useState<{
-    type?: string
+    type?: pick_tools_type
     instance?: MultipleShapeCountour | MultipleShape | LineShape | MeasureDistance | ProfileAnalysis
   }>({})
 
@@ -62,13 +78,15 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
   const [, setMapWidget] = useState<settingType['mapWidget']>([])
 
-  const [geojsonLoaderInstanceList, setGeojsonLoaderInstanceList] = useState<{ name: string; direction: 'left' | 'right'; opacity: number, instance: GeoJsonLoader }[]>([])
+  const [geojsonLoaderInstanceList, setGeojsonLoaderInstanceList] = useState<GeoJsonLoaderInstance[]>([])
 
   const [openGeojsonLoaderDrawer, setOpenGeojsonLoaderDrawer] = useState<boolean>(false)
 
-  const [openSplitCompare, setOpenSplitCompare] = useState<boolean>(false)
+  const [openAiPopver, setOpenAiPopver] = useState<boolean>(false)
 
   const splitCompareHandler = useRef<boolean>(false)
+
+  const [is3d, setIs3d] = useState<boolean>(true)
 
   const defaultCameraFlyTo = () => {
     if (defaultCameraFlyToParams?.destination) {
@@ -82,25 +100,10 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     }
   }
 
-  /* const coffeeBeltRectangle = Cesium.Rectangle.fromDegrees(
-    120.0,
-    21.744441967016826,
-    122.0,
-    25.457622543131478,
-  );
-  
-  viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(
-      120.90960542899757,
-      23.73598606130257,
-      55000,
-    ),
-  }); */
-
-  const MouseToolWithTips = (title: string, icon: React.ReactNode) => {
+  const MouseToolWithTips = (key: pick_tools_type, icon: React.ReactNode) => {
 
     return <Tooltip
-      open={title === activeTool.type}
+      open={key === activeTool.type}
       styles={{
         body: {
           padding: 0,
@@ -145,30 +148,78 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     </Tooltip>
   }
 
+  async function executePromisesSequentially(
+    data: string[],
+    callback?: (name: string, entities: Cesium.Entity[]) => void
+  ): Promise<void> {
+    // 使用reduce创建Promise链
+    await data.reduce(async (previousPromise: Promise<void>, item: string, index) => {
+      // 等待上一个Promise完成
+      await previousPromise;
+
+      try {
+        // 1. 执行fetch请求
+        const response = await fetch(import.meta.env.PROD ? `/ali-geo/geo/geojson/${item}` : `/dev-geo/${item}`, {
+          method: 'GET',
+          mode: 'cors',
+        });
+
+        const file = item.split('/')[1]
+
+        const fileName = handleFilename(file)
+
+        if (!response.ok) {
+          message.error(`${fileName}加载失败`);
+          throw new Error(`Fetch failed for ${item}: ${response.statusText}`);
+        }
+
+        const jsonData = await response.json();
+
+        // 2. 创建GeoJsonLoader实例
+        const loader = new GeoJsonLoader(viewer);
+
+        setOpenGeojsonLoaderDrawer(true)
+        // 3. 更新状态（如果需要在React组件中使用）
+        setGeojsonLoaderInstanceList((prev) => [
+          ...prev,
+          { name: fileName, instance: loader, direction: 'left', opacity: 0.8, show: true, origin: 'ai' },
+        ]);
+
+        // 4. 等待render完成
+        const entities = await loader.render(jsonData);
+        viewer.flyTo(entities, {
+          duration: 0.5
+        })
+        message.success(`${fileName}加载成功`);
+        callback && callback(item, entities)
+
+      } catch (error) {
+        // fetch失败或render失败时，直接继续下一个，这里可以添加错误处理
+        console.error(`Error processing ${item}:`, error);
+        // 不throw，让链继续执行
+      }
+    }, Promise.resolve()); // 初始Promise
+  }
+
+  const handleFilename = (filename: string) => {
+    return filename.replace('.geojson', '') || '未命名geojson';
+  }
+
   const handleSetGeojson = (data: string[]) => {
-    data.forEach(item => {
-      fetch(`/api/${item}`).then(res => res.json()).then(data => {
-
-        const loader = new GeoJsonLoader(viewer!)
-
-        setGeojsonLoaderInstanceList((prev) => {
-          return [
-            ...prev,
-            { name: item, instance: loader, direction: 'left', opacity: 0.8 },
-          ]
-        })
-
-        loader.render(data).then(entities => {
-
-        })
-      })
+    executePromisesSequentially(data, (name) => {
+      console.log(name)
     })
+  }
+
+  const getToolTitle = (key: pick_tools_type) => {
+    return pick_tools_List.find(item => item.key === key)?.title || ''
   }
 
   const commonTools: CommonToolsType[] = [
     {
       icon: <ZoomToHomeIcon></ZoomToHomeIcon>,
-      title: '默认视角',
+      key: 'default_perspective',
+      title: getToolTitle('default_perspective'),
       onClick: () => {
         if (model !== 'build') {
           return
@@ -178,7 +229,8 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     },
     {
       icon: <ZoomInIcon></ZoomInIcon>,
-      title: '视角放大',
+      key: 'zoom_in',
+      title: getToolTitle('zoom_in'),
       onClick: () => {
         if (model !== 'build') {
           return
@@ -188,7 +240,8 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     },
     {
       icon: <ZoomOutIcon></ZoomOutIcon>,
-      title: '视角缩小',
+      key: 'zoom_out',
+      title: getToolTitle('zoom_out'),
       onClick: () => {
         if (model !== 'build') {
           return
@@ -197,13 +250,44 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       },
     },
     {
+      icon: is3d ? <D3Icon></D3Icon> : <D2Icon></D2Icon>,
+      key: 'dimension',
+      title: getToolTitle('dimension'),
+      onClick: () => {
+        if (model !== 'build') {
+          return
+        }
+
+        if (is3d) {
+          setIs3d(false)
+          viewer.scene.morphToColumbusView(1);
+          return
+        }
+        setIs3d(true)
+        viewer.scene.morphTo3D(1);
+      }
+    },
+    {
       icon: <Popover
-        content={<AIChatBox viewer={viewer} handleSetGeojson={handleSetGeojson} />}
         trigger="click"
+        open={openAiPopver}
+        onOpenChange={(show, e) => {
+          if (model !== 'build') {
+            setOpenAiPopver(false)
+            return
+          }
+          setOpenAiPopver(show)
+        }}
+        content={
+          <AIChatBox handleSetGeojson={handleSetGeojson} handlePopoverOpen={(show) => {
+            setOpenAiPopver(show)
+          }} />
+        }
         placement="top">
         <AiIcon></AiIcon>
       </Popover>,
-      title: 'AI工具',
+      key: 'AI',
+      title: getToolTitle('AI'),
       onClick: () => {
         if (model !== 'build') {
           return
@@ -211,8 +295,16 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
       },
     },
     {
+      badge: !!geojsonLoaderInstanceList.length && <div title={geojsonLoaderInstanceList.length + ''} className={classNames("map-diy-tools-item-badge", {
+        "map-diy-tools-item-badge-more": geojsonLoaderInstanceList.length > 99
+      })} onClick={(e) => {
+        e.stopPropagation()
+        setOpenGeojsonLoaderDrawer(true)
+      }}>
+        {geojsonLoaderInstanceList.length}
+      </div>,
       icon: <>
-        <Upload action={'#'} customRequest={() => { }} maxCount={1} multiple={false} rootClassName='map-upload-tool-wrapper'
+        <Upload action={'#'} disabled={model !== 'build'} customRequest={() => { }} maxCount={1} multiple={false} rootClassName='map-upload-tool-wrapper'
           beforeUpload={(file) => {
             if (model !== 'build') {
               return Promise.reject()
@@ -238,7 +330,6 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
             message.success(`正在读取${file.name}`)
 
-            setPlacement('right')
             const reader = new FileReader()
 
             reader.onload = (e) => {
@@ -253,7 +344,8 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
                 })
               })
 
-              setGeojsonLoaderInstanceList([{ name: file.name.replace('.geojson', '') || '未命名geojson', instance: loader, direction: 'left', opacity: 0.8 }, ...geojsonLoaderInstanceList])
+              setOpenGeojsonLoaderDrawer(true)
+              setGeojsonLoaderInstanceList([{ name: handleFilename(file.name), instance: loader, direction: 'left', opacity: 0.8, show: true, origin: 'upload' }, ...geojsonLoaderInstanceList])
             }
 
             reader.readAsText(file.originFileObj as Blob)
@@ -261,12 +353,8 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
         >
           <UploadFileIcon></UploadFileIcon>
         </Upload></>,
-      showTipsClycle: !!geojsonLoaderInstanceList.length,
-      onClickTips: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        e.stopPropagation()
-        setOpenGeojsonLoaderDrawer(true)
-      },
-      title: '上传文件',
+      key: 'upload_file',
+      title: getToolTitle('upload_file'),
       onClick: () => {
         if (model !== 'build') {
           return
@@ -275,17 +363,18 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     },
   ]
 
-  const useMouseTools = [
+  const useMouseTools: CommonToolsType[] = [
     {
-      icon: MouseToolWithTips('区域等高线', <DrawAreaCountourIcon />),
-      title: '区域等高线',
+      icon: MouseToolWithTips('area_contour', <DrawAreaCountourIcon />),
+      title: getToolTitle('area_contour'),
+      key: 'area_contour',
       onClick: () => {
         if (model !== 'build') {
           return
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
+          message.warning('当前正在使用' + getToolTitle('area_contour') + '，请先结束当前工具')
           return
         }
 
@@ -328,19 +417,20 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           },
         })
 
-        setActiveTool({ type: '区域等高线', instance: drawer })
+        setActiveTool({ type: 'area_contour', instance: drawer })
       },
     },
     {
-      icon: MouseToolWithTips('绘制多边形', <DrawMultipleShapeIcon />),
-      title: '绘制多边形',
+      icon: MouseToolWithTips('draw_polygon', <DrawMultipleShapeIcon />),
+      key: 'draw_polygon',
+      title: getToolTitle('draw_polygon'),
       onClick: () => {
         if (model !== 'build') {
           return
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
+          message.warning('当前正在使用' + getToolTitle('area_contour') + '，请先结束当前工具')
           return
         }
 
@@ -383,19 +473,20 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           },
         })
 
-        setActiveTool({ type: '绘制多边形', instance: drawer })
+        setActiveTool({ type: 'draw_polygon', instance: drawer })
       },
     },
     {
-      icon: MouseToolWithTips('绘制线段', <DrawLineShapeIcon />),
-      title: '绘制线段',
+      icon: MouseToolWithTips('draw_line', <DrawLineShapeIcon />),
+      key: 'draw_line',
+      title: getToolTitle('draw_line'),
       onClick: () => {
         if (model !== 'build') {
           return
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
+          message.warning('当前正在使用' + getToolTitle('draw_line') + '，请先结束当前工具')
           return
         }
 
@@ -438,19 +529,20 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           },
         })
 
-        setActiveTool({ type: '绘制线段', instance: drawer })
+        setActiveTool({ type: 'draw_line', instance: drawer })
       },
     },
     {
-      icon: MouseToolWithTips('测距工具', <DrawMeasureDistanceIcon />),
-      title: '测距工具',
+      icon: MouseToolWithTips('measure_distance', <DrawMeasureDistanceIcon />),
+      key: 'measure_distance',
+      title: getToolTitle('measure_distance'),
       onClick: () => {
         if (model !== 'build') {
           return
         }
 
         if (!!activeTool.type) {
-          message.warning('当前正在使用' + activeTool.type + '，请先结束当前工具')
+          message.warning('当前正在使用' + getToolTitle('measure_distance') + '，请先结束当前工具')
           return
         }
 
@@ -493,17 +585,21 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           },
         })
 
-        setActiveTool({ type: '测距工具', instance: drawer })
+        setActiveTool({ type: 'measure_distance', instance: drawer })
       },
     },
     {
-      icon: MouseToolWithTips('剖面分析', <DrawProfileAnalysisIcon />),
-      title: '剖面分析',
-      showTipsClycle: !!profileAnalysisMetaData.length,
-      onClickTips: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      badge: !!profileAnalysisMetaData.length && <div title={profileAnalysisMetaData.length + ''} className={classNames("map-diy-tools-item-badge", {
+        "map-diy-tools-item-badge-more": profileAnalysisMetaData.length > 99
+      })} onClick={(e) => {
         e.stopPropagation()
         setOpenProfileAnalysisDrawer(true)
-      },
+      }}>
+        {profileAnalysisMetaData.length}
+      </div>,
+      icon: MouseToolWithTips('profile_analysis', <DrawProfileAnalysisIcon />),
+      title: getToolTitle('profile_analysis'),
+      key: 'profile_analysis',
       onClick: () => {
         if (model !== 'build') {
           return
@@ -558,44 +654,44 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           },
         })
 
-        setActiveTool({ type: '剖面分析', instance: drawer })
+        setActiveTool({ type: 'profile_analysis', instance: drawer })
       },
     },
   ]
 
   const finalTools = useMemo(() => {
-    return [...commonTools, ...useMouseTools].filter(item => pickToolsList?.includes(item.title))
-  }, [pickToolsList, activeTool, allowActiveToolToCompleted, geojsonLoaderInstanceList, profileAnalysisMetaData,])
+    return [...commonTools, ...useMouseTools].filter(item => pickToolsList?.includes(item.key))
+  }, [pickToolsList, openAiPopver, is3d, activeTool, allowActiveToolToCompleted, geojsonLoaderInstanceList, profileAnalysisMetaData,])
 
   useEffect(() => {
-    const slider = document.getElementById('slider')
-
-    viewer!.scene.splitPosition = 0.5 // 默认中间分割
-
-    const mousedown = () => (splitCompareHandler.current = true)
-    const mouseup = () => (splitCompareHandler.current = false)
-
-    const mousemove = (e: MouseEvent) => {
-      if (!splitCompareHandler.current) return
-      const splitPos = e.clientX / window.innerWidth
-      slider!.style.left = splitPos * 100 + '%'
-      viewer!.scene.splitPosition = splitPos
-    }
-
-    slider!.addEventListener('mousedown', mousedown)
-    window.addEventListener('mouseup', mouseup)
-    window.addEventListener('mousemove', mousemove)
-
-    return () => {
-      slider!.removeEventListener('mousedown', mousedown)
-      window.removeEventListener('mouseup', mouseup)
-      window.removeEventListener('mousemove', mousemove)
-    }
+    /*     const slider = document.getElementById('slider')
+    
+        viewer!.scene.splitPosition = 0.5 // 默认中间分割
+    
+        const mousedown = () => (splitCompareHandler.current = true)
+        const mouseup = () => (splitCompareHandler.current = false)
+    
+        const mousemove = (e: MouseEvent) => {
+          if (!splitCompareHandler.current) return
+          const splitPos = e.clientX / window.innerWidth
+          slider!.style.left = splitPos * 100 + '%'
+          viewer!.scene.splitPosition = splitPos
+        }
+    
+        slider!.addEventListener('mousedown', mousedown)
+        window.addEventListener('mouseup', mouseup)
+        window.addEventListener('mousemove', mousemove)
+    
+        return () => {
+          slider!.removeEventListener('mousedown', mousedown)
+          window.removeEventListener('mouseup', mouseup)
+          window.removeEventListener('mousemove', mousemove)
+        } */
   }, [])
 
   return <>
     {
-      <div id="slider" style={{ display: openSplitCompare ? 'block' : 'none' }}></div>
+      <div id="slider" style={{ display: 'none' }}></div>
     }
     <div className="map-diy-tools-container">
       <div className="map-diy-tools-container-wrapper">
@@ -603,7 +699,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           <div className="map-diy-tools-item-wrapper" key={item.title} >
             <div className="map-diy-tools-item" onClick={item.onClick} title={item.title} style={{ borderColor: item.title === 'AI工具' ? "#00ffff" : undefined }}>
               {item.icon}
-              {item.showTipsClycle && <div className="map-diy-tools-item-tipsClycle" onClick={item.onClickTips}></div>}
+              {item.badge}
             </div>
           </div>
         ))}
@@ -661,8 +757,8 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
     <Drawer
       getContainer={false}
       className='map-upload-tool-drawer'
-      title="geojson"
-      placement={placement}
+      title="矢量数据"
+      placement={'right'}
       onClose={() => {
         setOpenGeojsonLoaderDrawer(false)
       }}
@@ -672,36 +768,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           padding: 16,
         },
       }}
-      destroyOnHidden={true}
       open={openGeojsonLoaderDrawer}
-      extra={
-        <>
-          <Select
-            value={placement}
-            onChange={e => {
-              setPlacement(e)
-            }}
-            options={[
-              {
-                label: '上',
-                value: 'top',
-              },
-              {
-                label: '下',
-                value: 'bottom',
-              },
-              {
-                label: '左',
-                value: 'left',
-              },
-              {
-                label: '右',
-                value: 'right',
-              },
-            ]}
-          ></Select>
-        </>
-      }
     >
       {/*       <div style={{ display: 'flex', marginBottom: 16, maxWidth: 400 }}>
         <span>卷帘对比</span>&nbsp;&nbsp;
@@ -724,56 +791,60 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
           geojsonLoaderInstanceList.map((item, index) => {
             return <div className='upload-geojson-item' key={index}>
               <div className='upload-geojson-item-header'>
-                <div className='upload-geojson-item-name ellipsis-1'>{item.name}</div>
-                <div className='upload-geojson-item-action'>
-                  <Dropdown trigger={['click']} menu={{
-                    items: [
-                      {
-                        key: '1',
-                        label: <Button type='text' onClick={() => {
-                          item.instance.toggleVisibility()
-                        }}>展示/隐藏</Button>,
-                      },
-                      {
-                        key: '2',
-                        label: <Button danger type='text' onClick={() => {
-                          setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.filter((v, i) => i !== index))
-                          item.instance.clear()
-                        }}>删除</Button>,
-                      },
-                    ]
-                  }} placement="bottomRight">
-                    <EllipsisOutlined />
-                  </Dropdown>
+                <div className='upload-geojson-item-name' >
+                  <div className='upload-geojson-item-type' title={item.origin === 'ai' ? 'AI生成' : '上传'}>
+                    {
+                      item.origin === 'ai' ? (
+                        <img src={GeoIcon} style={{ width: 26, height: 26, borderRadius: '50%' }} alt="" />
+                      ) : (
+                        <UploadFileIcon width={20} height={20}></UploadFileIcon>
+                      )
+                    }
+                  </div>
+                  <div className='upload-geojson-item-text ellipsis-1' title={item.name}> {item.name}</div>
                 </div>
+                <div className='upload-geojson-item-action'>
+                  <AimOutlined title='快速定位' onClick={() => {
+                    viewer.flyTo(item.instance.allEntities, {
+                      duration: 1
+                    })
+                  }} />
+                  {
+                    item.show ? (
+                      <EyeInvisibleOutlined title='隐藏' onClick={() => {
+                        setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.map((v, i) => {
+                          if (i === index) {
+                            v.show = !v.show
+                          }
+                          return v
+                        }))
+                        item.instance.toggleVisibility()
+                      }} />
+                    ) : (
+                      <EyeOutlined title='展示' onClick={() => {
+                        setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.map((v, i) => {
+                          if (i === index) {
+                            v.show = !v.show
+                          }
+                          return v
+                        }))
+                        item.instance.toggleVisibility()
+                      }} />
+                    )
+                  }
+                  <DeleteOutlined
+                    title='删除'
+                    style={{
+                      color: '#d61717'
+                    }} onClick={() => {
+                      setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.filter((v, i) => i !== index))
+                      item.instance.clear()
+                    }} />
+                </div>
+
               </div>
               <div className='upload-geojson-item-content'>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-                  {/*                   <span>渲染方向</span>&nbsp;&nbsp;
-                  <Radio.Group
-                    disabled={!openSplitCompare}
-                    value={item.direction}
-                    onChange={(e) => {
-                      setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.map((v, i) => {
-                        if (i === index) {
-                          v.direction = e.target.value
-                        }
-                        return v
-                      }))
-
-                      item.instance.toggleEntitiesSplitDirection(e.target.value)
-                    }}
-                    options={[
-                      {
-                        label: '左',
-                        value: 'left',
-                      },
-                      {
-                        label: '右',
-                        value: 'right',
-                      }
-                    ]}
-                  /> */}
                   <span>透明度</span>&nbsp;&nbsp;
                   <InputNumber
                     style={{
@@ -783,7 +854,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
                     min={0}
                     step={0.1}
                     value={item.opacity}
-                    onChange={(value) => {
+                    onChange={debounce((value) => {
                       setGeojsonLoaderInstanceList(geojsonLoaderInstanceList.map((v, i) => {
                         if (i === index) {
                           v.opacity = value!
@@ -793,7 +864,7 @@ const MapTools: React.FC<MapToolsPropsType> = (props) => {
 
                       item.instance.updateEntitiesOpacity(value!)
 
-                    }}
+                    }, 1000)}
                   />
                 </div>
               </div>
