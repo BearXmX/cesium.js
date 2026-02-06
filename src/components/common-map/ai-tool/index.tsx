@@ -111,7 +111,7 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({
     // 模拟AI思考
     setTimeout(() => {
 
-      axios.post('/ai-geojson-server/v1/chat-messages', {
+      axios.post('/ai-server/v1/chat-messages', {
         inputs: {},
         query: text,
         response_mode: "blocking",

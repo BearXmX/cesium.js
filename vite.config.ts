@@ -22,10 +22,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/ali-geo/, ''),
       },
-      '/ai-geojson-server': {
+      '/ai-server': {
         target: 'https://airesearch.ai-study.net/',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/ai-geojson-server/, ''),
+        rewrite: path => path.replace(/^\/ai-server/, ''),
       },
       '/dev-geo': {
         target: 'http://localhost:8090/',

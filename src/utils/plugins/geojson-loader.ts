@@ -37,7 +37,6 @@ interface TopLevelProperties {
   outlineColor?: string
   outlineOpacity?: number
   outlineWidth?: number
-  polygonClampToGround?: number
   polylineClampToGround?: number
 
   pointOutlineColor?: string
@@ -284,7 +283,6 @@ class GeoJsonLoader {
         outlineOpacity: geoJsonData.properties.outlineOpacity || 1.0,
         outlineWidth: geoJsonData.properties.outlineWidth || 0,
         polylineClampToGround: Number(geoJsonData.properties.polylineClampToGround) || 0,
-        polygonClampToGround: Number(geoJsonData.properties.polygonClampToGround) || 0,
         pointOutlineColor: geoJsonData.properties.pointOutlineColor || '#fff',
         pointOutlineOpacity: geoJsonData.properties.pointOutlineOpacity || 1.0,
         pointOutlineWidth: geoJsonData.properties.pointOutlineWidth === 0 ? 0 : geoJsonData.properties.pointOutlineWidth || 1,
@@ -319,7 +317,6 @@ class GeoJsonLoader {
         outlineOpacity: 1.0,
         outlineWidth: 0,
         polylineClampToGround: 0,
-        polygonClampToGround: 0,
 
         pointOutlineColor: '#fff',
         pointOutlineOpacity: 1.0,
@@ -426,9 +423,6 @@ class GeoJsonLoader {
       if (fillColor) {
         geometryEntity.polygon.material = fillColor as unknown as Cesium.MaterialProperty
       }
-      geometryEntity.polygon.heightReference = Boolean(mergedProperties.polygonClampToGround)
-        ? (Cesium.HeightReference.CLAMP_TO_GROUND as unknown as Cesium.Property)
-        : (Cesium.HeightReference.NONE as unknown as Cesium.Property)
 
       const outlineColor = this._convertToCesiumColor(mergedProperties.outlineColor, mergedProperties.outlineOpacity)
 
